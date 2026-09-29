@@ -1,11 +1,11 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 
-import { getEmpresa } from "@/lib/empresas";
+import { buscarEmpresa } from "@/lib/empresas.functions";
 
 export const Route = createFileRoute("/empresa/$slug/")({
-  loader: ({ params }) => {
-    const empresa = getEmpresa(params.slug);
+  loader: async ({ params }) => {
+    const empresa = await buscarEmpresa({ data: { slug: params.slug } });
     if (!empresa) throw notFound();
     return { empresa };
   },

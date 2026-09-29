@@ -2,9 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight } from "lucide-react";
 
-import { EMPRESAS } from "@/lib/empresas";
+import { listarEmpresas } from "@/lib/empresas.functions";
 
 export const Route = createFileRoute("/")({
+  loader: () => listarEmpresas(),
   head: () => ({
     meta: [
       { title: "Painel do Grupo — Visão Geral" },
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const EMPRESAS = Route.useLoaderData();
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-6 py-16">
