@@ -8,6 +8,13 @@
       "when": 1790706375342,
       "tag": "0000_criar_empresas_marcas_produtos",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790706591636,
+      "tag": "0001_admin_roles_e_escrita",
+      "breakpoints": true
     }
   ]
 }
