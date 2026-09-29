@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { ArrowUpRight } from "lucide-react";
 
 import { listarEmpresas } from "@/lib/empresas.functions";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   loader: () => listarEmpresas(),
   head: () => ({
     meta: [
@@ -29,16 +31,44 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const EMPRESAS = Route.useLoaderData();
+  const { user } = Route.useRouteContext();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const admin = useQuery({
+    queryKey: ["is-admin", user.id],
+    queryFn: async () => {
+      const { data } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
+      return !!data;
+    },
+  });
+
+  async function sair() {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-6 py-16">
         <header className="relative mb-12">
-          <Link
-            to="/admin"
-            className="absolute right-0 top-0 rounded-full border border-border px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground"
-          >
-            Cadastrar
-          </Link>
+          <div className="absolute right-0 top-0 flex items-center gap-2">
+            {admin.data && (
+              <Link
+                to="/admin"
+                className="rounded-full border border-border px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground"
+              >
+                Gerenciar marcas e produtos
+              </Link>
+            )}
+            <button
+              onClick={sair}
+              className="rounded-full px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground"
+            >
+              Sair
+            </button>
+          </div>
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Painel corporativo
           </p>

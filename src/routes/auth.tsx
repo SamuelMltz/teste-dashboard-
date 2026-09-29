@@ -31,10 +31,10 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/admin" });
+      if (data.session) navigate({ to: "/" });
     });
     const { data } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session) navigate({ to: "/admin" });
+      if (session) navigate({ to: "/" });
     });
     return () => data.subscription.unsubscribe();
   }, [navigate]);
@@ -65,7 +65,7 @@ function AuthPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8">
-        <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">← Voltar</Link>
+        
         <h1 className="mt-4 font-display text-2xl font-bold text-foreground">
           {modo === "entrar" ? "Entrar" : "Criar conta"}
         </h1>

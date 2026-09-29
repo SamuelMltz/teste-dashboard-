@@ -15,4 +15,4 @@
 - Cada empresa tem uma cor de destaque (`accent`) usada em cartões e detalhes; trocar a cor lá, não nos componentes.
 - Estrutura: empresa → marcas → produtos (nome + estoque); rotas `/empresa/$slug` e `/empresa/$slug/marca/$marca`.
 - Tema escuro global via `class="dark"` no `<html>` em `__root.tsx`.
-- Área de cadastro em `/admin` (sob `_authenticated`), escreve direto pelo cliente do navegador; permissão garantida por RLS com `has_role(auth.uid(),'admin')`. Primeiro usuário cadastrado vira admin via trigger.
+- Todo o painel fica sob `_authenticated` (login obrigatório, `/auth` é a única rota pública). Cadastro em `/admin`, escrita pelo cliente do navegador protegida por RLS `has_role(auth.uid(),'admin')`; primeiro usuário vira admin via trigger.
