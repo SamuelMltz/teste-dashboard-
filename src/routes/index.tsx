@@ -32,7 +32,13 @@ function Index() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-6 py-16">
-        <header className="mb-12">
+        <header className="relative mb-12">
+          <Link
+            to="/admin"
+            className="absolute right-0 top-0 rounded-full border border-border px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            Cadastrar
+          </Link>
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Painel corporativo
           </p>
