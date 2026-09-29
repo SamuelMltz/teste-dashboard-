@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmpresaSlugRouteImport } from './routes/empresa.$slug'
+import { Route as EmpresaSlugIndexRouteImport } from './routes/empresa.$slug.index'
+import { Route as EmpresaSlugMarcaMarcaRouteImport } from './routes/empresa.$slug.marca.$marca'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +24,52 @@ const EmpresaSlugRoute = EmpresaSlugRouteImport.update({
   path: '/empresa/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EmpresaSlugIndexRoute = EmpresaSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => EmpresaSlugRoute,
+} as any)
+const EmpresaSlugMarcaMarcaRoute = EmpresaSlugMarcaMarcaRouteImport.update({
+  id: '/marca/$marca',
+  path: '/marca/$marca',
+  getParentRoute: () => EmpresaSlugRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/empresa/$slug': typeof EmpresaSlugRoute
+  '/empresa/$slug': typeof EmpresaSlugRouteWithChildren
+  '/empresa/$slug/': typeof EmpresaSlugIndexRoute
+  '/empresa/$slug/marca/$marca': typeof EmpresaSlugMarcaMarcaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/empresa/$slug': typeof EmpresaSlugRoute
+  '/empresa/$slug': typeof EmpresaSlugIndexRoute
+  '/empresa/$slug/marca/$marca': typeof EmpresaSlugMarcaMarcaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/empresa/$slug': typeof EmpresaSlugRoute
+  '/empresa/$slug': typeof EmpresaSlugRouteWithChildren
+  '/empresa/$slug/': typeof EmpresaSlugIndexRoute
+  '/empresa/$slug/marca/$marca': typeof EmpresaSlugMarcaMarcaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/empresa/$slug'
+  fullPaths:
+    '/' | '/empresa/$slug' | '/empresa/$slug/' | '/empresa/$slug/marca/$marca'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/empresa/$slug'
-  id: '__root__' | '/' | '/empresa/$slug'
+  to: '/' | '/empresa/$slug' | '/empresa/$slug/marca/$marca'
+  id:
+    | '__root__'
+    | '/'
+    | '/empresa/$slug'
+    | '/empresa/$slug/'
+    | '/empresa/$slug/marca/$marca'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  EmpresaSlugRoute: typeof EmpresaSlugRoute
+  EmpresaSlugRoute: typeof EmpresaSlugRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +88,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmpresaSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/empresa/$slug/': {
+      id: '/empresa/$slug/'
+      path: '/'
+      fullPath: '/empresa/$slug/'
+      preLoaderRoute: typeof EmpresaSlugIndexRouteImport
+      parentRoute: typeof EmpresaSlugRoute
+    }
+    '/empresa/$slug/marca/$marca': {
+      id: '/empresa/$slug/marca/$marca'
+      path: '/marca/$marca'
+      fullPath: '/empresa/$slug/marca/$marca'
+      preLoaderRoute: typeof EmpresaSlugMarcaMarcaRouteImport
+      parentRoute: typeof EmpresaSlugRoute
+    }
   }
 }
 
+interface EmpresaSlugRouteChildren {
+  EmpresaSlugIndexRoute: typeof EmpresaSlugIndexRoute
+  EmpresaSlugMarcaMarcaRoute: typeof EmpresaSlugMarcaMarcaRoute
+}
+
+const EmpresaSlugRouteChildren: EmpresaSlugRouteChildren = {
+  EmpresaSlugIndexRoute: EmpresaSlugIndexRoute,
+  EmpresaSlugMarcaMarcaRoute: EmpresaSlugMarcaMarcaRoute,
+}
+
+const EmpresaSlugRouteWithChildren = EmpresaSlugRoute._addFileChildren(
+  EmpresaSlugRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  EmpresaSlugRoute: EmpresaSlugRoute,
+  EmpresaSlugRoute: EmpresaSlugRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
