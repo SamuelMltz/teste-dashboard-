@@ -119,7 +119,7 @@ function EmpresaEditor({ empresa, onChange }: { empresa: Empresa; onChange: () =
     const nome = novaMarca.trim();
     if (!nome) return;
     const { error } = await supabase.from("marcas").insert({ empresa_id: empresa.id, nome, slug: slugify(nome) });
-    if (error) return toast.error("Não foi possível criar a marca (talvez já exista).");
+    if (error) { toast.error("Não foi possível criar a marca (talvez já exista)."); return; }
     setNovaMarca("");
     toast.success("Marca criada");
     onChange();
@@ -147,7 +147,7 @@ function MarcaEditor({ marca, onChange }: { marca: Marca; onChange: () => void }
     e.preventDefault();
     if (!nome.trim()) return;
     const { error } = await supabase.from("produtos").insert({ marca_id: marca.id, nome: nome.trim(), estoque: Number(estoque) || 0 });
-    if (error) return toast.error("Não foi possível criar o produto.");
+    if (error) { toast.error("Não foi possível criar o produto."); return; }
     setNome("");
     setEstoque("");
     onChange();
@@ -156,7 +156,7 @@ function MarcaEditor({ marca, onChange }: { marca: Marca; onChange: () => void }
   async function apagarMarca() {
     if (!confirm(`Apagar a marca "${marca.nome}" e todos os produtos dela?`)) return;
     const { error } = await supabase.from("marcas").delete().eq("id", marca.id);
-    if (error) return toast.error("Não foi possível apagar.");
+    if (error) { toast.error("Não foi possível apagar."); return; }
     onChange();
   }
 
@@ -185,7 +185,7 @@ function ProdutoLinha({ produto, onChange }: { produto: Produto; onChange: () =>
     const n = Number(estoque);
     if (Number.isNaN(n) || n === produto.estoque) return;
     const { error } = await supabase.from("produtos").update({ estoque: n }).eq("id", produto.id);
-    if (error) return toast.error("Não foi possível salvar.");
+    if (error) { toast.error("Não foi possível salvar."); return; }
     toast.success("Estoque atualizado");
     onChange();
   }
@@ -193,7 +193,7 @@ function ProdutoLinha({ produto, onChange }: { produto: Produto; onChange: () =>
   async function apagar() {
     if (!confirm(`Apagar "${produto.nome}"?`)) return;
     const { error } = await supabase.from("produtos").delete().eq("id", produto.id);
-    if (error) return toast.error("Não foi possível apagar.");
+    if (error) { toast.error("Não foi possível apagar."); return; }
     onChange();
   }
 
