@@ -4,7 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 
 import { listarEmpresas } from "@/lib/empresas.functions";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   loader: () => listarEmpresas(),
   head: () => ({
     meta: [

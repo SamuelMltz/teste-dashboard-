@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowUpRight } from "lucide-react";
 
 import { buscarEmpresa } from "@/lib/empresas.functions";
 
-export const Route = createFileRoute("/empresa/$slug/")({
+export const Route = createFileRoute("/_authenticated/empresa/$slug/")({
   loader: async ({ params }) => {
     const empresa = await buscarEmpresa({ data: { slug: params.slug } });
     if (!empresa) throw notFound();
