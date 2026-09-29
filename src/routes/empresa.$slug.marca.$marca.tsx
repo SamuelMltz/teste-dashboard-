@@ -1,15 +1,16 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 
-import { getMarca } from "@/lib/empresas";
+import { getEmpresa, getMarca } from "@/lib/empresas";
 
 export const Route = createFileRoute("/empresa/$slug/marca/$marca")({
-  loader: ({ params, parentMatchPromise }) => parentMatchPromise.then((p) => {
-    const empresa = (p.loaderData as { empresa: import("@/lib/empresas").Empresa }).empresa;
+  loader: ({ params }) => {
+    const empresa = getEmpresa(params.slug);
+    if (!empresa) throw notFound();
     const marca = getMarca(empresa, params.marca);
     if (!marca) throw notFound();
     return { empresa, marca };
-  }),
+  },
   head: ({ loaderData }) => {
     const titulo = loaderData ? `${loaderData.marca.nome} — Estoque` : "Marca não encontrada";
     return {

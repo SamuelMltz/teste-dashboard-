@@ -1,7 +1,14 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 
+import { getEmpresa } from "@/lib/empresas";
+
 export const Route = createFileRoute("/empresa/$slug/")({
+  loader: ({ params }) => {
+    const empresa = getEmpresa(params.slug);
+    if (!empresa) throw notFound();
+    return { empresa };
+  },
   head: ({ loaderData }) => {
     const nome = loaderData?.empresa.nome ?? "Empresa";
     return {
@@ -19,7 +26,7 @@ export const Route = createFileRoute("/empresa/$slug/")({
 });
 
 function EmpresaMarcas() {
-  const { empresa } = Route.useParent().useLoaderData();
+  const { empresa } = Route.useLoaderData();
 
   return (
     <div className="min-h-screen bg-background">
