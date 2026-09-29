@@ -14,7 +14,97 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      empresas: {
+        Row: {
+          accent: string
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+          slug: string
+        }
+        Insert: {
+          accent?: string
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number
+          slug: string
+        }
+        Update: {
+          accent?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          slug?: string
+        }
+        Relationships: []
+      }
+      marcas: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          id: string
+          nome: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          id?: string
+          nome: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          nome?: string
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marcas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      produtos: {
+        Row: {
+          created_at: string
+          estoque: number
+          id: string
+          marca_id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          estoque?: number
+          id?: string
+          marca_id: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          estoque?: number
+          id?: string
+          marca_id?: string
+          nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produtos_marca_id_fkey"
+            columns: ["marca_id"]
+            isOneToOne: false
+            referencedRelation: "marcas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
