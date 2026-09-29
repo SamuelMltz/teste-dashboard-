@@ -11,7 +11,7 @@
 
 # AGENTS.md
 
-- Dados das empresas vivem em `src/lib/empresas.ts` (mock em memória). Migrar para banco (Lovable Cloud) quando o usuário pedir dados reais.
+- Dados vêm do banco (tabelas empresas → marcas → produtos, leitura pública); lidos via server functions em `src/lib/empresas.functions.ts`.
 - Cada empresa tem uma cor de destaque (`accent`) usada em cartões e detalhes; trocar a cor lá, não nos componentes.
-- Estrutura: empresa → marcas → produtos (nome + estoque), tudo em `empresas.ts`; rotas `/empresa/$slug` e `/empresa/$slug/marca/$marca`.
+- Estrutura: empresa → marcas → produtos (nome + estoque); rotas `/empresa/$slug` e `/empresa/$slug/marca/$marca`.
 - Tema escuro global via `class="dark"` no `<html>` em `__root.tsx`.
