@@ -9,19 +9,14 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as EmpresaSlugRouteImport } from './routes/empresa.$slug'
-import { Route as EmpresaSlugIndexRouteImport } from './routes/empresa.$slug.index'
-import { Route as EmpresaSlugMarcaMarcaRouteImport } from './routes/empresa.$slug.marca.$marca'
+import { Route as AuthenticatedEmpresaSlugRouteImport } from './routes/_authenticated/empresa.$slug'
+import { Route as AuthenticatedEmpresaSlugIndexRouteImport } from './routes/_authenticated/empresa.$slug.index'
+import { Route as AuthenticatedEmpresaSlugMarcaMarcaRouteImport } from './routes/_authenticated/empresa.$slug.marca.$marca'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -31,51 +26,59 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const EmpresaSlugRoute = EmpresaSlugRouteImport.update({
-  id: '/empresa/$slug',
-  path: '/empresa/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EmpresaSlugIndexRoute = EmpresaSlugIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => EmpresaSlugRoute,
-} as any)
-const EmpresaSlugMarcaMarcaRoute = EmpresaSlugMarcaMarcaRouteImport.update({
-  id: '/marca/$marca',
-  path: '/marca/$marca',
-  getParentRoute: () => EmpresaSlugRoute,
-} as any)
+const AuthenticatedEmpresaSlugRoute =
+  AuthenticatedEmpresaSlugRouteImport.update({
+    id: '/empresa/$slug',
+    path: '/empresa/$slug',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEmpresaSlugIndexRoute =
+  AuthenticatedEmpresaSlugIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedEmpresaSlugRoute,
+  } as any)
+const AuthenticatedEmpresaSlugMarcaMarcaRoute =
+  AuthenticatedEmpresaSlugMarcaMarcaRouteImport.update({
+    id: '/marca/$marca',
+    path: '/marca/$marca',
+    getParentRoute: () => AuthenticatedEmpresaSlugRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
-  '/empresa/$slug': typeof EmpresaSlugRouteWithChildren
-  '/empresa/$slug/': typeof EmpresaSlugIndexRoute
-  '/empresa/$slug/marca/$marca': typeof EmpresaSlugMarcaMarcaRoute
+  '/empresa/$slug': typeof AuthenticatedEmpresaSlugRouteWithChildren
+  '/empresa/$slug/': typeof AuthenticatedEmpresaSlugIndexRoute
+  '/empresa/$slug/marca/$marca': typeof AuthenticatedEmpresaSlugMarcaMarcaRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
-  '/empresa/$slug': typeof EmpresaSlugIndexRoute
-  '/empresa/$slug/marca/$marca': typeof EmpresaSlugMarcaMarcaRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/empresa/$slug': typeof AuthenticatedEmpresaSlugIndexRoute
+  '/empresa/$slug/marca/$marca': typeof AuthenticatedEmpresaSlugMarcaMarcaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
-  '/empresa/$slug': typeof EmpresaSlugRouteWithChildren
-  '/empresa/$slug/': typeof EmpresaSlugIndexRoute
-  '/empresa/$slug/marca/$marca': typeof EmpresaSlugMarcaMarcaRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/empresa/$slug': typeof AuthenticatedEmpresaSlugRouteWithChildren
+  '/_authenticated/empresa/$slug/': typeof AuthenticatedEmpresaSlugIndexRoute
+  '/_authenticated/empresa/$slug/marca/$marca': typeof AuthenticatedEmpresaSlugMarcaMarcaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -88,34 +91,25 @@ export interface FileRouteTypes {
     | '/empresa/$slug/marca/$marca'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/auth' | '/admin' | '/empresa/$slug' | '/empresa/$slug/marca/$marca'
+    '/auth' | '/admin' | '/' | '/empresa/$slug' | '/empresa/$slug/marca/$marca'
   id:
     | '__root__'
-    | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/admin'
-    | '/empresa/$slug'
-    | '/empresa/$slug/'
-    | '/empresa/$slug/marca/$marca'
+    | '/_authenticated/'
+    | '/_authenticated/empresa/$slug'
+    | '/_authenticated/empresa/$slug/'
+    | '/_authenticated/empresa/$slug/marca/$marca'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
-  EmpresaSlugRoute: typeof EmpresaSlugRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -130,6 +124,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/': {
+      id: '/_authenticated/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -137,60 +138,65 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/empresa/$slug': {
-      id: '/empresa/$slug'
+    '/_authenticated/empresa/$slug': {
+      id: '/_authenticated/empresa/$slug'
       path: '/empresa/$slug'
       fullPath: '/empresa/$slug'
-      preLoaderRoute: typeof EmpresaSlugRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedEmpresaSlugRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/empresa/$slug/': {
-      id: '/empresa/$slug/'
+    '/_authenticated/empresa/$slug/': {
+      id: '/_authenticated/empresa/$slug/'
       path: '/'
       fullPath: '/empresa/$slug/'
-      preLoaderRoute: typeof EmpresaSlugIndexRouteImport
-      parentRoute: typeof EmpresaSlugRoute
+      preLoaderRoute: typeof AuthenticatedEmpresaSlugIndexRouteImport
+      parentRoute: typeof AuthenticatedEmpresaSlugRoute
     }
-    '/empresa/$slug/marca/$marca': {
-      id: '/empresa/$slug/marca/$marca'
+    '/_authenticated/empresa/$slug/marca/$marca': {
+      id: '/_authenticated/empresa/$slug/marca/$marca'
       path: '/marca/$marca'
       fullPath: '/empresa/$slug/marca/$marca'
-      preLoaderRoute: typeof EmpresaSlugMarcaMarcaRouteImport
-      parentRoute: typeof EmpresaSlugRoute
+      preLoaderRoute: typeof AuthenticatedEmpresaSlugMarcaMarcaRouteImport
+      parentRoute: typeof AuthenticatedEmpresaSlugRoute
     }
   }
 }
 
+interface AuthenticatedEmpresaSlugRouteChildren {
+  AuthenticatedEmpresaSlugIndexRoute: typeof AuthenticatedEmpresaSlugIndexRoute
+  AuthenticatedEmpresaSlugMarcaMarcaRoute: typeof AuthenticatedEmpresaSlugMarcaMarcaRoute
+}
+
+const AuthenticatedEmpresaSlugRouteChildren: AuthenticatedEmpresaSlugRouteChildren =
+  {
+    AuthenticatedEmpresaSlugIndexRoute: AuthenticatedEmpresaSlugIndexRoute,
+    AuthenticatedEmpresaSlugMarcaMarcaRoute:
+      AuthenticatedEmpresaSlugMarcaMarcaRoute,
+  }
+
+const AuthenticatedEmpresaSlugRouteWithChildren =
+  AuthenticatedEmpresaSlugRoute._addFileChildren(
+    AuthenticatedEmpresaSlugRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedEmpresaSlugRoute: typeof AuthenticatedEmpresaSlugRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedEmpresaSlugRoute: AuthenticatedEmpresaSlugRouteWithChildren,
 }
 
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
-interface EmpresaSlugRouteChildren {
-  EmpresaSlugIndexRoute: typeof EmpresaSlugIndexRoute
-  EmpresaSlugMarcaMarcaRoute: typeof EmpresaSlugMarcaMarcaRoute
-}
-
-const EmpresaSlugRouteChildren: EmpresaSlugRouteChildren = {
-  EmpresaSlugIndexRoute: EmpresaSlugIndexRoute,
-  EmpresaSlugMarcaMarcaRoute: EmpresaSlugMarcaMarcaRoute,
-}
-
-const EmpresaSlugRouteWithChildren = EmpresaSlugRoute._addFileChildren(
-  EmpresaSlugRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
-  EmpresaSlugRoute: EmpresaSlugRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
