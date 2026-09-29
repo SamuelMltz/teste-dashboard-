@@ -1,24 +1,128 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
+import { ArrowUpRight, TrendingDown, TrendingUp } from "lucide-react";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+import { EMPRESAS, fmtBRLCurto } from "@/lib/empresas";
+
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Painel do Grupo — Visão Geral" },
+      {
+        name: "description",
+        content:
+          "Painel corporativo com a visão geral das empresas do grupo: Vivalle, Luminartech e Vitrine.",
+      },
+      { property: "og:title", content: "Painel do Grupo — Visão Geral" },
+      {
+        property: "og:description",
+        content:
+          "Painel corporativo com a visão geral das empresas do grupo: Vivalle, Luminartech e Vitrine.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-6xl px-6 py-16">
+        <header className="mb-12">
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            Painel corporativo
+          </p>
+          <h1 className="mt-2 font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+            Selecione uma empresa
+          </h1>
+          <p className="mt-3 max-w-xl text-muted-foreground">
+            Toque em um dos cartões abaixo para abrir a visão detalhada de cada
+            unidade de negócio.
+          </p>
+        </header>
+
+        <div className="grid gap-6 md:grid-cols-3">
+          {EMPRESAS.map((empresa) => {
+            const positivo = empresa.kpis.variacaoMensal >= 0;
+            return (
+              <Link
+                key={empresa.slug}
+                to="/empresa/$slug"
+                params={{ slug: empresa.slug }}
+                className="group relative overflow-hidden rounded-2xl border border-border bg-card p-8 transition-all duration-300 hover:-translate-y-1 hover:border-transparent"
+                style={{ ["--empresa-accent" as string]: empresa.accent }}
+              >
+                <div
+                  className="pointer-events-none absolute inset-x-0 top-0 h-1 opacity-80"
+                  style={{ backgroundColor: empresa.accent }}
+                />
+                <div
+                  className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full opacity-[0.07] blur-2xl transition-opacity duration-300 group-hover:opacity-[0.18]"
+                  style={{ backgroundColor: empresa.accent }}
+                />
+
+                <div className="flex items-start justify-between">
+                  <div
+                    className="flex h-12 w-12 items-center justify-center rounded-xl font-display text-xl font-bold"
+                    style={{
+                      backgroundColor: `${empresa.accent}1a`,
+                      color: empresa.accent,
+                    }}
+                  >
+                    {empresa.nome.charAt(0)}
+                  </div>
+                  <ArrowUpRight className="h-5 w-5 text-muted-foreground transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground" />
+                </div>
+
+                <h2 className="mt-6 font-display text-2xl font-semibold tracking-tight text-foreground">
+                  {empresa.nome}
+                </h2>
+
+                <dl className="mt-6 space-y-3">
+                  <div className="flex items-baseline justify-between">
+                    <dt className="text-sm text-muted-foreground">
+                      Faturamento (mês)
+                    </dt>
+                    <dd className="font-display text-lg font-semibold text-foreground">
+                      {fmtBRLCurto(empresa.kpis.faturamentoMes)}
+                    </dd>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <dt className="text-sm text-muted-foreground">
+                      Vs. mês anterior
+                    </dt>
+                    <dd
+                      className={`flex items-center gap-1 text-sm font-semibold ${
+                        positivo ? "text-chart-2" : "text-destructive"
+                      }`}
+                    >
+                      {positivo ? (
+                        <TrendingUp className="h-4 w-4" />
+                      ) : (
+                        <TrendingDown className="h-4 w-4" />
+                      )}
+                      {positivo ? "+" : ""}
+                      {empresa.kpis.variacaoMensal.toLocaleString("pt-BR", {
+                        minimumFractionDigits: 1,
+                      })}
+                      %
+                    </dd>
+                  </div>
+                </dl>
+
+                <span
+                  className="mt-8 inline-flex items-center text-sm font-medium opacity-70 transition-opacity group-hover:opacity-100"
+                  style={{ color: empresa.accent }}
+                >
+                  Ver painel detalhado
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
