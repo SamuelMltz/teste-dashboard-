@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { ArrowUpRight, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
-import { EMPRESAS, fmtBRLCurto } from "@/lib/empresas";
+import { EMPRESAS } from "@/lib/empresas";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -45,7 +45,6 @@ function Index() {
 
         <div className="grid gap-6 md:grid-cols-3">
           {EMPRESAS.map((empresa) => {
-            const positivo = empresa.kpis.variacaoMensal >= 0;
             return (
               <Link
                 key={empresa.slug}
@@ -80,43 +79,15 @@ function Index() {
                   {empresa.nome}
                 </h2>
 
-                <dl className="mt-6 space-y-3">
-                  <div className="flex items-baseline justify-between">
-                    <dt className="text-sm text-muted-foreground">
-                      Faturamento (mês)
-                    </dt>
-                    <dd className="font-display text-lg font-semibold text-foreground">
-                      {fmtBRLCurto(empresa.kpis.faturamentoMes)}
-                    </dd>
-                  </div>
-                  <div className="flex items-baseline justify-between">
-                    <dt className="text-sm text-muted-foreground">
-                      Vs. mês anterior
-                    </dt>
-                    <dd
-                      className={`flex items-center gap-1 text-sm font-semibold ${
-                        positivo ? "text-chart-2" : "text-destructive"
-                      }`}
-                    >
-                      {positivo ? (
-                        <TrendingUp className="h-4 w-4" />
-                      ) : (
-                        <TrendingDown className="h-4 w-4" />
-                      )}
-                      {positivo ? "+" : ""}
-                      {empresa.kpis.variacaoMensal.toLocaleString("pt-BR", {
-                        minimumFractionDigits: 1,
-                      })}
-                      %
-                    </dd>
-                  </div>
-                </dl>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {empresa.marcas.length} {empresa.marcas.length === 1 ? "marca" : "marcas"}
+                </p>
 
                 <span
                   className="mt-8 inline-flex items-center text-sm font-medium opacity-70 transition-opacity group-hover:opacity-100"
                   style={{ color: empresa.accent }}
                 >
-                  Ver painel detalhado
+                  Ver marcas
                 </span>
               </Link>
             );
