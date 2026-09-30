@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   AlertTriangle,
@@ -9,6 +10,8 @@ import {
   Home,
   LogOut,
   PackagePlus,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
   ShieldCheck,
   Tag,
@@ -78,6 +81,7 @@ const CORES = {
 function Inicio() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [menuRecolhido, setMenuRecolhido] = useState(false);
 
   async function sair() {
     await queryClient.cancelQueries();
@@ -102,21 +106,57 @@ function Inicio() {
         </Button>
       </header>
 
-      <div className="grid min-h-[calc(100vh-4.25rem)] md:grid-cols-[220px_minmax(0,1fr)]">
-        <aside className="hidden border-r border-border bg-dashboard-sidebar p-4 md:flex md:flex-col">
-          <div className="flex h-14 items-center gap-4 rounded-md border-l-4 border-dashboard-amber bg-dashboard-nav-active px-4 text-foreground">
+      <div
+        className={`grid min-h-[calc(100vh-4.25rem)] transition-[grid-template-columns] duration-300 ease-out ${
+          menuRecolhido
+            ? "md:grid-cols-[68px_minmax(0,1fr)]"
+            : "md:grid-cols-[220px_minmax(0,1fr)]"
+        }`}
+      >
+        <aside
+          className={`hidden overflow-hidden border-r border-border bg-dashboard-sidebar py-4 transition-[padding] duration-300 md:flex md:flex-col ${
+            menuRecolhido ? "px-2" : "px-4"
+          }`}
+        >
+          <div className={`mb-3 flex ${menuRecolhido ? "justify-center" : "justify-end"}`}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setMenuRecolhido((recolhido) => !recolhido)}
+              aria-label={menuRecolhido ? "Expandir menu lateral" : "Recolher menu lateral"}
+              title={menuRecolhido ? "Expandir menu lateral" : "Recolher menu lateral"}
+              className="h-10 w-10 shrink-0 text-muted-foreground hover:text-foreground"
+            >
+              {menuRecolhido ? (
+                <PanelLeftOpen className="h-5 w-5" aria-hidden="true" />
+              ) : (
+                <PanelLeftClose className="h-5 w-5" aria-hidden="true" />
+              )}
+            </Button>
+          </div>
+
+          <div
+            title={menuRecolhido ? "Início" : undefined}
+            className={`flex h-14 items-center rounded-md border-l-4 border-dashboard-amber bg-dashboard-nav-active text-foreground ${
+              menuRecolhido ? "justify-center px-2" : "gap-4 px-4"
+            }`}
+          >
             <Home className="h-6 w-6" aria-hidden="true" />
-            <span className="font-medium">Início</span>
+            <span className={menuRecolhido ? "sr-only" : "font-medium"}>Início</span>
           </div>
           <div className="mt-auto border-t border-border pt-4">
             <Button
               type="button"
               variant="ghost"
-              className="h-12 w-full justify-start gap-4 text-muted-foreground hover:text-foreground"
+              title={menuRecolhido ? "Configurações" : undefined}
+              className={`h-12 w-full text-muted-foreground hover:text-foreground ${
+                menuRecolhido ? "justify-center px-0" : "justify-start gap-4"
+              }`}
               aria-label="Configurações (em breve)"
             >
               <Settings className="h-5 w-5" aria-hidden="true" />
-              Configurações
+              <span className={menuRecolhido ? "sr-only" : undefined}>Configurações</span>
             </Button>
           </div>
         </aside>
