@@ -122,6 +122,7 @@ function AdminPage() {
 function EmpresaEditor({ empresa, onChange }: { empresa: Empresa; onChange: () => void }) {
   const [novaMarca, setNovaMarca] = useState("");
   const [marcaArrastada, setMarcaArrastada] = useState<string | null>(null);
+  const [abertas, setAbertas] = useState<Set<string>>(new Set());
 
   async function addMarca(e: React.FormEvent) {
     e.preventDefault();
@@ -195,7 +196,19 @@ function EmpresaEditor({ empresa, onChange }: { empresa: Empresa; onChange: () =
   );
 }
 
-function MarcaEditor({ marca, onChange, onDragStart }: { marca: Marca; onChange: () => void; onDragStart: () => void }) {
+function MarcaEditor({
+  marca,
+  onChange,
+  onDragStart,
+  aberta,
+  onToggle,
+}: {
+  marca: Marca;
+  onChange: () => void;
+  onDragStart: () => void;
+  aberta: boolean;
+  onToggle: () => void;
+}) {
   const [codigo, setCodigo] = useState("");
   const [nome, setNome] = useState("");
   const [estoque, setEstoque] = useState("");
