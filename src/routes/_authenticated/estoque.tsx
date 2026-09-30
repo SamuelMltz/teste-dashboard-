@@ -5,14 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 
 import { listarEmpresas } from "@/lib/empresas.functions";
-import vivalleLogo from "@/assets/logos/vivalle.png.asset.json";
-import luminartechLogo from "@/assets/logos/luminartech.png.asset.json";
-import vitrineLogo from "@/assets/logos/vitrine.png.asset.json";
+import vivalleLogo from "@/assets/logos/vivalle-refined.png";
+import luminartechLogo from "@/assets/logos/luminartech-refined.png";
+import vitrineLogo from "@/assets/logos/vitrine-refined.png";
 
-const LOGOS: Record<string, { url: string; position?: string }> = {
-  vivalle: { url: vivalleLogo.url },
-  luminartech: { url: luminartechLogo.url },
-  vitrine: { url: vitrineLogo.url, position: "center" },
+const LOGOS: Record<string, { url: string }> = {
+  vivalle: { url: vivalleLogo },
+  luminartech: { url: luminartechLogo },
+  vitrine: { url: vitrineLogo },
 };
 
 export const Route = createFileRoute("/_authenticated/estoque")({
@@ -109,7 +109,6 @@ function Index() {
                         src={logo.url}
                         alt={`Logo da ${empresa.nome}`}
                         className="h-full w-full object-cover"
-                        style={{ objectPosition: logo.position ?? "center" }}
                       />
                     ) : (
                       <div
