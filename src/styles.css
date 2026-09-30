@@ -62,6 +62,29 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-dashboard-header: var(--dashboard-header);
+  --color-dashboard-sidebar: var(--dashboard-sidebar);
+  --color-dashboard-nav-active: var(--dashboard-nav-active);
+  --color-dashboard-avatar: var(--dashboard-avatar);
+  --color-dashboard-amber: var(--dashboard-amber);
+  --color-dashboard-amber-soft: var(--dashboard-amber-soft);
+  --color-dashboard-amber-icon: var(--dashboard-amber-icon);
+  --color-dashboard-amber-wave: var(--dashboard-amber-wave);
+  --color-dashboard-blue: var(--dashboard-blue);
+  --color-dashboard-blue-soft: var(--dashboard-blue-soft);
+  --color-dashboard-blue-icon: var(--dashboard-blue-icon);
+  --color-dashboard-blue-wave: var(--dashboard-blue-wave);
+  --color-dashboard-green: var(--dashboard-green);
+  --color-dashboard-green-soft: var(--dashboard-green-soft);
+  --color-dashboard-green-icon: var(--dashboard-green-icon);
+  --color-dashboard-green-wave: var(--dashboard-green-wave);
+  --color-dashboard-red: var(--dashboard-red);
+  --color-dashboard-red-soft: var(--dashboard-red-soft);
+  --color-dashboard-red-icon: var(--dashboard-red-icon);
+  --shadow-dashboard-amber: 0 0 22px color-mix(in oklab, var(--dashboard-amber) 35%, transparent);
+  --shadow-dashboard-blue: 0 0 22px color-mix(in oklab, var(--dashboard-blue) 35%, transparent);
+  --shadow-dashboard-green: 0 0 22px color-mix(in oklab, var(--dashboard-green) 35%, transparent);
+  --shadow-dashboard-red: 0 0 22px color-mix(in oklab, var(--dashboard-red) 30%, transparent);
 }
 
 :root {
@@ -98,6 +121,25 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
+  --dashboard-header: oklch(0.18 0.01 70);
+  --dashboard-sidebar: oklch(0.16 0.01 70);
+  --dashboard-nav-active: oklch(0.29 0.025 65);
+  --dashboard-avatar: oklch(0.62 0.08 65);
+  --dashboard-amber: oklch(0.72 0.12 68);
+  --dashboard-amber-soft: oklch(0.25 0.025 62);
+  --dashboard-amber-icon: oklch(0.55 0.09 65);
+  --dashboard-amber-wave: oklch(0.5 0.07 62);
+  --dashboard-blue: oklch(0.65 0.15 248);
+  --dashboard-blue-soft: oklch(0.23 0.03 250);
+  --dashboard-blue-icon: oklch(0.48 0.13 250);
+  --dashboard-blue-wave: oklch(0.42 0.12 250);
+  --dashboard-green: oklch(0.65 0.13 165);
+  --dashboard-green-soft: oklch(0.23 0.035 165);
+  --dashboard-green-icon: oklch(0.45 0.11 165);
+  --dashboard-green-wave: oklch(0.4 0.1 165);
+  --dashboard-red: oklch(0.6 0.15 25);
+  --dashboard-red-soft: oklch(0.23 0.03 25);
+  --dashboard-red-icon: oklch(0.45 0.13 25);
 }
 
 .dark {
@@ -133,6 +175,31 @@
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+  --dashboard-header: oklch(0.16 0.008 70);
+  --dashboard-sidebar: oklch(0.145 0.008 70);
+  --dashboard-nav-active: oklch(0.27 0.025 65);
+  --dashboard-avatar: oklch(0.62 0.08 65);
+  --dashboard-amber: oklch(0.72 0.12 68);
+  --dashboard-amber-soft: oklch(0.205 0.022 62);
+  --dashboard-amber-icon: oklch(0.5 0.09 65);
+  --dashboard-amber-wave: oklch(0.43 0.07 62);
+  --dashboard-blue: oklch(0.65 0.15 248);
+  --dashboard-blue-soft: oklch(0.195 0.03 250);
+  --dashboard-blue-icon: oklch(0.44 0.13 250);
+  --dashboard-blue-wave: oklch(0.37 0.12 250);
+  --dashboard-green: oklch(0.65 0.13 165);
+  --dashboard-green-soft: oklch(0.195 0.035 165);
+  --dashboard-green-icon: oklch(0.4 0.11 165);
+  --dashboard-green-wave: oklch(0.35 0.1 165);
+  --dashboard-red: oklch(0.6 0.15 25);
+  --dashboard-red-soft: oklch(0.195 0.03 25);
+  --dashboard-red-icon: oklch(0.4 0.13 25);
+}
+
+@utility bg-dashboard-glow {
+  background:
+    radial-gradient(circle at 85% 10%, color-mix(in oklab, var(--dashboard-amber) 8%, transparent), transparent 30%),
+    radial-gradient(circle at 100% 100%, color-mix(in oklab, var(--dashboard-amber) 6%, transparent), transparent 35%);
 }
 
 @layer base {
