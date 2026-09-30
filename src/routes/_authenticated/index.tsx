@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Boxes, ShieldCheck, Settings, ArrowUpRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -35,20 +36,26 @@ function Inicio() {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center bg-background px-6 py-16">
-      <button
+    <div className="relative min-h-screen bg-background">
+      <Button
+        variant="ghost"
         onClick={sair}
-        className="absolute right-6 top-6 rounded-full px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground"
+        className="absolute right-6 top-6 z-10 rounded-full text-muted-foreground hover:text-foreground"
       >
         Sair
-      </button>
-      <div className="w-full max-w-6xl">
-        <header className="mb-12">
+      </Button>
+
+      <header className="flex min-h-[42vh] items-end border-b border-border px-6 pb-10 pt-24 sm:min-h-[40vh] sm:pb-12">
+        <div className="mx-auto w-full max-w-6xl">
           <h1 className="font-display text-6xl font-bold tracking-tight text-foreground sm:text-8xl">
             Dashboard
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">O que você quer fazer?</p>
-        </header>
+        </div>
+      </header>
+
+      <main className="px-6 py-10 sm:py-12">
+        <div className="mx-auto w-full max-w-6xl">
         <div className="grid gap-6 md:grid-cols-3">
           {OPCOES.map(({ to, titulo, desc, Icon }) => (
             <Link
@@ -67,7 +74,8 @@ function Inicio() {
             </Link>
           ))}
         </div>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

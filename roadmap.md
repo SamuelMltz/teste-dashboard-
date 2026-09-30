@@ -4,3 +4,5 @@
 - [x] Permitir reordenar marcas por arrastar e salvar a ordem.
 - [x] Permitir reordenar produtos por arrastar e salvar a ordem.
 - [x] Validar cadastro, edição e exibição.
+- [x] Adicionar as logos de Vitrine, Luminartech e Vivalle aos cartões das empresas.
+- [x] Separar o cabeçalho e as opções do Dashboard em duas áreas.
