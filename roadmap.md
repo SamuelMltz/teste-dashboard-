@@ -6,3 +6,5 @@
 - [x] Validar cadastro, edição e exibição.
 - [x] Adicionar as logos de Vitrine, Luminartech e Vivalle aos cartões das empresas.
 - [x] Separar o cabeçalho e as opções do Dashboard em duas áreas.
+- [x] Redesenhar a tela inicial seguindo a referência enviada, sem o indicador de marcas.
+- [x] Adicionar ações rápidas e Configurações apenas como botões visuais, sem ação.
