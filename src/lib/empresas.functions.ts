@@ -19,13 +19,25 @@ function clientePublico() {
   });
 }
 
-const SELECT = "slug, nome, accent, marcas(slug, nome, produtos(nome, estoque))";
+const SELECT = "slug, nome, accent, marcas(slug, nome, ordem, produtos(nome, codigo, estoque, ordem))";
+
+function ordenarEmpresa(empresa: Empresa): Empresa {
+  return {
+    ...empresa,
+    marcas: [...empresa.marcas]
+      .sort((a, b) => a.ordem - b.ordem)
+      .map((marca) => ({
+        ...marca,
+        produtos: [...marca.produtos].sort((a, b) => a.ordem - b.ordem),
+      })),
+  };
+}
 
 // Lista todas as empresas com marcas e produtos
 export const listarEmpresas = createServerFn({ method: "GET" }).handler(async (): Promise<Empresa[]> => {
   const { data, error } = await clientePublico().from("empresas").select(SELECT).order("ordem");
   if (error) throw new Error("Não foi possível carregar as empresas");
-  return (data ?? []) as Empresa[];
+  return ((data ?? []) as Empresa[]).map(ordenarEmpresa);
 });
 
 // Busca uma empresa pelo slug
@@ -38,5 +50,5 @@ export const buscarEmpresa = createServerFn({ method: "GET" })
       .eq("slug", data.slug)
       .maybeSingle();
     if (error) throw new Error("Não foi possível carregar a empresa");
-    return (row as Empresa | null) ?? null;
+    return row ? ordenarEmpresa(row as Empresa) : null;
   });

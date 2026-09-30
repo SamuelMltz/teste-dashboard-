@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, GripVertical, Plus, Trash2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -22,8 +22,8 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type Produto = { id: string; nome: string; estoque: number };
-type Marca = { id: string; nome: string; slug: string; produtos: Produto[] };
+type Produto = { id: string; nome: string; codigo: string; estoque: number; ordem: number };
+type Marca = { id: string; nome: string; slug: string; ordem: number; produtos: Produto[] };
 type Empresa = { id: string; nome: string; accent: string; marcas: Marca[] };
 
 function slugify(s: string) {
@@ -49,10 +49,18 @@ function AdminPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("empresas")
-        .select("id, nome, accent, marcas(id, nome, slug, produtos(id, nome, estoque))")
+        .select("id, nome, accent, marcas(id, nome, slug, ordem, produtos(id, nome, codigo, estoque, ordem))")
         .order("ordem");
       if (error) throw error;
-      return data as Empresa[];
+      return (data as Empresa[]).map((empresa) => ({
+        ...empresa,
+        marcas: [...empresa.marcas]
+          .sort((a, b) => a.ordem - b.ordem)
+          .map((marca) => ({
+            ...marca,
+            produtos: [...marca.produtos].sort((a, b) => a.ordem - b.ordem),
+          })),
+      }));
     },
   });
 
@@ -113,15 +121,41 @@ function AdminPage() {
 
 function EmpresaEditor({ empresa, onChange }: { empresa: Empresa; onChange: () => void }) {
   const [novaMarca, setNovaMarca] = useState("");
+  const [marcaArrastada, setMarcaArrastada] = useState<string | null>(null);
 
   async function addMarca(e: React.FormEvent) {
     e.preventDefault();
     const nome = novaMarca.trim();
     if (!nome) return;
-    const { error } = await supabase.from("marcas").insert({ empresa_id: empresa.id, nome, slug: slugify(nome) });
+    const { error } = await supabase.from("marcas").insert({
+      empresa_id: empresa.id,
+      nome,
+      slug: slugify(nome),
+      ordem: empresa.marcas.length,
+    });
     if (error) { toast.error("Não foi possível criar a marca (talvez já exista)."); return; }
     setNovaMarca("");
     toast.success("Marca criada");
+    onChange();
+  }
+
+  async function moverMarca(destinoId: string) {
+    if (!marcaArrastada || marcaArrastada === destinoId) return;
+    const atual = [...empresa.marcas];
+    const origem = atual.findIndex((marca) => marca.id === marcaArrastada);
+    const destino = atual.findIndex((marca) => marca.id === destinoId);
+    if (origem < 0 || destino < 0) return;
+    const [movida] = atual.splice(origem, 1);
+    if (!movida) return;
+    atual.splice(destino, 0, movida);
+    setMarcaArrastada(null);
+    const resultados = await Promise.all(
+      atual.map((marca, ordem) => supabase.from("marcas").update({ ordem }).eq("id", marca.id)),
+    );
+    if (resultados.some(({ error }) => error)) {
+      toast.error("Não foi possível salvar a ordem das marcas.");
+      return;
+    }
     onChange();
   }
 
@@ -134,22 +168,60 @@ function EmpresaEditor({ empresa, onChange }: { empresa: Empresa; onChange: () =
       {empresa.marcas.length === 0 && (
         <p className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">Nenhuma marca ainda.</p>
       )}
-      {empresa.marcas.map((m) => <MarcaEditor key={m.id} marca={m} onChange={onChange} />)}
+      {empresa.marcas.map((m) => (
+        <div
+          key={m.id}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={() => moverMarca(m.id)}
+          className={marcaArrastada === m.id ? "opacity-50" : undefined}
+        >
+          <MarcaEditor marca={m} onChange={onChange} onDragStart={() => setMarcaArrastada(m.id)} />
+        </div>
+      ))}
     </div>
   );
 }
 
-function MarcaEditor({ marca, onChange }: { marca: Marca; onChange: () => void }) {
+function MarcaEditor({ marca, onChange, onDragStart }: { marca: Marca; onChange: () => void; onDragStart: () => void }) {
+  const [codigo, setCodigo] = useState("");
   const [nome, setNome] = useState("");
   const [estoque, setEstoque] = useState("");
+  const [produtoArrastado, setProdutoArrastado] = useState<string | null>(null);
 
   async function addProduto(e: React.FormEvent) {
     e.preventDefault();
     if (!nome.trim()) return;
-    const { error } = await supabase.from("produtos").insert({ marca_id: marca.id, nome: nome.trim(), estoque: Number(estoque) || 0 });
+    const { error } = await supabase.from("produtos").insert({
+      marca_id: marca.id,
+      codigo: codigo.trim(),
+      nome: nome.trim(),
+      estoque: Number(estoque) || 0,
+      ordem: marca.produtos.length,
+    });
     if (error) { toast.error("Não foi possível criar o produto."); return; }
+    setCodigo("");
     setNome("");
     setEstoque("");
+    onChange();
+  }
+
+  async function moverProduto(destinoId: string) {
+    if (!produtoArrastado || produtoArrastado === destinoId) return;
+    const atual = [...marca.produtos];
+    const origem = atual.findIndex((produto) => produto.id === produtoArrastado);
+    const destino = atual.findIndex((produto) => produto.id === destinoId);
+    if (origem < 0 || destino < 0) return;
+    const [movido] = atual.splice(origem, 1);
+    if (!movido) return;
+    atual.splice(destino, 0, movido);
+    setProdutoArrastado(null);
+    const resultados = await Promise.all(
+      atual.map((produto, ordem) => supabase.from("produtos").update({ ordem }).eq("id", produto.id)),
+    );
+    if (resultados.some(({ error }) => error)) {
+      toast.error("Não foi possível salvar a ordem dos produtos.");
+      return;
+    }
     onChange();
   }
 
@@ -163,13 +235,23 @@ function MarcaEditor({ marca, onChange }: { marca: Marca; onChange: () => void }
   return (
     <div className="rounded-2xl border border-border bg-card p-6">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-xl font-semibold text-foreground">{marca.nome}</h2>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" draggable onDragStart={onDragStart} aria-label={`Arrastar marca ${marca.nome}`} title="Arrastar para reordenar">
+            <GripVertical className="h-5 w-5" />
+          </Button>
+          <h2 className="font-display text-xl font-semibold text-foreground">{marca.nome}</h2>
+        </div>
         <Button variant="ghost" size="icon" onClick={apagarMarca} aria-label="Apagar marca"><Trash2 className="h-4 w-4" /></Button>
       </div>
       <div className="mt-4 space-y-2">
-        {marca.produtos.map((p) => <ProdutoLinha key={p.id} produto={p} onChange={onChange} />)}
+        {marca.produtos.map((p) => (
+          <div key={p.id} onDragOver={(event) => event.preventDefault()} onDrop={() => moverProduto(p.id)}>
+            <ProdutoLinha produto={p} onChange={onChange} onDragStart={() => setProdutoArrastado(p.id)} />
+          </div>
+        ))}
       </div>
       <form onSubmit={addProduto} className="mt-4 flex gap-2">
+        <Input className="w-32" placeholder="Código" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
         <Input placeholder="Novo produto" value={nome} onChange={(e) => setNome(e.target.value)} />
         <Input className="w-28" type="number" min={0} placeholder="Estoque" value={estoque} onChange={(e) => setEstoque(e.target.value)} />
         <Button type="submit" variant="secondary"><Plus className="h-4 w-4" /></Button>
@@ -178,8 +260,18 @@ function MarcaEditor({ marca, onChange }: { marca: Marca; onChange: () => void }
   );
 }
 
-function ProdutoLinha({ produto, onChange }: { produto: Produto; onChange: () => void }) {
+function ProdutoLinha({ produto, onChange, onDragStart }: { produto: Produto; onChange: () => void; onDragStart: () => void }) {
+  const [codigo, setCodigo] = useState(produto.codigo);
   const [estoque, setEstoque] = useState(String(produto.estoque));
+
+  async function salvarCodigo() {
+    const valor = codigo.trim();
+    if (valor === produto.codigo) return;
+    const { error } = await supabase.from("produtos").update({ codigo: valor }).eq("id", produto.id);
+    if (error) { toast.error("Não foi possível salvar o código."); return; }
+    toast.success("Código atualizado");
+    onChange();
+  }
 
   async function salvar() {
     const n = Number(estoque);
@@ -199,6 +291,18 @@ function ProdutoLinha({ produto, onChange }: { produto: Produto; onChange: () =>
 
   return (
     <div className="flex items-center gap-2">
+      <Button variant="ghost" size="icon" draggable onDragStart={onDragStart} aria-label={`Arrastar produto ${produto.nome}`} title="Arrastar para reordenar">
+        <GripVertical className="h-4 w-4" />
+      </Button>
+      <Input
+        className="w-32 font-mono"
+        aria-label={`Código de ${produto.nome}`}
+        placeholder="Código"
+        value={codigo}
+        onChange={(e) => setCodigo(e.target.value)}
+        onBlur={salvarCodigo}
+        onKeyDown={(e) => e.key === "Enter" && salvarCodigo()}
+      />
       <span className="flex-1 text-foreground">{produto.nome}</span>
       <Input
         className="w-28 text-right"

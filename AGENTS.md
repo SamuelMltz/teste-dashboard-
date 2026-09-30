@@ -13,6 +13,6 @@
 
 - Dados vêm do banco (tabelas empresas → marcas → produtos, leitura pública); lidos via server functions em `src/lib/empresas.functions.ts`.
 - Cada empresa tem uma cor de destaque (`accent`) usada em cartões e detalhes; trocar a cor lá, não nos componentes.
-- Estrutura: empresa → marcas → produtos (nome + estoque); rotas `/empresa/$slug` e `/empresa/$slug/marca/$marca`.
+- Estrutura: empresa → marcas ordenáveis → produtos ordenáveis (código personalizado + nome + estoque); rotas `/empresa/$slug` e `/empresa/$slug/marca/$marca`.
 - Tema escuro global via `class="dark"` no `<html>` em `__root.tsx`.
 - Todo o painel fica sob `_authenticated` (login obrigatório, `/auth` é a única rota pública). Cadastro em `/admin`, escrita pelo cliente do navegador protegida por RLS `has_role(auth.uid(),'admin')`; primeiro usuário vira admin via trigger.

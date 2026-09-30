@@ -15,6 +15,13 @@
       "when": 1790706591636,
       "tag": "0001_admin_roles_e_escrita",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790785416589,
+      "tag": "0002_add_product_codes_and_sort_order",
+      "breakpoints": true
     }
   ]
 }
