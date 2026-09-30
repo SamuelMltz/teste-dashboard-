@@ -47,6 +47,7 @@ export type Database = {
           empresa_id: string
           id: string
           nome: string
+          ordem: number
           slug: string
         }
         Insert: {
@@ -54,6 +55,7 @@ export type Database = {
           empresa_id: string
           id?: string
           nome: string
+          ordem?: number
           slug: string
         }
         Update: {
@@ -61,6 +63,7 @@ export type Database = {
           empresa_id?: string
           id?: string
           nome?: string
+          ordem?: number
           slug?: string
         }
         Relationships: [
@@ -75,25 +78,31 @@ export type Database = {
       }
       produtos: {
         Row: {
+          codigo: string
           created_at: string
           estoque: number
           id: string
           marca_id: string
           nome: string
+          ordem: number
         }
         Insert: {
+          codigo?: string
           created_at?: string
           estoque?: number
           id?: string
           marca_id: string
           nome: string
+          ordem?: number
         }
         Update: {
+          codigo?: string
           created_at?: string
           estoque?: number
           id?: string
           marca_id?: string
           nome?: string
+          ordem?: number
         }
         Relationships: [
           {
