@@ -6,17 +6,17 @@ import { ArrowUpRight } from "lucide-react";
 
 import { listarEmpresas } from "@/lib/empresas.functions";
 
-export const Route = createFileRoute("/_authenticated/")({
+export const Route = createFileRoute("/_authenticated/estoque")({
   loader: () => listarEmpresas(),
   head: () => ({
     meta: [
-      { title: "Painel do Grupo — Visão Geral" },
+      { title: "Estoque — Empresas do Grupo" },
       {
         name: "description",
         content:
           "Painel corporativo com a visão geral das empresas do grupo: Vivalle, Luminartech e Vitrine.",
       },
-      { property: "og:title", content: "Painel do Grupo — Visão Geral" },
+      { property: "og:title", content: "Estoque — Empresas do Grupo" },
       {
         property: "og:description",
         content:
