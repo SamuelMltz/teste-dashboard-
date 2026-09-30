@@ -16,3 +16,4 @@
 - Estrutura: empresa → marcas ordenáveis → produtos ordenáveis (código personalizado + nome + estoque); rotas `/empresa/$slug` e `/empresa/$slug/marca/$marca`.
 - Tema escuro global via `class="dark"` no `<html>` em `__root.tsx`.
 - Todo o painel fica sob `_authenticated` (login obrigatório, `/auth` é a única rota pública). Cadastro em `/admin`, escrita pelo cliente do navegador protegida por RLS `has_role(auth.uid(),'admin')`; primeiro usuário vira admin via trigger.
+- As logos estáticas das empresas são associadas pelo `slug` na tela de Estoque, para permanecerem independentes dos dados do banco.

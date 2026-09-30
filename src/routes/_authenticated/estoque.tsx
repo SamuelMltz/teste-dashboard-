@@ -5,6 +5,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 
 import { listarEmpresas } from "@/lib/empresas.functions";
+import vivalleLogo from "@/assets/logos/vivalle.png.asset.json";
+import luminartechLogo from "@/assets/logos/luminartech.png.asset.json";
+import vitrineLogo from "@/assets/logos/vitrine.png.asset.json";
+
+const LOGOS: Record<string, { url: string; position?: string }> = {
+  vivalle: { url: vivalleLogo.url },
+  luminartech: { url: luminartechLogo.url },
+  vitrine: { url: vitrineLogo.url, position: "center" },
+};
 
 export const Route = createFileRoute("/_authenticated/estoque")({
   loader: () => listarEmpresas(),
@@ -75,6 +84,7 @@ function Index() {
 
         <div className="grid gap-6 md:grid-cols-3">
           {EMPRESAS.map((empresa) => {
+            const logo = LOGOS[empresa.slug];
             return (
               <Link
                 key={empresa.slug}
@@ -93,14 +103,22 @@ function Index() {
                 />
 
                 <div className="flex items-start justify-between">
-                  <div
-                    className="flex h-12 w-12 items-center justify-center rounded-xl font-display text-xl font-bold"
-                    style={{
-                      backgroundColor: `${empresa.accent}1a`,
-                      color: empresa.accent,
-                    }}
-                  >
-                    {empresa.nome.charAt(0)}
+                  <div className="h-20 w-20 overflow-hidden rounded-full border border-border bg-background shadow-sm">
+                    {logo ? (
+                      <img
+                        src={logo.url}
+                        alt={`Logo da ${empresa.nome}`}
+                        className="h-full w-full object-cover"
+                        style={{ objectPosition: logo.position ?? "center" }}
+                      />
+                    ) : (
+                      <div
+                        className="flex h-full w-full items-center justify-center font-display text-xl font-bold"
+                        style={{ color: empresa.accent }}
+                      >
+                        {empresa.nome.charAt(0)}
+                      </div>
+                    )}
                   </div>
                   <ArrowUpRight className="h-5 w-5 text-muted-foreground transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground" />
                 </div>
