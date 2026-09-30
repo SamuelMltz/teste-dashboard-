@@ -44,10 +44,10 @@ function Inicio() {
           >
             Sair
           </button>
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">Painel corporativo</p>
-          <h1 className="mt-2 font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-            O que você quer fazer?
+          <h1 className="font-display text-6xl font-bold tracking-tight text-foreground sm:text-8xl">
+            Dashboard
           </h1>
+          <p className="mt-4 text-lg text-muted-foreground">O que você quer fazer?</p>
         </header>
         <div className="grid gap-6 md:grid-cols-3">
           {OPCOES.map(({ to, titulo, desc, Icon }) => (

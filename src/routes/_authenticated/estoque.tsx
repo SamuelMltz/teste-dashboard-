@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
 
 import { listarEmpresas } from "@/lib/empresas.functions";
 
@@ -14,13 +14,13 @@ export const Route = createFileRoute("/_authenticated/estoque")({
       {
         name: "description",
         content:
-          "Painel corporativo com a visão geral das empresas do grupo: Vivalle, Luminartech e Vitrine.",
+          "Visão geral das empresas do grupo: Vivalle, Luminartech e Vitrine.",
       },
       { property: "og:title", content: "Estoque — Empresas do Grupo" },
       {
         property: "og:description",
         content:
-          "Painel corporativo com a visão geral das empresas do grupo: Vivalle, Luminartech e Vitrine.",
+          "Visão geral das empresas do grupo: Vivalle, Luminartech e Vitrine.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -53,10 +53,10 @@ function Index() {
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-6 py-16">
         <header className="relative mb-12">
+          <Link to="/" className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" /> Voltar ao início
+          </Link>
           <div className="absolute right-0 top-0 flex items-center gap-2">
-            <Link to="/" className="rounded-full border border-border px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground">
-              Voltar ao início
-            </Link>
             <button
               onClick={sair}
               className="rounded-full px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground"
@@ -64,9 +64,6 @@ function Index() {
               Sair
             </button>
           </div>
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Painel corporativo
-          </p>
           <h1 className="mt-2 font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
             Selecione uma empresa
           </h1>
