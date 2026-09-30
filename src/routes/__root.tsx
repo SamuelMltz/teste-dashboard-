@@ -80,11 +80,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Painel do Grupo" },
-      { name: "description", content: "Painel corporativo das empresas do grupo." },
+      { name: "description", content: "Dashboard das empresas do grupo." },
       { property: "og:title", content: "Painel do Grupo" },
       {
         property: "og:description",
-        content: "Painel corporativo das empresas do grupo.",
+        content: "Dashboard das empresas do grupo.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
