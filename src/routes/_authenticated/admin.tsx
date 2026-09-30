@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, GripVertical, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, GripVertical, Plus, Trash2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -122,6 +122,7 @@ function AdminPage() {
 function EmpresaEditor({ empresa, onChange }: { empresa: Empresa; onChange: () => void }) {
   const [novaMarca, setNovaMarca] = useState("");
   const [marcaArrastada, setMarcaArrastada] = useState<string | null>(null);
+  const [abertas, setAbertas] = useState<Set<string>>(new Set());
 
   async function addMarca(e: React.FormEvent) {
     e.preventDefault();
@@ -175,14 +176,39 @@ function EmpresaEditor({ empresa, onChange }: { empresa: Empresa; onChange: () =
           onDrop={() => moverMarca(m.id)}
           className={marcaArrastada === m.id ? "opacity-50" : undefined}
         >
-          <MarcaEditor marca={m} onChange={onChange} onDragStart={() => setMarcaArrastada(m.id)} />
+          <MarcaEditor
+            marca={m}
+            onChange={onChange}
+            onDragStart={() => setMarcaArrastada(m.id)}
+            aberta={abertas.has(m.id)}
+            onToggle={() =>
+              setAbertas((atual) => {
+                const novo = new Set(atual);
+                if (novo.has(m.id)) novo.delete(m.id);
+                else novo.add(m.id);
+                return novo;
+              })
+            }
+          />
         </div>
       ))}
     </div>
   );
 }
 
-function MarcaEditor({ marca, onChange, onDragStart }: { marca: Marca; onChange: () => void; onDragStart: () => void }) {
+function MarcaEditor({
+  marca,
+  onChange,
+  onDragStart,
+  aberta,
+  onToggle,
+}: {
+  marca: Marca;
+  onChange: () => void;
+  onDragStart: () => void;
+  aberta: boolean;
+  onToggle: () => void;
+}) {
   const [codigo, setCodigo] = useState("");
   const [nome, setNome] = useState("");
   const [estoque, setEstoque] = useState("");
@@ -239,23 +265,40 @@ function MarcaEditor({ marca, onChange, onDragStart }: { marca: Marca; onChange:
           <Button variant="ghost" size="icon" draggable onDragStart={onDragStart} aria-label={`Arrastar marca ${marca.nome}`} title="Arrastar para reordenar">
             <GripVertical className="h-5 w-5" />
           </Button>
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={aberta}
+            aria-label={aberta ? `Esconder produtos de ${marca.nome}` : `Mostrar produtos de ${marca.nome}`}
+            title={aberta ? "Esconder produtos" : "Mostrar produtos"}
+            className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${aberta ? "" : "-rotate-90"}`} />
+          </button>
           <h2 className="font-display text-xl font-semibold text-foreground">{marca.nome}</h2>
+          <span className="text-xs text-muted-foreground">
+            {marca.produtos.length} {marca.produtos.length === 1 ? "produto" : "produtos"}
+          </span>
         </div>
         <Button variant="ghost" size="icon" onClick={apagarMarca} aria-label="Apagar marca"><Trash2 className="h-4 w-4" /></Button>
       </div>
-      <div className="mt-4 space-y-2">
-        {marca.produtos.map((p) => (
-          <div key={p.id} onDragOver={(event) => event.preventDefault()} onDrop={() => moverProduto(p.id)}>
-            <ProdutoLinha produto={p} onChange={onChange} onDragStart={() => setProdutoArrastado(p.id)} />
+      {aberta && (
+        <>
+          <div className="mt-4 space-y-2">
+            {marca.produtos.map((p) => (
+              <div key={p.id} onDragOver={(event) => event.preventDefault()} onDrop={() => moverProduto(p.id)}>
+                <ProdutoLinha produto={p} onChange={onChange} onDragStart={() => setProdutoArrastado(p.id)} />
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <form onSubmit={addProduto} className="mt-4 flex gap-2">
-        <Input className="w-32" placeholder="Código" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
-        <Input placeholder="Novo produto" value={nome} onChange={(e) => setNome(e.target.value)} />
-        <Input className="w-28" type="number" min={0} placeholder="Estoque" value={estoque} onChange={(e) => setEstoque(e.target.value)} />
-        <Button type="submit" variant="secondary"><Plus className="h-4 w-4" /></Button>
-      </form>
+          <form onSubmit={addProduto} className="mt-4 flex gap-2">
+            <Input className="w-32" placeholder="Código" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
+            <Input placeholder="Novo produto" value={nome} onChange={(e) => setNome(e.target.value)} />
+            <Input className="w-28" type="number" min={0} placeholder="Estoque" value={estoque} onChange={(e) => setEstoque(e.target.value)} />
+            <Button type="submit" variant="secondary"><Plus className="h-4 w-4" /></Button>
+          </form>
+        </>
+      )}
     </div>
   );
 }
