@@ -35,15 +35,15 @@ function Inicio() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-6xl px-6 py-16">
-        <header className="relative mb-12">
-          <button
-            onClick={sair}
-            className="absolute right-0 top-0 rounded-full px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground"
-          >
-            Sair
-          </button>
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-background px-6 py-16">
+      <button
+        onClick={sair}
+        className="absolute right-6 top-6 rounded-full px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground"
+      >
+        Sair
+      </button>
+      <div className="w-full max-w-6xl">
+        <header className="mb-12">
           <h1 className="font-display text-6xl font-bold tracking-tight text-foreground sm:text-8xl">
             Dashboard
           </h1>
