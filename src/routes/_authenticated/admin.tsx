@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, GripVertical, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, GripVertical, Plus, Trash2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -175,7 +175,20 @@ function EmpresaEditor({ empresa, onChange }: { empresa: Empresa; onChange: () =
           onDrop={() => moverMarca(m.id)}
           className={marcaArrastada === m.id ? "opacity-50" : undefined}
         >
-          <MarcaEditor marca={m} onChange={onChange} onDragStart={() => setMarcaArrastada(m.id)} />
+          <MarcaEditor
+            marca={m}
+            onChange={onChange}
+            onDragStart={() => setMarcaArrastada(m.id)}
+            aberta={abertas.has(m.id)}
+            onToggle={() =>
+              setAbertas((atual) => {
+                const novo = new Set(atual);
+                if (novo.has(m.id)) novo.delete(m.id);
+                else novo.add(m.id);
+                return novo;
+              })
+            }
+          />
         </div>
       ))}
     </div>
