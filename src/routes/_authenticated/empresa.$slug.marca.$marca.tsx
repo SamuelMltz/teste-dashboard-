@@ -57,6 +57,7 @@ function MarcaEstoque() {
             <table className="w-full text-left">
               <thead className="border-b border-border text-sm text-muted-foreground">
                 <tr>
+                  <th className="w-40 px-6 py-3 font-medium">Código</th>
                   <th className="px-6 py-3 font-medium">Produto</th>
                   <th className="px-6 py-3 text-right font-medium">Em estoque</th>
                 </tr>
@@ -64,6 +65,7 @@ function MarcaEstoque() {
               <tbody>
                 {marca.produtos.map((p) => (
                   <tr key={p.nome} className="border-b border-border last:border-0">
+                    <td className="px-6 py-4 font-mono text-sm text-muted-foreground">{p.codigo || "—"}</td>
                     <td className="px-6 py-4 text-foreground">{p.nome}</td>
                     <td className="px-6 py-4 text-right font-display font-semibold text-foreground">
                       {p.estoque.toLocaleString("pt-BR")}
