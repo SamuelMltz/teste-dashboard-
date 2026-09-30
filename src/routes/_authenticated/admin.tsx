@@ -265,23 +265,40 @@ function MarcaEditor({
           <Button variant="ghost" size="icon" draggable onDragStart={onDragStart} aria-label={`Arrastar marca ${marca.nome}`} title="Arrastar para reordenar">
             <GripVertical className="h-5 w-5" />
           </Button>
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={aberta}
+            aria-label={aberta ? `Esconder produtos de ${marca.nome}` : `Mostrar produtos de ${marca.nome}`}
+            title={aberta ? "Esconder produtos" : "Mostrar produtos"}
+            className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${aberta ? "" : "-rotate-90"}`} />
+          </button>
           <h2 className="font-display text-xl font-semibold text-foreground">{marca.nome}</h2>
+          <span className="text-xs text-muted-foreground">
+            {marca.produtos.length} {marca.produtos.length === 1 ? "produto" : "produtos"}
+          </span>
         </div>
         <Button variant="ghost" size="icon" onClick={apagarMarca} aria-label="Apagar marca"><Trash2 className="h-4 w-4" /></Button>
       </div>
-      <div className="mt-4 space-y-2">
-        {marca.produtos.map((p) => (
-          <div key={p.id} onDragOver={(event) => event.preventDefault()} onDrop={() => moverProduto(p.id)}>
-            <ProdutoLinha produto={p} onChange={onChange} onDragStart={() => setProdutoArrastado(p.id)} />
+      {aberta && (
+        <>
+          <div className="mt-4 space-y-2">
+            {marca.produtos.map((p) => (
+              <div key={p.id} onDragOver={(event) => event.preventDefault()} onDrop={() => moverProduto(p.id)}>
+                <ProdutoLinha produto={p} onChange={onChange} onDragStart={() => setProdutoArrastado(p.id)} />
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <form onSubmit={addProduto} className="mt-4 flex gap-2">
-        <Input className="w-32" placeholder="Código" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
-        <Input placeholder="Novo produto" value={nome} onChange={(e) => setNome(e.target.value)} />
-        <Input className="w-28" type="number" min={0} placeholder="Estoque" value={estoque} onChange={(e) => setEstoque(e.target.value)} />
-        <Button type="submit" variant="secondary"><Plus className="h-4 w-4" /></Button>
-      </form>
+          <form onSubmit={addProduto} className="mt-4 flex gap-2">
+            <Input className="w-32" placeholder="Código" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
+            <Input placeholder="Novo produto" value={nome} onChange={(e) => setNome(e.target.value)} />
+            <Input className="w-28" type="number" min={0} placeholder="Estoque" value={estoque} onChange={(e) => setEstoque(e.target.value)} />
+            <Button type="submit" variant="secondary"><Plus className="h-4 w-4" /></Button>
+          </form>
+        </>
+      )}
     </div>
   );
 }
