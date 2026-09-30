@@ -54,14 +54,9 @@ function Index() {
       <div className="mx-auto max-w-6xl px-6 py-16">
         <header className="relative mb-12">
           <div className="absolute right-0 top-0 flex items-center gap-2">
-            {admin.data && (
-              <Link
-                to="/admin"
-                className="rounded-full border border-border px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground"
-              >
-                Gerenciar marcas e produtos
-              </Link>
-            )}
+            <Link to="/" className="rounded-full border border-border px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground">
+              Voltar ao início
+            </Link>
             <button
               onClick={sair}
               className="rounded-full px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground"

@@ -11,8 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticated/estoque'
+import { Route as AuthenticatedGarantiaRouteImport } from './routes/_authenticated/garantia'
 import { Route as AuthenticatedEmpresaSlugRouteImport } from './routes/_authenticated/empresa.$slug'
 import { Route as AuthenticatedEmpresaSlugIndexRouteImport } from './routes/_authenticated/empresa.$slug.index'
 import { Route as AuthenticatedEmpresaSlugMarcaMarcaRouteImport } from './routes/_authenticated/empresa.$slug.marca.$marca'
@@ -26,6 +28,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -34,6 +41,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
 const AuthenticatedEstoqueRoute = AuthenticatedEstoqueRouteImport.update({
   id: '/estoque',
   path: '/estoque',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGarantiaRoute = AuthenticatedGarantiaRouteImport.update({
+  id: '/garantia',
+  path: '/garantia',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedEmpresaSlugRoute =
@@ -56,19 +68,21 @@ const AuthenticatedEmpresaSlugMarcaMarcaRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AuthenticatedRouteRouteWithChildren
+  '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
+  '/garantia': typeof AuthenticatedGarantiaRoute
   '/empresa/$slug': typeof AuthenticatedEmpresaSlugRouteWithChildren
   '/empresa/$slug/': typeof AuthenticatedEmpresaSlugIndexRoute
   '/empresa/$slug/marca/$marca': typeof AuthenticatedEmpresaSlugMarcaMarcaRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
+  '/garantia': typeof AuthenticatedGarantiaRoute
+  '/': typeof AuthenticatedIndexRoute
   '/empresa/$slug': typeof AuthenticatedEmpresaSlugIndexRoute
   '/empresa/$slug/marca/$marca': typeof AuthenticatedEmpresaSlugMarcaMarcaRoute
 }
@@ -78,6 +92,8 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/estoque': typeof AuthenticatedEstoqueRoute
+  '/_authenticated/garantia': typeof AuthenticatedGarantiaRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/empresa/$slug': typeof AuthenticatedEmpresaSlugRouteWithChildren
   '/_authenticated/empresa/$slug/': typeof AuthenticatedEmpresaSlugIndexRoute
   '/_authenticated/empresa/$slug/marca/$marca': typeof AuthenticatedEmpresaSlugMarcaMarcaRoute
@@ -89,15 +105,17 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin'
     | '/estoque'
+    | '/garantia'
     | '/empresa/$slug'
     | '/empresa/$slug/'
     | '/empresa/$slug/marca/$marca'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
     | '/auth'
     | '/admin'
     | '/estoque'
+    | '/garantia'
+    | '/'
     | '/empresa/$slug'
     | '/empresa/$slug/marca/$marca'
   id:
@@ -106,6 +124,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/admin'
     | '/_authenticated/estoque'
+    | '/_authenticated/garantia'
+    | '/_authenticated/'
     | '/_authenticated/empresa/$slug'
     | '/_authenticated/empresa/$slug/'
     | '/_authenticated/empresa/$slug/marca/$marca'
@@ -132,6 +152,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/': {
+      id: '/_authenticated/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -144,6 +171,13 @@ declare module '@tanstack/react-router' {
       path: '/estoque'
       fullPath: '/estoque'
       preLoaderRoute: typeof AuthenticatedEstoqueRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/garantia': {
+      id: '/_authenticated/garantia'
+      path: '/garantia'
+      fullPath: '/garantia'
+      preLoaderRoute: typeof AuthenticatedGarantiaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/empresa/$slug': {
@@ -190,12 +224,16 @@ const AuthenticatedEmpresaSlugRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedEstoqueRoute: typeof AuthenticatedEstoqueRoute
+  AuthenticatedGarantiaRoute: typeof AuthenticatedGarantiaRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedEmpresaSlugRoute: typeof AuthenticatedEmpresaSlugRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedEstoqueRoute: AuthenticatedEstoqueRoute,
+  AuthenticatedGarantiaRoute: AuthenticatedGarantiaRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedEmpresaSlugRoute: AuthenticatedEmpresaSlugRouteWithChildren,
 }
 
