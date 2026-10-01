@@ -81,6 +81,7 @@
   --color-dashboard-red: var(--dashboard-red);
   --color-dashboard-red-soft: var(--dashboard-red-soft);
   --color-dashboard-red-icon: var(--dashboard-red-icon);
+  --color-estoque-canvas: var(--estoque-canvas);
   --shadow-dashboard-amber: 0 0 22px color-mix(in oklab, var(--dashboard-amber) 35%, transparent);
   --shadow-dashboard-blue: 0 0 22px color-mix(in oklab, var(--dashboard-blue) 35%, transparent);
   --shadow-dashboard-green: 0 0 22px color-mix(in oklab, var(--dashboard-green) 35%, transparent);
@@ -140,6 +141,7 @@
   --dashboard-red: oklch(0.6 0.15 25);
   --dashboard-red-soft: oklch(0.23 0.03 25);
   --dashboard-red-icon: oklch(0.45 0.13 25);
+  --estoque-canvas: oklch(0.145 0.025 265);
 }
 
 .dark {
@@ -194,12 +196,67 @@
   --dashboard-red: oklch(0.6 0.15 25);
   --dashboard-red-soft: oklch(0.195 0.03 25);
   --dashboard-red-icon: oklch(0.4 0.13 25);
+  --estoque-canvas: oklch(0.11 0.025 265);
 }
 
 @utility bg-dashboard-glow {
   background:
     radial-gradient(circle at 85% 10%, color-mix(in oklab, var(--dashboard-amber) 8%, transparent), transparent 30%),
     radial-gradient(circle at 100% 100%, color-mix(in oklab, var(--dashboard-amber) 6%, transparent), transparent 35%);
+}
+
+@utility bg-estoque-atmosphere {
+  background:
+    linear-gradient(145deg, color-mix(in oklab, var(--dashboard-amber) 8%, transparent), transparent 27%),
+    linear-gradient(325deg, color-mix(in oklab, var(--dashboard-blue) 6%, transparent), transparent 30%);
+}
+
+@utility estoque-card {
+  background-color: color-mix(in oklab, var(--empresa-accent) 7%, var(--estoque-canvas));
+  border-color: color-mix(in oklab, var(--empresa-accent) 42%, transparent);
+  box-shadow: 0 18px 50px -28px color-mix(in oklab, var(--empresa-accent) 30%, transparent);
+}
+
+@utility estoque-card-wave {
+  background-color: color-mix(in oklab, var(--empresa-accent) 22%, transparent);
+}
+
+@utility estoque-logo {
+  border-color: color-mix(in oklab, var(--empresa-accent) 35%, transparent);
+  box-shadow: 0 0 24px color-mix(in oklab, var(--empresa-accent) 20%, transparent);
+}
+
+@utility estoque-corner {
+  background-color: color-mix(in oklab, var(--empresa-accent) 12%, transparent);
+  border-color: color-mix(in oklab, var(--empresa-accent) 16%, transparent);
+}
+
+@utility estoque-accent-text {
+  color: var(--empresa-accent);
+}
+
+@utility estoque-arrow {
+  color: var(--empresa-accent);
+  background-color: color-mix(in oklab, var(--empresa-accent) 14%, transparent);
+}
+
+@media (hover: hover) {
+  .estoque-card:hover {
+    border-color: color-mix(in oklab, var(--empresa-accent) 72%, transparent);
+    box-shadow: 0 24px 56px -26px color-mix(in oklab, var(--empresa-accent) 34%, transparent);
+  }
+
+  .estoque-card:hover .estoque-arrow {
+    color: var(--estoque-canvas);
+    background-color: var(--empresa-accent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .estoque-card,
+  .estoque-card * {
+    transition-duration: 0.01ms;
+  }
 }
 
 @layer base {
