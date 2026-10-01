@@ -8,3 +8,4 @@
 - [x] Separar o cabeçalho e as opções do Dashboard em duas áreas.
 - [x] Redesenhar a tela inicial seguindo a referência enviada, sem o indicador de marcas.
 - [x] Adicionar ações rápidas e Configurações apenas como botões visuais, sem ação.
+- [x] Redesenhar a tela de Gerenciar seguindo a referência enviada.
