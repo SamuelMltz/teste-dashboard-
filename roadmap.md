@@ -9,3 +9,6 @@
 - [x] Redesenhar a tela inicial seguindo a referência enviada, sem o indicador de marcas.
 - [x] Adicionar ações rápidas e Configurações apenas como botões visuais, sem ação.
 - [x] Redesenhar a tela de Gerenciar seguindo a referência enviada.
+- [ ] Adicionar estoque mínimo ao cadastro e à edição de produtos.
+- [ ] Destacar níveis de estoque e redesenhar a lista de produtos.
+- [ ] Exibir contagem e tela detalhada de alertas de estoque.
