@@ -295,6 +295,22 @@
   background-color: color-mix(in oklab, var(--empresa-accent) 14%, transparent);
 }
 
+@utility estoque-product-table {
+  background-color: color-mix(in oklab, var(--empresa-accent) 5%, var(--estoque-canvas));
+  border-color: color-mix(in oklab, var(--empresa-accent) 38%, transparent);
+  box-shadow: 0 20px 50px -34px color-mix(in oklab, var(--empresa-accent) 35%, transparent);
+}
+
+@utility estoque-product-mark {
+  color: var(--empresa-accent);
+  border-color: color-mix(in oklab, var(--empresa-accent) 36%, transparent);
+  background-color: color-mix(in oklab, var(--empresa-accent) 12%, var(--estoque-canvas));
+}
+
+@utility estoque-product-accent {
+  background-color: var(--empresa-accent);
+}
+
 @media (hover: hover) {
   .estoque-card:hover {
     border-color: color-mix(in oklab, var(--empresa-accent) 72%, transparent);

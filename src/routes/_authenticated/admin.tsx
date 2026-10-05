@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type Produto = { id: string; nome: string; codigo: string; estoque: number; ordem: number };
+type Produto = { id: string; nome: string; codigo: string; estoque: number; estoque_minimo: number; ordem: number };
 type Marca = { id: string; nome: string; slug: string; ordem: number; produtos: Produto[] };
 type Empresa = { id: string; nome: string; accent: string; marcas: Marca[] };
 
@@ -58,7 +58,7 @@ function AdminPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("empresas")
-        .select("id, nome, accent, marcas(id, nome, slug, ordem, produtos(id, nome, codigo, estoque, ordem))")
+        .select("id, nome, accent, marcas(id, nome, slug, ordem, produtos(id, nome, codigo, estoque, estoque_minimo, ordem))")
         .order("ordem");
       if (error) throw error;
       return (data as Empresa[]).map((empresa) => ({
@@ -231,6 +231,7 @@ function MarcaEditor({
   const [codigo, setCodigo] = useState("");
   const [nome, setNome] = useState("");
   const [estoque, setEstoque] = useState("");
+  const [estoqueMinimo, setEstoqueMinimo] = useState("");
   const [produtoArrastado, setProdutoArrastado] = useState<string | null>(null);
 
   async function addProduto(e: React.FormEvent) {
@@ -241,12 +242,14 @@ function MarcaEditor({
       codigo: codigo.trim(),
       nome: nome.trim(),
       estoque: Number(estoque) || 0,
+      estoque_minimo: Number(estoqueMinimo) || 0,
       ordem: marca.produtos.length,
     });
     if (error) { toast.error("Não foi possível criar o produto."); return; }
     setCodigo("");
     setNome("");
     setEstoque("");
+    setEstoqueMinimo("");
     onChange();
   }
 
@@ -308,10 +311,11 @@ function MarcaEditor({
               </div>
             ))}
           </div>
-          <form onSubmit={addProduto} className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,2fr)] gap-2 px-3 pb-4 pt-3 sm:grid-cols-[120px_minmax(0,1fr)_110px_44px] sm:px-5">
+          <form onSubmit={addProduto} className="grid grid-cols-2 gap-2 px-3 pb-4 pt-3 sm:grid-cols-[110px_minmax(0,1fr)_105px_105px_44px] sm:px-5">
             <Input className="h-10" placeholder="Código" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
             <Input className="h-10" placeholder="Novo produto" value={nome} onChange={(e) => setNome(e.target.value)} />
             <Input className="h-10" type="number" min={0} placeholder="Estoque" value={estoque} onChange={(e) => setEstoque(e.target.value)} />
+            <Input className="h-10" type="number" min={0} placeholder="Mínimo" aria-label="Estoque mínimo" value={estoqueMinimo} onChange={(e) => setEstoqueMinimo(e.target.value)} />
             <Button type="submit" size="icon" className="gerenciar-primary h-10 w-full"><Plus className="h-5 w-5" /></Button>
           </form>
         </>
@@ -323,6 +327,7 @@ function MarcaEditor({
 function ProdutoLinha({ produto, onChange, onDragStart }: { produto: Produto; onChange: () => void; onDragStart: () => void }) {
   const [codigo, setCodigo] = useState(produto.codigo);
   const [estoque, setEstoque] = useState(String(produto.estoque));
+  const [estoqueMinimo, setEstoqueMinimo] = useState(String(produto.estoque_minimo));
 
   async function salvarCodigo() {
     const valor = codigo.trim();
@@ -342,6 +347,15 @@ function ProdutoLinha({ produto, onChange, onDragStart }: { produto: Produto; on
     onChange();
   }
 
+  async function salvarMinimo() {
+    const n = Number(estoqueMinimo);
+    if (Number.isNaN(n) || n < 0 || n === produto.estoque_minimo) return;
+    const { error } = await supabase.from("produtos").update({ estoque_minimo: n }).eq("id", produto.id);
+    if (error) { toast.error("Não foi possível salvar o estoque mínimo."); return; }
+    toast.success("Estoque mínimo atualizado");
+    onChange();
+  }
+
   async function apagar() {
     if (!confirm(`Apagar "${produto.nome}"?`)) return;
     const { error } = await supabase.from("produtos").delete().eq("id", produto.id);
@@ -350,7 +364,7 @@ function ProdutoLinha({ produto, onChange, onDragStart }: { produto: Produto; on
   }
 
   return (
-    <div className="grid grid-cols-[32px_minmax(0,0.8fr)_minmax(0,2fr)_44px] items-center gap-2 sm:grid-cols-[32px_120px_minmax(0,1fr)_110px_36px]">
+    <div className="grid grid-cols-[32px_minmax(0,0.8fr)_minmax(0,2fr)_44px] items-center gap-2 sm:grid-cols-[32px_110px_minmax(0,1fr)_105px_105px_36px]">
       <Button variant="ghost" size="icon" draggable onDragStart={onDragStart} aria-label={`Arrastar produto ${produto.nome}`} title="Arrastar para reordenar" className="h-9 w-8 text-muted-foreground">
         <GripVertical className="h-4 w-4" />
       </Button>
@@ -372,6 +386,17 @@ function ProdutoLinha({ produto, onChange, onDragStart }: { produto: Produto; on
         onChange={(e) => setEstoque(e.target.value)}
         onBlur={salvar}
         onKeyDown={(e) => e.key === "Enter" && salvar()}
+      />
+      <Input
+        className="col-start-3 h-9 min-w-0 text-right sm:col-start-auto"
+        aria-label={`Estoque mínimo de ${produto.nome}`}
+        title="Estoque mínimo"
+        type="number"
+        min={0}
+        value={estoqueMinimo}
+        onChange={(e) => setEstoqueMinimo(e.target.value)}
+        onBlur={salvarMinimo}
+        onKeyDown={(e) => e.key === "Enter" && salvarMinimo()}
       />
       <Button variant="ghost" size="icon" onClick={apagar} aria-label="Apagar produto" className="col-start-4 h-9 w-9 sm:col-start-auto"><Trash2 className="h-4 w-4" /></Button>
     </div>

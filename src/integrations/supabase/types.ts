@@ -81,6 +81,7 @@ export type Database = {
           codigo: string
           created_at: string
           estoque: number
+          estoque_minimo: number
           id: string
           marca_id: string
           nome: string
@@ -90,6 +91,7 @@ export type Database = {
           codigo?: string
           created_at?: string
           estoque?: number
+          estoque_minimo?: number
           id?: string
           marca_id: string
           nome: string
@@ -99,6 +101,7 @@ export type Database = {
           codigo?: string
           created_at?: string
           estoque?: number
+          estoque_minimo?: number
           id?: string
           marca_id?: string
           nome?: string

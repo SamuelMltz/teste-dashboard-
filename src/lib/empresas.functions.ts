@@ -19,7 +19,7 @@ function clientePublico() {
   });
 }
 
-const SELECT = "slug, nome, accent, marcas(slug, nome, ordem, produtos(nome, codigo, estoque, ordem))";
+const SELECT = "slug, nome, accent, marcas(slug, nome, ordem, produtos(nome, codigo, estoque, estoque_minimo, ordem))";
 
 function ordenarEmpresa(empresa: Empresa): Empresa {
   return {

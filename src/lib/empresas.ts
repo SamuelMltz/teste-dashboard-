@@ -1,4 +1,4 @@
-export type Produto = { nome: string; codigo: string; estoque: number; ordem: number };
+export type Produto = { nome: string; codigo: string; estoque: number; estoque_minimo: number; ordem: number };
 export type Marca = { slug: string; nome: string; ordem: number; produtos: Produto[] };
 export type Empresa = {
   slug: string;

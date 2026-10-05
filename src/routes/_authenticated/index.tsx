@@ -18,8 +18,11 @@ import {
   UserRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { listarEmpresas } from "@/lib/empresas.functions";
+import { listarAlertas } from "@/lib/estoque";
 
 export const Route = createFileRoute("/_authenticated/")({
+  loader: () => listarEmpresas(),
   head: () => ({
     meta: [
       { title: "Painel do Grupo — Início" },
@@ -79,6 +82,8 @@ const CORES = {
 } as const;
 
 function Inicio() {
+  const empresas = Route.useLoaderData();
+  const alertas = listarAlertas(empresas);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [menuRecolhido, setMenuRecolhido] = useState(false);
@@ -171,15 +176,16 @@ function Inicio() {
             </div>
 
             <section aria-label="Resumo" className="mt-5 max-w-sm">
-              <div className="flex min-h-24 items-center gap-5 rounded-md border border-dashboard-red/60 bg-dashboard-red-soft px-5 py-4">
+              <Link to="/alertas-estoque" className="group flex min-h-24 items-center gap-5 rounded-md border border-dashboard-red/60 bg-dashboard-red-soft px-5 py-4 transition-[transform,border-color] duration-300 hover:-translate-y-0.5 hover:border-dashboard-red">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-dashboard-red-icon text-foreground shadow-dashboard-red">
                   <AlertTriangle className="h-8 w-8" aria-hidden="true" />
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-sm text-foreground">Produtos com<br />estoque baixo</p>
-                  <p className="mt-1 text-xl font-semibold text-foreground">—</p>
+                  <p className="mt-1 text-xl font-semibold text-foreground">{alertas.length}</p>
                 </div>
-              </div>
+                <ArrowRight className="h-5 w-5 text-dashboard-red transition-transform group-hover:translate-x-1" aria-hidden="true" />
+              </Link>
             </section>
 
             <section aria-label="Áreas do sistema" className="mt-4 grid gap-4 lg:grid-cols-3">
