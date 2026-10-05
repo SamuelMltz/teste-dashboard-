@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAlertasEstoqueRouteImport } from './routes/_authenticated/alertas-estoque'
 import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticated/estoque'
 import { Route as AuthenticatedGarantiaRouteImport } from './routes/_authenticated/garantia'
 import { Route as AuthenticatedEmpresaSlugRouteImport } from './routes/_authenticated/empresa.$slug'
@@ -38,6 +39,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAlertasEstoqueRoute =
+  AuthenticatedAlertasEstoqueRouteImport.update({
+    id: '/alertas-estoque',
+    path: '/alertas-estoque',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEstoqueRoute = AuthenticatedEstoqueRouteImport.update({
   id: '/estoque',
   path: '/estoque',
@@ -71,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/alertas-estoque': typeof AuthenticatedAlertasEstoqueRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/garantia': typeof AuthenticatedGarantiaRoute
   '/empresa/$slug': typeof AuthenticatedEmpresaSlugRouteWithChildren
@@ -80,6 +88,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/alertas-estoque': typeof AuthenticatedAlertasEstoqueRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/garantia': typeof AuthenticatedGarantiaRoute
   '/': typeof AuthenticatedIndexRoute
@@ -91,6 +100,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/alertas-estoque': typeof AuthenticatedAlertasEstoqueRoute
   '/_authenticated/estoque': typeof AuthenticatedEstoqueRoute
   '/_authenticated/garantia': typeof AuthenticatedGarantiaRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/admin'
+    | '/alertas-estoque'
     | '/estoque'
     | '/garantia'
     | '/empresa/$slug'
@@ -113,6 +124,7 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/admin'
+    | '/alertas-estoque'
     | '/estoque'
     | '/garantia'
     | '/'
@@ -123,6 +135,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/admin'
+    | '/_authenticated/alertas-estoque'
     | '/_authenticated/estoque'
     | '/_authenticated/garantia'
     | '/_authenticated/'
@@ -164,6 +177,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/alertas-estoque': {
+      id: '/_authenticated/alertas-estoque'
+      path: '/alertas-estoque'
+      fullPath: '/alertas-estoque'
+      preLoaderRoute: typeof AuthenticatedAlertasEstoqueRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/estoque': {
@@ -223,6 +243,7 @@ const AuthenticatedEmpresaSlugRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAlertasEstoqueRoute: typeof AuthenticatedAlertasEstoqueRoute
   AuthenticatedEstoqueRoute: typeof AuthenticatedEstoqueRoute
   AuthenticatedGarantiaRoute: typeof AuthenticatedGarantiaRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -231,6 +252,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAlertasEstoqueRoute: AuthenticatedAlertasEstoqueRoute,
   AuthenticatedEstoqueRoute: AuthenticatedEstoqueRoute,
   AuthenticatedGarantiaRoute: AuthenticatedGarantiaRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
