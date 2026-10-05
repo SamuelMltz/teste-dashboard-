@@ -36,6 +36,13 @@
       "when": 1791219264284,
       "tag": "0004_create_full_delivery_planning",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791219635517,
+      "tag": "0005_create_supplier_orders",
+      "breakpoints": true
     }
   ]
 }

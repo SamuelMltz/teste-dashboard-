@@ -27,9 +27,9 @@ export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Painel do Grupo — Início" },
-      { name: "description", content: "Acesse Estoque, Garantia, Gerenciar ou planeje entregas Full." },
+      { name: "description", content: "Acesse Estoque, Garantia, Gerenciar, Full e Pedidos." },
       { property: "og:title", content: "Painel do Grupo — Início" },
-      { property: "og:description", content: "Acesse Estoque, Garantia, Gerenciar ou planeje entregas Full." },
+      { property: "og:description", content: "Acesse Estoque, Garantia, Gerenciar, Full e Pedidos." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -65,6 +65,13 @@ const OPCOES = [
     desc: "Planeje cargas e confirme a baixa no estoque.",
     Icon: Truck,
     cor: "amber",
+  },
+  {
+    to: "/pedidos",
+    titulo: "Pedidos",
+    desc: "Monte pedidos e confirme a entrada no estoque.",
+    Icon: PackagePlus,
+    cor: "green",
   },
 ] as const;
 
@@ -196,7 +203,7 @@ function Inicio() {
               </Link>
             </section>
 
-            <section aria-label="Áreas do sistema" className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <section aria-label="Áreas do sistema" className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
               {OPCOES.map(({ to, titulo, desc, Icon, cor }) => {
                 const cores = CORES[cor];
                 return (

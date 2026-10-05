@@ -13,3 +13,4 @@
 - [x] Destacar níveis de estoque e redesenhar a lista de produtos.
 - [x] Exibir contagem e tela detalhada de alertas de estoque.
 - [x] Criar o sistema Full para planejar cargas e dar baixa no estoque ao confirmar o envio.
+- [x] Criar Pedidos para planejar compras de fornecedores e somar ao estoque no recebimento.

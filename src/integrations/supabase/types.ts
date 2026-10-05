@@ -159,6 +159,92 @@ export type Database = {
           },
         ]
       }
+      pedido_itens: {
+        Row: {
+          created_at: string
+          id: string
+          pedido_id: string
+          produto_id: string
+          quantidade: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pedido_id: string
+          produto_id: string
+          quantidade: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pedido_id?: string
+          produto_id?: string
+          quantidade?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedido_itens_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_itens_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pedidos: {
+        Row: {
+          created_at: string
+          created_by: string
+          empresa_id: string
+          fornecedor: string
+          id: string
+          nome: string
+          numero: number
+          received_at: string | null
+          received_by: string | null
+          status: Database["public"]["Enums"]["pedido_status"]
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          empresa_id: string
+          fornecedor: string
+          id?: string
+          nome: string
+          numero?: never
+          received_at?: string | null
+          received_by?: string | null
+          status?: Database["public"]["Enums"]["pedido_status"]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          empresa_id?: string
+          fornecedor?: string
+          id?: string
+          nome?: string
+          numero?: never
+          received_at?: string | null
+          received_by?: string | null
+          status?: Database["public"]["Enums"]["pedido_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtos: {
         Row: {
           codigo: string
@@ -224,6 +310,10 @@ export type Database = {
     }
     Functions: {
       confirmar_carga_full: { Args: { _carga_id: string }; Returns: Json }
+      confirmar_recebimento_pedido: {
+        Args: { _pedido_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -235,6 +325,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       full_status: "planejada" | "confirmada"
+      pedido_status: "planejado" | "recebido"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -364,6 +455,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       full_status: ["planejada", "confirmada"],
+      pedido_status: ["planejado", "recebido"],
     },
   },
 } as const
