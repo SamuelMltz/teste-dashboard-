@@ -142,6 +142,7 @@ function FullPage() {
 function CargaPlanejada({ carga, produtos, aberta, onToggle, onAtualizar }: { carga: Carga; produtos: Produto[]; aberta: boolean; onToggle: () => void; onAtualizar: () => Promise<void> }) {
   const [produtoId, setProdutoId] = useState("");
   const [quantidade, setQuantidade] = useState("1");
+  const [nomeCarga, setNomeCarga] = useState(carga.nome);
   const [ocupado, setOcupado] = useState(false);
   const disponiveis = useMemo(() => produtos.filter((produto) => produto.empresa_id === carga.empresa_id && !carga.itens.some((item) => item.produto_id === produto.id)), [produtos, carga]);
   const total = carga.itens.reduce((soma, item) => soma + item.quantidade, 0);
@@ -162,6 +163,16 @@ function CargaPlanejada({ carga, produtos, aberta, onToggle, onAtualizar }: { ca
     const { error } = await supabase.from("full_itens").delete().eq("id", id);
     if (error) { toast.error("Não foi possível remover o produto."); return; }
     await onAtualizar();
+  }
+
+  async function salvarNome() {
+    const valor = nomeCarga.trim();
+    if (!valor) { setNomeCarga(carga.nome); toast.error("O nome da carga não pode ficar vazio."); return; }
+    if (valor === carga.nome) return;
+    const { error } = await supabase.from("full_cargas").update({ nome: valor }).eq("id", carga.id);
+    if (error) { setNomeCarga(carga.nome); toast.error("Não foi possível alterar o nome."); return; }
+    await onAtualizar();
+    toast.success("Nome da carga atualizado");
   }
 
   async function excluir() {
@@ -186,11 +197,12 @@ function CargaPlanejada({ carga, produtos, aberta, onToggle, onAtualizar }: { ca
     <article className="overflow-hidden rounded-md border border-dashboard-amber/45 bg-dashboard-amber-soft">
       <div className="flex items-center gap-3 p-5">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-dashboard-amber-icon text-foreground"><Truck className="h-6 w-6" /></div>
-        <button type="button" onClick={onToggle} className="min-w-0 flex-1 text-left"><p className="font-display text-lg font-semibold text-foreground">{codigo(carga.numero)} · {carga.nome}</p><p className="text-sm text-muted-foreground">{carga.empresa} · {carga.itens.length} {carga.itens.length === 1 ? "produto" : "produtos"} · {total} unidades</p></button>
+        <Button type="button" variant="ghost" onClick={onToggle} className="h-auto min-w-0 flex-1 justify-start p-0 text-left hover:bg-transparent"><span><span className="block font-display text-lg font-semibold text-foreground">{codigo(carga.numero)} · {carga.nome}</span><span className="block text-sm font-normal text-muted-foreground">{carga.empresa} · {carga.itens.length} {carga.itens.length === 1 ? "produto" : "produtos"} · {total} unidades</span></span></Button>
         <Button variant="ghost" size="icon" onClick={onToggle} aria-label={aberta ? "Recolher carga" : "Abrir carga"}><ChevronDown className={`h-5 w-5 transition-transform ${aberta ? "rotate-180" : ""}`} /></Button>
         <Button variant="ghost" size="icon" onClick={excluir} aria-label="Excluir planejamento" className="text-dashboard-red hover:text-dashboard-red"><Trash2 className="h-5 w-5" /></Button>
       </div>
       {aberta && <div className="border-t border-dashboard-amber/25 bg-background/25 p-5">
+        <div className="mb-4"><label className="mb-2 block text-xs text-muted-foreground" htmlFor={`nome-${carga.id}`}>Nome do planejamento</label><Input id={`nome-${carga.id}`} value={nomeCarga} maxLength={120} onChange={(event) => setNomeCarga(event.target.value)} onBlur={salvarNome} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></div>
         <div className="grid gap-2">
           {carga.itens.map((item) => <div key={item.id} className="grid gap-3 rounded-md border border-border bg-background/35 p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"><div><p className="font-medium text-foreground">{item.produto.nome}</p><p className="text-xs text-muted-foreground">{item.produto.marca} · {item.produto.codigo || "Sem código"} · disponível: {item.produto.estoque}</p></div><span className="font-display text-lg font-semibold text-dashboard-amber">{item.quantidade} un.</span><Button variant="ghost" size="icon" onClick={() => removerItem(item.id)} aria-label={`Remover ${item.produto.nome}`}><Trash2 className="h-4 w-4" /></Button></div>)}
         </div>
