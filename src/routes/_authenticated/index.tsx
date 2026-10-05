@@ -15,6 +15,7 @@ import {
   Settings,
   ShieldCheck,
   Tag,
+  Truck,
   UserRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,9 +27,9 @@ export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Painel do Grupo — Início" },
-      { name: "description", content: "Escolha entre Estoque, Garantia ou Gerenciar no painel do grupo." },
+      { name: "description", content: "Acesse Estoque, Garantia, Gerenciar ou planeje entregas Full." },
       { property: "og:title", content: "Painel do Grupo — Início" },
-      { property: "og:description", content: "Escolha entre Estoque, Garantia ou Gerenciar no painel do grupo." },
+      { property: "og:description", content: "Acesse Estoque, Garantia, Gerenciar ou planeje entregas Full." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -57,6 +58,13 @@ const OPCOES = [
     desc: "Cadastre e organize marcas e produtos.",
     Icon: ClipboardPlus,
     cor: "green",
+  },
+  {
+    to: "/full",
+    titulo: "Full",
+    desc: "Planeje cargas e confirme a baixa no estoque.",
+    Icon: Truck,
+    cor: "amber",
   },
 ] as const;
 
@@ -188,7 +196,7 @@ function Inicio() {
               </Link>
             </section>
 
-            <section aria-label="Áreas do sistema" className="mt-4 grid gap-4 lg:grid-cols-3">
+            <section aria-label="Áreas do sistema" className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {OPCOES.map(({ to, titulo, desc, Icon, cor }) => {
                 const cores = CORES[cor];
                 return (

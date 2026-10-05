@@ -18,3 +18,4 @@
 - Todo o painel fica sob `_authenticated` (login obrigatório, `/auth` é a única rota pública). Cadastro em `/admin`, escrita pelo cliente do navegador protegida por RLS `has_role(auth.uid(),'admin')`; primeiro usuário vira admin via trigger.
 - As logos estáticas das empresas são associadas pelo `slug` na tela de Estoque, para permanecerem independentes dos dados do banco.
 - A tela inicial usa uma estrutura própria de painel com barra superior e menu lateral; os atalhos novos permanecem sem ação até terem seus fluxos definidos.
+- O sistema Full mantém várias cargas por empresa; itens podem misturar marcas da mesma empresa e a confirmação desconta o estoque atomicamente pelo banco.
