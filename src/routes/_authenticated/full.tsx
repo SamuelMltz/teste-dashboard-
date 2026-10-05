@@ -71,14 +71,14 @@ function FullPage() {
   }
 
   async function criarCarga() {
-    if (!nome.trim() || !empresaId) return toast.error("Informe o nome e a empresa da carga.");
+    if (!nome.trim() || !empresaId) { toast.error("Informe o nome e a empresa da carga."); return; }
     setCriando(true);
     const { data: userData } = await supabase.auth.getUser();
     const user = userData.user;
-    if (!user) { setCriando(false); return toast.error("Sua sessão expirou."); }
+    if (!user) { setCriando(false); toast.error("Sua sessão expirou."); return; }
     const { data: carga, error } = await supabase.from("full_cargas").insert({ nome: nome.trim(), empresa_id: empresaId, created_by: user.id }).select("id").single();
     setCriando(false);
-    if (error) return toast.error("Não foi possível criar o planejamento.");
+    if (error) { toast.error("Não foi possível criar o planejamento."); return; }
     setNome(""); setEmpresaId(""); setAberta(carga.id);
     await atualizar();
     toast.success("Planejamento Full criado");
@@ -149,35 +149,35 @@ function CargaPlanejada({ carga, produtos, aberta, onToggle, onAtualizar }: { ca
   async function adicionar() {
     const qtd = Number(quantidade);
     const produto = produtos.find((item) => item.id === produtoId);
-    if (!produto || !Number.isInteger(qtd) || qtd <= 0) return toast.error("Escolha um produto e uma quantidade válida.");
-    if (qtd > produto.estoque) return toast.error(`Há somente ${produto.estoque} unidades disponíveis.`);
+    if (!produto || !Number.isInteger(qtd) || qtd <= 0) { toast.error("Escolha um produto e uma quantidade válida."); return; }
+    if (qtd > produto.estoque) { toast.error(`Há somente ${produto.estoque} unidades disponíveis.`); return; }
     setOcupado(true);
     const { error } = await supabase.from("full_itens").insert({ carga_id: carga.id, produto_id: produto.id, quantidade: qtd });
     setOcupado(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setProdutoId(""); setQuantidade("1"); await onAtualizar();
   }
 
   async function removerItem(id: string) {
     const { error } = await supabase.from("full_itens").delete().eq("id", id);
-    if (error) return toast.error("Não foi possível remover o produto.");
+    if (error) { toast.error("Não foi possível remover o produto."); return; }
     await onAtualizar();
   }
 
   async function excluir() {
     if (!confirm(`Excluir o planejamento ${codigo(carga.numero)}?`)) return;
     const { error } = await supabase.from("full_cargas").delete().eq("id", carga.id);
-    if (error) return toast.error("Não foi possível excluir o planejamento.");
+    if (error) { toast.error("Não foi possível excluir o planejamento."); return; }
     await onAtualizar(); toast.success("Planejamento excluído");
   }
 
   async function confirmar() {
-    if (!carga.itens.length) return toast.error("Adicione ao menos um produto.");
+    if (!carga.itens.length) { toast.error("Adicione ao menos um produto."); return; }
     if (!confirm(`Confirmar o envio de ${total} unidades? O estoque será atualizado e esta ação não poderá ser desfeita.`)) return;
     setOcupado(true);
     const { error } = await supabase.rpc("confirmar_carga_full", { _carga_id: carga.id });
     setOcupado(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await onAtualizar();
     toast.success("Carga enviada e estoque atualizado");
   }

@@ -12,4 +12,4 @@
 - [x] Adicionar estoque mínimo ao cadastro e à edição de produtos.
 - [x] Destacar níveis de estoque e redesenhar a lista de produtos.
 - [x] Exibir contagem e tela detalhada de alertas de estoque.
-- [ ] Criar o sistema Full para planejar cargas e dar baixa no estoque ao confirmar o envio.
+- [x] Criar o sistema Full para planejar cargas e dar baixa no estoque ao confirmar o envio.
