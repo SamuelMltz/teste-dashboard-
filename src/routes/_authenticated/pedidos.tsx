@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 type Empresa = { id: string; nome: string };
 type Produto = { id: string; nome: string; codigo: string; estoque: number; marca_id: string; marca: string; empresa_id: string };
 type Item = { id: string; pedido_id: string; produto_id: string; quantidade: number; produto: Produto };
-type Pedido = { id: string; numero: number; nome: string; empresa_id: string; empresa: string; fornecedor: string; status: "planejado" | "recebido"; created_at: string; received_at: string | null; itens: Item[] };
+type Pedido = { id: string; numero: number; nome: string; empresa_id: string; empresa: string; status: "planejado" | "recebido"; created_at: string; received_at: string | null; itens: Item[] };
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({
@@ -31,7 +31,7 @@ async function carregarPedidos(): Promise<{ empresas: Empresa[]; produtos: Produ
   const [empresasRes, produtosRes, pedidosRes, itensRes] = await Promise.all([
     supabase.from("empresas").select("id, nome").order("ordem"),
     supabase.from("produtos").select("id, nome, codigo, estoque, marca_id, marcas!inner(nome, empresa_id)").order("ordem"),
-    supabase.from("pedidos").select("id, numero, nome, fornecedor, empresa_id, status, created_at, received_at, empresas(nome)").order("created_at", { ascending: false }),
+    supabase.from("pedidos").select("id, numero, nome, empresa_id, status, created_at, received_at, empresas(nome)").order("created_at", { ascending: false }),
     supabase.from("pedido_itens").select("id, pedido_id, produto_id, quantidade"),
   ]);
   const erro = empresasRes.error ?? produtosRes.error ?? pedidosRes.error ?? itensRes.error;
@@ -62,7 +62,6 @@ function PedidosPage() {
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["pedidos"], queryFn: carregarPedidos });
   const [nome, setNome] = useState("");
-  const [fornecedor, setFornecedor] = useState("");
   const [empresaId, setEmpresaId] = useState("");
   const [aberta, setAberta] = useState<string | null>(null);
   const [criando, setCriando] = useState(false);
@@ -72,15 +71,17 @@ function PedidosPage() {
   }
 
   async function criarPedido() {
-    if (!nome.trim() || !fornecedor.trim() || !empresaId) { toast.error("Informe o nome do pedido, o fornecedor e a empresa."); return; }
+    if (!nome.trim() || !empresaId) { toast.error("Informe o nome do pedido e a empresa."); return; }
+    const empresa = data?.empresas.find((item) => item.id === empresaId);
+    if (!empresa) { toast.error("Selecione uma empresa válida."); return; }
     setCriando(true);
     const { data: userData } = await supabase.auth.getUser();
     const user = userData.user;
     if (!user) { setCriando(false); toast.error("Sua sessão expirou."); return; }
-    const { data: pedido, error } = await supabase.from("pedidos").insert({ nome: nome.trim(), fornecedor: fornecedor.trim(), empresa_id: empresaId, created_by: user.id }).select("id").single();
+    const { data: pedido, error } = await supabase.from("pedidos").insert({ nome: nome.trim(), fornecedor: empresa.nome, empresa_id: empresaId, created_by: user.id }).select("id").single();
     setCriando(false);
     if (error) { toast.error("Não foi possível criar o pedido."); return; }
-    setNome(""); setFornecedor(""); setEmpresaId(""); setAberta(pedido.id);
+    setNome(""); setEmpresaId(""); setAberta(pedido.id);
     await atualizar();
     toast.success("Pedido criado");
   }
@@ -104,10 +105,9 @@ function PedidosPage() {
 
         <section className="mt-8 border-y border-border py-6" aria-labelledby="novo-pedido">
           <h2 id="novo-pedido" className="font-display text-xl font-semibold text-foreground">Novo pedido</h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(220px,0.7fr)_auto]">
+          <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(220px,0.7fr)_auto]">
             <Input value={nome} onChange={(event) => setNome(event.target.value)} placeholder="Nome do pedido" maxLength={120} />
-            <Input value={fornecedor} onChange={(event) => setFornecedor(event.target.value)} placeholder="Empresa fornecedora" maxLength={120} />
-             <select value={empresaId} onChange={(event) => setEmpresaId(event.target.value)} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <select value={empresaId} onChange={(event) => setEmpresaId(event.target.value)} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <option value="" className="bg-background">Selecione a empresa</option>
               {data?.empresas.map((empresa) => <option key={empresa.id} value={empresa.id} className="bg-background">{empresa.nome}</option>)}
             </select>
@@ -130,7 +130,7 @@ function PedidosPage() {
             {confirmadas.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum pedido foi recebido ainda.</p> : confirmadas.map((pedido) => (
               <article key={pedido.id} className="grid gap-3 rounded-md border border-dashboard-green/35 bg-dashboard-green-soft p-5 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-md bg-dashboard-green-icon text-foreground"><Check className="h-5 w-5" /></div>
-                <div><p className="font-display text-lg font-semibold text-foreground">{codigo(pedido.numero)} · {pedido.nome}</p><p className="text-sm text-muted-foreground">{pedido.fornecedor} → {pedido.empresa} · {pedido.itens.length} {pedido.itens.length === 1 ? "produto" : "produtos"}</p></div>
+                <div><p className="font-display text-lg font-semibold text-foreground">{codigo(pedido.numero)} · {pedido.nome}</p><p className="text-sm text-muted-foreground">{pedido.empresa} · {pedido.itens.length} {pedido.itens.length === 1 ? "produto" : "produtos"}</p></div>
                 <p className="text-sm text-dashboard-green">Recebido em {pedido.received_at ? new Date(pedido.received_at).toLocaleDateString("pt-BR") : "—"}</p>
               </article>
             ))}
@@ -198,7 +198,7 @@ function PedidoPlanejado({ pedido, produtos, aberta, onToggle, onAtualizar }: { 
     <article className="overflow-hidden rounded-md border border-dashboard-amber/45 bg-dashboard-amber-soft">
       <div className="flex items-center gap-3 p-5">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-dashboard-amber-icon text-foreground"><PackagePlus className="h-6 w-6" /></div>
-        <Button type="button" variant="ghost" onClick={onToggle} className="h-auto min-w-0 flex-1 justify-start p-0 text-left hover:bg-transparent"><span><span className="block font-display text-lg font-semibold text-foreground">{codigo(pedido.numero)} · {pedido.nome}</span><span className="block text-sm font-normal text-muted-foreground">{pedido.fornecedor} → {pedido.empresa} · {pedido.itens.length} {pedido.itens.length === 1 ? "produto" : "produtos"} · {total} unidades</span></span></Button>
+        <Button type="button" variant="ghost" onClick={onToggle} className="h-auto min-w-0 flex-1 justify-start p-0 text-left hover:bg-transparent"><span><span className="block font-display text-lg font-semibold text-foreground">{codigo(pedido.numero)} · {pedido.nome}</span><span className="block text-sm font-normal text-muted-foreground">{pedido.empresa} · {pedido.itens.length} {pedido.itens.length === 1 ? "produto" : "produtos"} · {total} unidades</span></span></Button>
         <Button variant="ghost" size="icon" onClick={onToggle} aria-label={aberta ? "Recolher pedido" : "Abrir pedido"}><ChevronDown className={`h-5 w-5 transition-transform ${aberta ? "rotate-180" : ""}`} /></Button>
         <Button variant="ghost" size="icon" onClick={excluir} aria-label="Excluir pedido" className="text-dashboard-red hover:text-dashboard-red"><Trash2 className="h-5 w-5" /></Button>
       </div>
