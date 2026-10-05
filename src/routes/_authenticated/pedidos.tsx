@@ -79,7 +79,7 @@ function PedidosPage() {
     if (!user) { setCriando(false); toast.error("Sua sessão expirou."); return; }
     const { data: pedido, error } = await supabase.from("pedidos").insert({ nome: nome.trim(), fornecedor: fornecedor.trim(), empresa_id: empresaId, created_by: user.id }).select("id").single();
     setCriando(false);
-    if (error) { toast.error("Não foi possível criar o planejamento."); return; }
+    if (error) { toast.error("Não foi possível criar o pedido."); return; }
     setNome(""); setFornecedor(""); setEmpresaId(""); setAberta(pedido.id);
     await atualizar();
     toast.success("Pedido criado");
@@ -118,7 +118,7 @@ function PedidosPage() {
         <section className="mt-8" aria-labelledby="planejamentos">
           <div className="flex items-end justify-between"><div><h2 id="planejamentos" className="font-display text-2xl font-semibold text-foreground">Pedidos em aberto</h2><p className="text-sm text-muted-foreground">{planejadas.length} {planejadas.length === 1 ? "pedido em preparação" : "pedidos em preparação"}</p></div></div>
           <div className="mt-4 grid gap-4">
-            {isLoading ? <p className="py-10 text-muted-foreground">Carregando planejamentos…</p> : planejadas.length === 0 ? <div className="rounded-md border border-dashed border-border p-10 text-center text-muted-foreground">Nenhum pedido em aberto.</div> : planejadas.map((pedido) => (
+            {isLoading ? <p className="py-10 text-muted-foreground">Carregando pedidos…</p> : planejadas.length === 0 ? <div className="rounded-md border border-dashed border-border p-10 text-center text-muted-foreground">Nenhum pedido em aberto.</div> : planejadas.map((pedido) => (
               <PedidoPlanejado key={pedido.id} pedido={pedido} produtos={data?.produtos ?? []} aberta={aberta === pedido.id} onToggle={() => setAberta(aberta === pedido.id ? null : pedido.id)} onAtualizar={atualizar} />
             ))}
           </div>
@@ -130,7 +130,7 @@ function PedidosPage() {
             {confirmadas.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum pedido foi recebido ainda.</p> : confirmadas.map((pedido) => (
               <article key={pedido.id} className="grid gap-3 rounded-md border border-dashboard-green/35 bg-dashboard-green-soft p-5 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-md bg-dashboard-green-icon text-foreground"><Check className="h-5 w-5" /></div>
-                <div><p className="font-display text-lg font-semibold text-foreground">{codigo(pedido.numero)} · {pedido.nome}</p><p className="text-sm text-muted-foreground">{pedido.empresa} · {pedido.itens.length} {pedido.itens.length === 1 ? "produto" : "produtos"}</p></div>
+                <div><p className="font-display text-lg font-semibold text-foreground">{codigo(pedido.numero)} · {pedido.nome}</p><p className="text-sm text-muted-foreground">{pedido.fornecedor} → {pedido.empresa} · {pedido.itens.length} {pedido.itens.length === 1 ? "produto" : "produtos"}</p></div>
                 <p className="text-sm text-dashboard-green">Recebido em {pedido.received_at ? new Date(pedido.received_at).toLocaleDateString("pt-BR") : "—"}</p>
               </article>
             ))}
@@ -146,7 +146,7 @@ function PedidoPlanejado({ pedido, produtos, aberta, onToggle, onAtualizar }: { 
   const [quantidade, setQuantidade] = useState("1");
   const [nomeCarga, setNomeCarga] = useState(pedido.nome);
   const [ocupado, setOcupado] = useState(false);
-  const disponiveis = useMemo(() => produtos.filter((produto) => produto.empresa_id === pedido.empresa_id && !pedido.itens.some((item) => item.produto_id === produto.id)), [produtos, carga]);
+  const disponiveis = useMemo(() => produtos.filter((produto) => produto.empresa_id === pedido.empresa_id && !pedido.itens.some((item) => item.produto_id === produto.id)), [produtos, pedido]);
   const total = pedido.itens.reduce((soma, item) => soma + item.quantidade, 0);
 
   async function adicionar() {
@@ -168,7 +168,7 @@ function PedidoPlanejado({ pedido, produtos, aberta, onToggle, onAtualizar }: { 
 
   async function salvarNome() {
     const valor = nomeCarga.trim();
-    if (!valor) { setNomeCarga(pedido.nome); toast.error("O nome da carga não pode ficar vazio."); return; }
+    if (!valor) { setNomeCarga(pedido.nome); toast.error("O nome do pedido não pode ficar vazio."); return; }
     if (valor === pedido.nome) return;
     const { error } = await supabase.from("pedidos").update({ nome: valor }).eq("id", pedido.id);
     if (error) { setNomeCarga(pedido.nome); toast.error("Não foi possível alterar o nome."); return; }
@@ -198,9 +198,9 @@ function PedidoPlanejado({ pedido, produtos, aberta, onToggle, onAtualizar }: { 
     <article className="overflow-hidden rounded-md border border-dashboard-amber/45 bg-dashboard-amber-soft">
       <div className="flex items-center gap-3 p-5">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-dashboard-amber-icon text-foreground"><PackagePlus className="h-6 w-6" /></div>
-        <Button type="button" variant="ghost" onClick={onToggle} className="h-auto min-w-0 flex-1 justify-start p-0 text-left hover:bg-transparent"><span><span className="block font-display text-lg font-semibold text-foreground">{codigo(pedido.numero)} · {pedido.nome}</span><span className="block text-sm font-normal text-muted-foreground">{pedido.empresa} · {pedido.itens.length} {pedido.itens.length === 1 ? "produto" : "produtos"} · {total} unidades</span></span></Button>
-        <Button variant="ghost" size="icon" onClick={onToggle} aria-label={aberta ? "Recolher carga" : "Abrir carga"}><ChevronDown className={`h-5 w-5 transition-transform ${aberta ? "rotate-180" : ""}`} /></Button>
-        <Button variant="ghost" size="icon" onClick={excluir} aria-label="Excluir planejamento" className="text-dashboard-red hover:text-dashboard-red"><Trash2 className="h-5 w-5" /></Button>
+        <Button type="button" variant="ghost" onClick={onToggle} className="h-auto min-w-0 flex-1 justify-start p-0 text-left hover:bg-transparent"><span><span className="block font-display text-lg font-semibold text-foreground">{codigo(pedido.numero)} · {pedido.nome}</span><span className="block text-sm font-normal text-muted-foreground">{pedido.fornecedor} → {pedido.empresa} · {pedido.itens.length} {pedido.itens.length === 1 ? "produto" : "produtos"} · {total} unidades</span></span></Button>
+        <Button variant="ghost" size="icon" onClick={onToggle} aria-label={aberta ? "Recolher pedido" : "Abrir pedido"}><ChevronDown className={`h-5 w-5 transition-transform ${aberta ? "rotate-180" : ""}`} /></Button>
+        <Button variant="ghost" size="icon" onClick={excluir} aria-label="Excluir pedido" className="text-dashboard-red hover:text-dashboard-red"><Trash2 className="h-5 w-5" /></Button>
       </div>
       {aberta && <div className="border-t border-dashboard-amber/25 bg-background/25 p-5">
         <div className="mb-4"><label className="mb-2 block text-xs text-muted-foreground" htmlFor={`nome-${pedido.id}`}>Nome do pedido</label><Input id={`nome-${pedido.id}`} value={nomeCarga} maxLength={120} onChange={(event) => setNomeCarga(event.target.value)} onBlur={salvarNome} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></div>
