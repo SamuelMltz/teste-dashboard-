@@ -41,6 +41,89 @@ export type Database = {
         }
         Relationships: []
       }
+      full_cargas: {
+        Row: {
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          created_by: string
+          empresa_id: string
+          id: string
+          nome: string
+          numero: number
+          status: Database["public"]["Enums"]["full_status"]
+        }
+        Insert: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          created_by?: string
+          empresa_id: string
+          id?: string
+          nome: string
+          numero?: never
+          status?: Database["public"]["Enums"]["full_status"]
+        }
+        Update: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          created_by?: string
+          empresa_id?: string
+          id?: string
+          nome?: string
+          numero?: never
+          status?: Database["public"]["Enums"]["full_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "full_cargas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      full_itens: {
+        Row: {
+          carga_id: string
+          created_at: string
+          id: string
+          produto_id: string
+          quantidade: number
+        }
+        Insert: {
+          carga_id: string
+          created_at?: string
+          id?: string
+          produto_id: string
+          quantidade: number
+        }
+        Update: {
+          carga_id?: string
+          created_at?: string
+          id?: string
+          produto_id?: string
+          quantidade?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "full_itens_carga_id_fkey"
+            columns: ["carga_id"]
+            isOneToOne: false
+            referencedRelation: "full_cargas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "full_itens_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marcas: {
         Row: {
           created_at: string
@@ -140,6 +223,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      confirmar_carga_full: { Args: { _carga_id: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -150,6 +234,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      full_status: "planejada" | "confirmada"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -278,6 +363,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      full_status: ["planejada", "confirmada"],
     },
   },
 } as const
