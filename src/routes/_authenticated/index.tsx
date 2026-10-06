@@ -17,6 +17,7 @@ import {
   Tag,
   Truck,
   UserRound,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { listarEmpresas } from "@/lib/empresas.functions";
@@ -166,6 +167,19 @@ function Inicio() {
             <span className={menuRecolhido ? "sr-only" : "font-medium"}>Início</span>
           </div>
           <div className="mt-auto border-t border-border pt-4">
+            <Button
+              asChild
+              variant="ghost"
+              title={menuRecolhido ? "Contas" : undefined}
+              className={`h-12 w-full text-muted-foreground hover:text-foreground ${
+                menuRecolhido ? "justify-center px-0" : "justify-start gap-4"
+              }`}
+            >
+              <Link to="/contas">
+                <Users className="h-5 w-5" aria-hidden="true" />
+                <span className={menuRecolhido ? "sr-only" : undefined}>Contas</span>
+              </Link>
+            </Button>
             <Button
               type="button"
               variant="ghost"
