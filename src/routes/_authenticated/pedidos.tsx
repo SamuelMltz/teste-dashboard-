@@ -71,7 +71,7 @@ function PedidosPage() {
   }
 
   async function criarPedido() {
-    if (!nome.trim() || !empresaId) { toast.error("Informe o nome do pedido e a empresa."); return; }
+    if (!nome.trim() || !empresaId) { toast.error("Selecione a empresa e a marca."); return; }
     const empresa = data?.empresas.find((item) => item.id === empresaId);
     if (!empresa) { toast.error("Selecione uma empresa válida."); return; }
     setCriando(true);
@@ -86,6 +86,7 @@ function PedidosPage() {
     toast.success("Pedido criado");
   }
 
+  const marcasDaEmpresa = useMemo(() => Array.from(new Set((data?.produtos ?? []).filter((p) => p.empresa_id === empresaId).map((p) => p.marca))), [data, empresaId]);
   const planejadas = data?.pedidos.filter((pedido) => pedido.status === "planejado") ?? [];
   const confirmadas = data?.pedidos.filter((pedido) => pedido.status === "recebido") ?? [];
 
@@ -105,11 +106,14 @@ function PedidosPage() {
 
         <section className="mt-8 border-y border-border py-6" aria-labelledby="novo-pedido">
           <h2 id="novo-pedido" className="font-display text-xl font-semibold text-foreground">Novo pedido</h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(220px,0.7fr)_auto]">
-            <Input value={nome} onChange={(event) => setNome(event.target.value)} placeholder="Nome do pedido" maxLength={120} />
-            <select value={empresaId} onChange={(event) => setEmpresaId(event.target.value)} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+            <select value={empresaId} onChange={(event) => { setEmpresaId(event.target.value); setNome(""); }} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <option value="" className="bg-background">Selecione a empresa</option>
               {data?.empresas.map((empresa) => <option key={empresa.id} value={empresa.id} className="bg-background">{empresa.nome}</option>)}
+            </select>
+            <select value={nome} onChange={(event) => setNome(event.target.value)} disabled={!empresaId} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50">
+              <option value="" className="bg-background">Selecione a marca</option>
+              {marcasDaEmpresa.map((marca) => <option key={marca} value={marca} className="bg-background">{marca}</option>)}
             </select>
             <Button onClick={criarPedido} disabled={criando} className="gerenciar-primary gap-2"><Plus className="h-4 w-4" />Criar pedido</Button>
           </div>
@@ -144,9 +148,8 @@ function PedidosPage() {
 function PedidoPlanejado({ pedido, produtos, aberta, onToggle, onAtualizar }: { pedido: Pedido; produtos: Produto[]; aberta: boolean; onToggle: () => void; onAtualizar: () => Promise<void> }) {
   const [produtoId, setProdutoId] = useState("");
   const [quantidade, setQuantidade] = useState("1");
-  const [nomeCarga, setNomeCarga] = useState(pedido.nome);
   const [ocupado, setOcupado] = useState(false);
-  const disponiveis = useMemo(() => produtos.filter((produto) => produto.empresa_id === pedido.empresa_id && !pedido.itens.some((item) => item.produto_id === produto.id)), [produtos, pedido]);
+  const disponiveis = useMemo(() => produtos.filter((produto) => produto.empresa_id === pedido.empresa_id && produto.marca === pedido.nome && !pedido.itens.some((item) => item.produto_id === produto.id)), [produtos, pedido]);
   const total = pedido.itens.reduce((soma, item) => soma + item.quantidade, 0);
 
   async function adicionar() {
@@ -164,16 +167,6 @@ function PedidoPlanejado({ pedido, produtos, aberta, onToggle, onAtualizar }: { 
     const { error } = await supabase.from("pedido_itens").delete().eq("id", id);
     if (error) { toast.error("Não foi possível remover o produto."); return; }
     await onAtualizar();
-  }
-
-  async function salvarNome() {
-    const valor = nomeCarga.trim();
-    if (!valor) { setNomeCarga(pedido.nome); toast.error("O nome do pedido não pode ficar vazio."); return; }
-    if (valor === pedido.nome) return;
-    const { error } = await supabase.from("pedidos").update({ nome: valor }).eq("id", pedido.id);
-    if (error) { setNomeCarga(pedido.nome); toast.error("Não foi possível alterar o nome."); return; }
-    await onAtualizar();
-    toast.success("Nome do pedido atualizado");
   }
 
   async function excluir() {
@@ -203,12 +196,11 @@ function PedidoPlanejado({ pedido, produtos, aberta, onToggle, onAtualizar }: { 
         <Button variant="ghost" size="icon" onClick={excluir} aria-label="Excluir pedido" className="text-dashboard-red hover:text-dashboard-red"><Trash2 className="h-5 w-5" /></Button>
       </div>
       {aberta && <div className="border-t border-dashboard-amber/25 bg-background/25 p-5">
-        <div className="mb-4"><label className="mb-2 block text-xs text-muted-foreground" htmlFor={`nome-${pedido.id}`}>Nome do pedido</label><Input id={`nome-${pedido.id}`} value={nomeCarga} maxLength={120} onChange={(event) => setNomeCarga(event.target.value)} onBlur={salvarNome} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></div>
         <div className="grid gap-2">
           {pedido.itens.map((item) => <div key={item.id} className="grid gap-3 rounded-md border border-border bg-background/35 p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"><div><p className="font-medium text-foreground">{item.produto.nome}</p><p className="text-xs text-muted-foreground">{item.produto.marca} · SKU {item.produto.codigo || "—"} · COD {item.produto.cod || "—"} · estoque atual: {item.produto.estoque}</p></div><span className="font-display text-lg font-semibold text-dashboard-amber">{item.quantidade} un.</span><Button variant="ghost" size="icon" onClick={() => removerItem(item.id)} aria-label={`Remover ${item.produto.nome}`}><Trash2 className="h-4 w-4" /></Button></div>)}
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_110px_auto]">
-          <select value={produtoId} onChange={(event) => setProdutoId(event.target.value)} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"><option value="" className="bg-background">Adicionar produto</option>{disponiveis.map((produto) => <option key={produto.id} value={produto.id} className="bg-background">{produto.marca} · {produto.nome} ({produto.estoque})</option>)}</select>
+          <select value={produtoId} onChange={(event) => setProdutoId(event.target.value)} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"><option value="" className="bg-background">Adicionar produto</option>{disponiveis.map((produto) => <option key={produto.id} value={produto.id} className="bg-background">{produto.nome} ({produto.estoque})</option>)}</select>
           <Input type="number" min={1} value={quantidade} onChange={(event) => setQuantidade(event.target.value)} aria-label="Quantidade" />
           <Button variant="outline" onClick={adicionar} disabled={ocupado} className="gap-2 border-dashboard-amber/55"><Plus className="h-4 w-4" />Adicionar</Button>
         </div>
