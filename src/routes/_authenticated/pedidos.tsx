@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, ChevronDown, Package, PackagePlus, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, Package, PackagePlus, Plus, Trash2, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -149,7 +149,7 @@ function PedidoPlanejado({ pedido, produtos, aberta, onToggle, onAtualizar }: { 
   const [produtoId, setProdutoId] = useState("");
   const [quantidade, setQuantidade] = useState("1");
   const [ocupado, setOcupado] = useState(false);
-  const disponiveis = useMemo(() => produtos.filter((produto) => produto.empresa_id === pedido.empresa_id && produto.marca === pedido.nome && !pedido.itens.some((item) => item.produto_id === produto.id)), [produtos, pedido]);
+  const disponiveis = useMemo(() => produtos.filter((produto) => produto.empresa_id === pedido.empresa_id && !pedido.itens.some((item) => item.produto_id === produto.id)), [produtos, pedido]);
   const total = pedido.itens.reduce((soma, item) => soma + item.quantidade, 0);
 
   async function adicionar() {
@@ -193,6 +193,7 @@ function PedidoPlanejado({ pedido, produtos, aberta, onToggle, onAtualizar }: { 
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-dashboard-amber-icon text-foreground"><PackagePlus className="h-6 w-6" /></div>
         <Button type="button" variant="ghost" onClick={onToggle} className="h-auto min-w-0 flex-1 justify-start p-0 text-left hover:bg-transparent"><span><span className="block font-display text-lg font-semibold text-foreground">{codigo(pedido.numero)} · {pedido.nome}</span><span className="block text-sm font-normal text-muted-foreground">{pedido.empresa} · {pedido.itens.length} {pedido.itens.length === 1 ? "produto" : "produtos"} · {total} unidades</span></span></Button>
         <Button variant="ghost" size="icon" onClick={onToggle} aria-label={aberta ? "Recolher pedido" : "Abrir pedido"}><ChevronDown className={`h-5 w-5 transition-transform ${aberta ? "rotate-180" : ""}`} /></Button>
+        <Button variant="outline" size="sm" asChild className="gap-2"><Link to="/pedidos/$id" params={{ id: pedido.id }}><FileText className="h-4 w-4" />Detalhes</Link></Button>
         <Button variant="ghost" size="icon" onClick={excluir} aria-label="Excluir pedido" className="text-dashboard-red hover:text-dashboard-red"><Trash2 className="h-5 w-5" /></Button>
       </div>
       {aberta && <div className="border-t border-dashboard-amber/25 bg-background/25 p-5">
@@ -200,7 +201,7 @@ function PedidoPlanejado({ pedido, produtos, aberta, onToggle, onAtualizar }: { 
           {pedido.itens.map((item) => <div key={item.id} className="grid gap-3 rounded-md border border-border bg-background/35 p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"><div><p className="font-medium text-foreground">{item.produto.nome}</p><p className="text-xs text-muted-foreground">{item.produto.marca} · SKU {item.produto.codigo || "—"} · COD {item.produto.cod || "—"} · estoque atual: {item.produto.estoque}</p></div><span className="font-display text-lg font-semibold text-dashboard-amber">{item.quantidade} un.</span><Button variant="ghost" size="icon" onClick={() => removerItem(item.id)} aria-label={`Remover ${item.produto.nome}`}><Trash2 className="h-4 w-4" /></Button></div>)}
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_110px_auto]">
-          <select value={produtoId} onChange={(event) => setProdutoId(event.target.value)} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"><option value="" className="bg-background">Adicionar produto</option>{disponiveis.map((produto) => <option key={produto.id} value={produto.id} className="bg-background">{produto.nome} ({produto.estoque})</option>)}</select>
+          <select value={produtoId} onChange={(event) => setProdutoId(event.target.value)} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"><option value="" className="bg-background">Adicionar produto</option>{disponiveis.map((produto) => <option key={produto.id} value={produto.id} className="bg-background">{produto.marca} · {produto.nome} ({produto.estoque})</option>)}</select>
           <Input type="number" min={1} value={quantidade} onChange={(event) => setQuantidade(event.target.value)} aria-label="Quantidade" />
           <Button variant="outline" onClick={adicionar} disabled={ocupado} className="gap-2 border-dashboard-amber/55"><Plus className="h-4 w-4" />Adicionar</Button>
         </div>

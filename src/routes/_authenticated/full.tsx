@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, ChevronDown, Package, Plus, Send, Trash2, Truck } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, Package, Plus, Send, Trash2, Truck, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -199,6 +199,7 @@ function CargaPlanejada({ carga, produtos, aberta, onToggle, onAtualizar }: { ca
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-dashboard-amber-icon text-foreground"><Truck className="h-6 w-6" /></div>
         <Button type="button" variant="ghost" onClick={onToggle} className="h-auto min-w-0 flex-1 justify-start p-0 text-left hover:bg-transparent"><span><span className="block font-display text-lg font-semibold text-foreground">{codigo(carga.numero)} · {carga.nome}</span><span className="block text-sm font-normal text-muted-foreground">{carga.empresa} · {carga.itens.length} {carga.itens.length === 1 ? "produto" : "produtos"} · {total} unidades</span></span></Button>
         <Button variant="ghost" size="icon" onClick={onToggle} aria-label={aberta ? "Recolher carga" : "Abrir carga"}><ChevronDown className={`h-5 w-5 transition-transform ${aberta ? "rotate-180" : ""}`} /></Button>
+        <Button variant="outline" size="sm" asChild className="gap-2"><Link to="/full/$id" params={{ id: carga.id }}><FileText className="h-4 w-4" />Detalhes</Link></Button>
         <Button variant="ghost" size="icon" onClick={excluir} aria-label="Excluir planejamento" className="text-dashboard-red hover:text-dashboard-red"><Trash2 className="h-5 w-5" /></Button>
       </div>
       {aberta && <div className="border-t border-dashboard-amber/25 bg-background/25 p-5">

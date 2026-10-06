@@ -19,6 +19,8 @@ import { Route as AuthenticatedFullRouteImport } from './routes/_authenticated/f
 import { Route as AuthenticatedGarantiaRouteImport } from './routes/_authenticated/garantia'
 import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
 import { Route as AuthenticatedEmpresaSlugRouteImport } from './routes/_authenticated/empresa.$slug'
+import { Route as AuthenticatedFullIdRouteImport } from './routes/_authenticated/full_.$id'
+import { Route as AuthenticatedPedidosIdRouteImport } from './routes/_authenticated/pedidos_.$id'
 import { Route as AuthenticatedEmpresaSlugIndexRouteImport } from './routes/_authenticated/empresa.$slug.index'
 import { Route as AuthenticatedEmpresaSlugMarcaMarcaRouteImport } from './routes/_authenticated/empresa.$slug.marca.$marca'
 
@@ -73,6 +75,16 @@ const AuthenticatedEmpresaSlugRoute =
     path: '/empresa/$slug',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFullIdRoute = AuthenticatedFullIdRouteImport.update({
+  id: '/full_/$id',
+  path: '/full/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPedidosIdRoute = AuthenticatedPedidosIdRouteImport.update({
+  id: '/pedidos_/$id',
+  path: '/pedidos/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedEmpresaSlugIndexRoute =
   AuthenticatedEmpresaSlugIndexRouteImport.update({
     id: '/',
@@ -96,6 +108,8 @@ export interface FileRoutesByFullPath {
   '/garantia': typeof AuthenticatedGarantiaRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/empresa/$slug': typeof AuthenticatedEmpresaSlugRouteWithChildren
+  '/full/$id': typeof AuthenticatedFullIdRoute
+  '/pedidos/$id': typeof AuthenticatedPedidosIdRoute
   '/empresa/$slug/': typeof AuthenticatedEmpresaSlugIndexRoute
   '/empresa/$slug/marca/$marca': typeof AuthenticatedEmpresaSlugMarcaMarcaRoute
 }
@@ -108,6 +122,8 @@ export interface FileRoutesByTo {
   '/garantia': typeof AuthenticatedGarantiaRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/': typeof AuthenticatedIndexRoute
+  '/full/$id': typeof AuthenticatedFullIdRoute
+  '/pedidos/$id': typeof AuthenticatedPedidosIdRoute
   '/empresa/$slug': typeof AuthenticatedEmpresaSlugIndexRoute
   '/empresa/$slug/marca/$marca': typeof AuthenticatedEmpresaSlugMarcaMarcaRoute
 }
@@ -123,6 +139,8 @@ export interface FileRoutesById {
   '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/empresa/$slug': typeof AuthenticatedEmpresaSlugRouteWithChildren
+  '/_authenticated/full_/$id': typeof AuthenticatedFullIdRoute
+  '/_authenticated/pedidos_/$id': typeof AuthenticatedPedidosIdRoute
   '/_authenticated/empresa/$slug/': typeof AuthenticatedEmpresaSlugIndexRoute
   '/_authenticated/empresa/$slug/marca/$marca': typeof AuthenticatedEmpresaSlugMarcaMarcaRoute
 }
@@ -138,6 +156,8 @@ export interface FileRouteTypes {
     | '/garantia'
     | '/pedidos'
     | '/empresa/$slug'
+    | '/full/$id'
+    | '/pedidos/$id'
     | '/empresa/$slug/'
     | '/empresa/$slug/marca/$marca'
   fileRoutesByTo: FileRoutesByTo
@@ -150,6 +170,8 @@ export interface FileRouteTypes {
     | '/garantia'
     | '/pedidos'
     | '/'
+    | '/full/$id'
+    | '/pedidos/$id'
     | '/empresa/$slug'
     | '/empresa/$slug/marca/$marca'
   id:
@@ -164,6 +186,8 @@ export interface FileRouteTypes {
     | '/_authenticated/pedidos'
     | '/_authenticated/'
     | '/_authenticated/empresa/$slug'
+    | '/_authenticated/full_/$id'
+    | '/_authenticated/pedidos_/$id'
     | '/_authenticated/empresa/$slug/'
     | '/_authenticated/empresa/$slug/marca/$marca'
   fileRoutesById: FileRoutesById
@@ -245,6 +269,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEmpresaSlugRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/full_/$id': {
+      id: '/_authenticated/full_/$id'
+      path: '/full/$id'
+      fullPath: '/full/$id'
+      preLoaderRoute: typeof AuthenticatedFullIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pedidos_/$id': {
+      id: '/_authenticated/pedidos_/$id'
+      path: '/pedidos/$id'
+      fullPath: '/pedidos/$id'
+      preLoaderRoute: typeof AuthenticatedPedidosIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/empresa/$slug/': {
       id: '/_authenticated/empresa/$slug/'
       path: '/'
@@ -288,6 +326,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedEmpresaSlugRoute: typeof AuthenticatedEmpresaSlugRouteWithChildren
+  AuthenticatedFullIdRoute: typeof AuthenticatedFullIdRoute
+  AuthenticatedPedidosIdRoute: typeof AuthenticatedPedidosIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -299,6 +339,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPedidosRoute: AuthenticatedPedidosRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedEmpresaSlugRoute: AuthenticatedEmpresaSlugRouteWithChildren,
+  AuthenticatedFullIdRoute: AuthenticatedFullIdRoute,
+  AuthenticatedPedidosIdRoute: AuthenticatedPedidosIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

@@ -20,3 +20,4 @@
 - A tela inicial usa uma estrutura própria de painel com barra superior e menu lateral; os atalhos novos permanecem sem ação até terem seus fluxos definidos.
 - O sistema Full mantém várias cargas por empresa; itens podem misturar marcas da mesma empresa e a confirmação desconta o estoque atomicamente pelo banco.
 - O sistema Pedidos mantém várias compras por empresa e fornecedor; itens podem misturar marcas da mesma empresa e o recebimento soma ao estoque atomicamente pelo banco.
+- Full e Pedidos têm telas de detalhe (`full_.$id`, `pedidos_.$id`) compartilhando `DetalhesDocumento`; importar PDF é leitura de texto no navegador (`src/lib/pdf-import.ts`, casa pelo COD) e baixar PDF é gerado no cliente (`src/lib/pdf-export.ts`) — sem custo de IA.
