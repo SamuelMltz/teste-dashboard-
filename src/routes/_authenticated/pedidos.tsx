@@ -148,7 +148,6 @@ function PedidosPage() {
 function PedidoPlanejado({ pedido, produtos, aberta, onToggle, onAtualizar }: { pedido: Pedido; produtos: Produto[]; aberta: boolean; onToggle: () => void; onAtualizar: () => Promise<void> }) {
   const [produtoId, setProdutoId] = useState("");
   const [quantidade, setQuantidade] = useState("1");
-  const [nomeCarga, setNomeCarga] = useState(pedido.nome);
   const [ocupado, setOcupado] = useState(false);
   const disponiveis = useMemo(() => produtos.filter((produto) => produto.empresa_id === pedido.empresa_id && produto.marca === pedido.nome && !pedido.itens.some((item) => item.produto_id === produto.id)), [produtos, pedido]);
   const total = pedido.itens.reduce((soma, item) => soma + item.quantidade, 0);
@@ -168,16 +167,6 @@ function PedidoPlanejado({ pedido, produtos, aberta, onToggle, onAtualizar }: { 
     const { error } = await supabase.from("pedido_itens").delete().eq("id", id);
     if (error) { toast.error("Não foi possível remover o produto."); return; }
     await onAtualizar();
-  }
-
-  async function salvarNome() {
-    const valor = nomeCarga.trim();
-    if (!valor) { setNomeCarga(pedido.nome); toast.error("O nome do pedido não pode ficar vazio."); return; }
-    if (valor === pedido.nome) return;
-    const { error } = await supabase.from("pedidos").update({ nome: valor }).eq("id", pedido.id);
-    if (error) { setNomeCarga(pedido.nome); toast.error("Não foi possível alterar o nome."); return; }
-    await onAtualizar();
-    toast.success("Nome do pedido atualizado");
   }
 
   async function excluir() {
