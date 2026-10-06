@@ -15,7 +15,7 @@
 - Cada empresa tem uma cor de destaque (`accent`) usada em cartões e detalhes; trocar a cor lá, não nos componentes.
 - Estrutura: empresa → marcas ordenáveis → produtos ordenáveis (código, estoque atual e mínimo); alertas incluem níveis até 20% acima do mínimo.
 - Tema escuro global via `class="dark"` no `<html>` em `__root.tsx`.
-- Todo o painel fica sob `_authenticated` (login obrigatório, `/auth` é a única rota pública). Cadastro em `/admin`, escrita pelo cliente do navegador protegida por RLS `has_role(auth.uid(),'admin')`; primeiro usuário vira admin via trigger.
+- Todo o painel fica sob `_authenticated` (login obrigatório, `/auth` é a única rota pública). Cadastro em `/admin`, escrita pelo cliente do navegador protegida por RLS `has_role(auth.uid(),'admin')`; primeiro usuário vira admin via trigger e admins promovem/removem outros pelas funções `listar_usuarios_admin`/`definir_admin` (checam admin no banco).
 - As logos estáticas das empresas são associadas pelo `slug` na tela de Estoque, para permanecerem independentes dos dados do banco.
 - A tela inicial usa uma estrutura própria de painel com barra superior e menu lateral; os atalhos novos permanecem sem ação até terem seus fluxos definidos.
 - O sistema Full mantém várias cargas por empresa; itens podem misturar marcas da mesma empresa e a confirmação desconta o estoque atomicamente pelo banco.

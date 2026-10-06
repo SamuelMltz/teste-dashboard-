@@ -129,8 +129,51 @@ function AdminPage() {
         </div>
 
         {empresa && <EmpresaEditor key={empresa.id} empresa={empresa} onChange={recarregar} />}
+
+        <ContasAdmin meuId={user.id} />
       </div>
     </div>
+  );
+}
+
+function ContasAdmin({ meuId }: { meuId: string }) {
+  const qc = useQueryClient();
+  const contas = useQuery({
+    queryKey: ["contas-admin"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("listar_usuarios_admin");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  async function alterar(id: string, admin: boolean) {
+    const { error } = await supabase.rpc("definir_admin", { _user_id: id, _admin: admin });
+    if (error) { toast.error(error.message); return; }
+    toast.success(admin ? "Conta promovida a administradora" : "Acesso de administrador removido");
+    qc.invalidateQueries({ queryKey: ["contas-admin"] });
+  }
+
+  return (
+    <section className="mt-12 border-t border-border pt-8" aria-labelledby="contas">
+      <h2 id="contas" className="font-display text-2xl font-semibold text-foreground">Contas</h2>
+      <p className="text-sm text-muted-foreground">Escolha quais contas também podem administrar o sistema.</p>
+      <div className="mt-4 grid gap-2">
+        {contas.isLoading ? <p className="text-muted-foreground">Carregando contas…</p> : (contas.data ?? []).map((c) => (
+          <div key={c.id} className="gerenciar-card flex flex-col gap-3 rounded-md border p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="truncate font-medium text-foreground">{c.email}{c.id === meuId ? " (você)" : ""}</p>
+              <p className="text-xs text-muted-foreground">{c.is_admin ? "Administrador" : "Usuário comum"}</p>
+            </div>
+            {c.is_admin ? (
+              <Button variant="outline" disabled={c.id === meuId} onClick={() => alterar(c.id, false)}>Remover administrador</Button>
+            ) : (
+              <Button className="gerenciar-primary" onClick={() => alterar(c.id, true)}>Tornar administrador</Button>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

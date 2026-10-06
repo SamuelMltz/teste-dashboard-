@@ -314,12 +314,25 @@ export type Database = {
         Args: { _pedido_id: string }
         Returns: Json
       }
+      definir_admin: {
+        Args: { _admin: boolean; _user_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      listar_usuarios_admin: {
+        Args: never
+        Returns: {
+          criado_em: string
+          email: string
+          id: string
+          is_admin: boolean
+        }[]
       }
     }
     Enums: {
