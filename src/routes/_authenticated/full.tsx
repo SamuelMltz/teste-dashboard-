@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 
 type Empresa = { id: string; nome: string };
-type Produto = { id: string; nome: string; codigo: string; estoque: number; marca_id: string; marca: string; empresa_id: string };
+type Produto = { id: string; nome: string; codigo: string; cod: string; estoque: number; marca_id: string; marca: string; empresa_id: string };
 type Item = { id: string; carga_id: string; produto_id: string; quantidade: number; produto: Produto };
 type Carga = { id: string; numero: number; nome: string; empresa_id: string; empresa: string; status: "planejada" | "confirmada"; created_at: string; confirmed_at: string | null; itens: Item[] };
 
@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/full")({
 async function carregarFull(): Promise<{ empresas: Empresa[]; produtos: Produto[]; cargas: Carga[] }> {
   const [empresasRes, produtosRes, cargasRes, itensRes] = await Promise.all([
     supabase.from("empresas").select("id, nome").order("ordem"),
-    supabase.from("produtos").select("id, nome, codigo, estoque, marca_id, marcas!inner(nome, empresa_id)").order("ordem"),
+    supabase.from("produtos").select("id, nome, codigo, cod, estoque, marca_id, marcas!inner(nome, empresa_id)").order("ordem"),
     supabase.from("full_cargas").select("id, numero, nome, empresa_id, status, created_at, confirmed_at, empresas(nome)").order("created_at", { ascending: false }),
     supabase.from("full_itens").select("id, carga_id, produto_id, quantidade"),
   ]);
@@ -40,7 +40,7 @@ async function carregarFull(): Promise<{ empresas: Empresa[]; produtos: Produto[
   const empresas = (empresasRes.data ?? []) as Empresa[];
   const produtos = (produtosRes.data ?? []).map((p) => {
     const marca = Array.isArray(p.marcas) ? p.marcas[0] : p.marcas;
-    return { id: p.id, nome: p.nome, codigo: p.codigo, estoque: p.estoque, marca_id: p.marca_id, marca: marca?.nome ?? "", empresa_id: marca?.empresa_id ?? "" };
+    return { id: p.id, nome: p.nome, codigo: p.codigo, cod: p.cod, estoque: p.estoque, marca_id: p.marca_id, marca: marca?.nome ?? "", empresa_id: marca?.empresa_id ?? "" };
   });
   const produtoPorId = new Map(produtos.map((produto) => [produto.id, produto]));
   const itens = (itensRes.data ?? []).flatMap((item) => {
@@ -204,7 +204,7 @@ function CargaPlanejada({ carga, produtos, aberta, onToggle, onAtualizar }: { ca
       {aberta && <div className="border-t border-dashboard-amber/25 bg-background/25 p-5">
         <div className="mb-4"><label className="mb-2 block text-xs text-muted-foreground" htmlFor={`nome-${carga.id}`}>Nome do planejamento</label><Input id={`nome-${carga.id}`} value={nomeCarga} maxLength={120} onChange={(event) => setNomeCarga(event.target.value)} onBlur={salvarNome} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></div>
         <div className="grid gap-2">
-          {carga.itens.map((item) => <div key={item.id} className="grid gap-3 rounded-md border border-border bg-background/35 p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"><div><p className="font-medium text-foreground">{item.produto.nome}</p><p className="text-xs text-muted-foreground">{item.produto.marca} · {item.produto.codigo || "Sem código"} · disponível: {item.produto.estoque}</p></div><span className="font-display text-lg font-semibold text-dashboard-amber">{item.quantidade} un.</span><Button variant="ghost" size="icon" onClick={() => removerItem(item.id)} aria-label={`Remover ${item.produto.nome}`}><Trash2 className="h-4 w-4" /></Button></div>)}
+          {carga.itens.map((item) => <div key={item.id} className="grid gap-3 rounded-md border border-border bg-background/35 p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"><div><p className="font-medium text-foreground">{item.produto.nome}</p><p className="text-xs text-muted-foreground">{item.produto.marca} · SKU {item.produto.codigo || "—"} · COD {item.produto.cod || "—"} · disponível: {item.produto.estoque}</p></div><span className="font-display text-lg font-semibold text-dashboard-amber">{item.quantidade} un.</span><Button variant="ghost" size="icon" onClick={() => removerItem(item.id)} aria-label={`Remover ${item.produto.nome}`}><Trash2 className="h-4 w-4" /></Button></div>)}
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_110px_auto]">
           <select value={produtoId} onChange={(event) => setProdutoId(event.target.value)} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"><option value="" className="bg-background">Adicionar produto</option>{disponiveis.map((produto) => <option key={produto.id} value={produto.id} className="bg-background">{produto.marca} · {produto.nome} ({produto.estoque})</option>)}</select>

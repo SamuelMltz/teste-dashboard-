@@ -64,7 +64,7 @@ function MarcaEstoque() {
             <table className="hidden w-full text-left sm:table">
               <thead className="border-b border-border text-sm text-muted-foreground">
                 <tr>
-                  <th className="w-40 px-6 py-4 font-medium">Código</th>
+                  <th className="w-32 px-6 py-4 font-medium">SKU</th><th className="w-32 px-6 py-4 font-medium">COD</th>
                   <th className="px-6 py-4 font-medium">Produto</th>
                   <th className="px-6 py-4 text-right font-medium">Mínimo</th>
                   <th className="px-6 py-4 text-right font-medium">Em estoque</th>
@@ -75,7 +75,7 @@ function MarcaEstoque() {
                   const nivel = nivelEstoque(p);
                   return (
                     <tr key={`${p.codigo}-${p.nome}`} className="border-b border-border/70 last:border-0">
-                      <td className="px-6 py-5 font-mono text-sm text-muted-foreground">{p.codigo || "—"}</td>
+                      <td className="px-6 py-5 font-mono text-sm text-muted-foreground">{p.codigo || "—"}</td><td className="px-6 py-5 font-mono text-sm text-muted-foreground">{p.cod || "—"}</td>
                       <td className="px-6 py-5 font-medium text-foreground">{p.nome}</td>
                       <td className="px-6 py-5 text-right text-muted-foreground">{p.estoque_minimo.toLocaleString("pt-BR")}</td>
                       <td className={`px-6 py-5 text-right font-display text-lg font-bold ${nivel === "critico" ? "text-dashboard-red" : nivel === "atencao" ? "text-dashboard-amber" : "text-foreground"}`}>
@@ -92,7 +92,7 @@ function MarcaEstoque() {
                 return (
                   <article key={`${p.codigo}-${p.nome}`} className="p-5">
                     <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0"><p className="font-medium text-foreground">{p.nome}</p><p className="mt-1 font-mono text-xs text-muted-foreground">{p.codigo || "Sem código"}</p></div>
+                      <div className="min-w-0"><p className="font-medium text-foreground">{p.nome}</p><p className="mt-1 font-mono text-xs text-muted-foreground">SKU {p.codigo || "—"} · COD {p.cod || "—"}</p></div>
                       <span className={`inline-flex items-center gap-1 font-display text-xl font-bold ${nivel === "critico" ? "text-dashboard-red" : nivel === "atencao" ? "text-dashboard-amber" : "text-foreground"}`}>{nivel !== "normal" && <AlertTriangle className="h-4 w-4" />}{p.estoque.toLocaleString("pt-BR")}</span>
                     </div>
                     <p className="mt-3 text-xs text-muted-foreground">Mínimo: {p.estoque_minimo.toLocaleString("pt-BR")}</p>

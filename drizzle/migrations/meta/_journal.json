@@ -50,6 +50,13 @@
       "when": 1791289142908,
       "tag": "0006_admin_promote_users",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791289295012,
+      "tag": "0007_add_supplier_cod_to_products",
+      "breakpoints": true
     }
   ]
 }
