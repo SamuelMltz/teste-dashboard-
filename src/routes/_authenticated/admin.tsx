@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type Produto = { id: string; nome: string; codigo: string; estoque: number; estoque_minimo: number; ordem: number };
+type Produto = { id: string; nome: string; codigo: string; cod: string; estoque: number; estoque_minimo: number; ordem: number };
 type Marca = { id: string; nome: string; slug: string; ordem: number; produtos: Produto[] };
 type Empresa = { id: string; nome: string; accent: string; marcas: Marca[] };
 
@@ -58,7 +58,7 @@ function AdminPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("empresas")
-        .select("id, nome, accent, marcas(id, nome, slug, ordem, produtos(id, nome, codigo, estoque, estoque_minimo, ordem))")
+        .select("id, nome, accent, marcas(id, nome, slug, ordem, produtos(id, nome, codigo, cod, estoque, estoque_minimo, ordem))")
         .order("ordem");
       if (error) throw error;
       return (data as Empresa[]).map((empresa) => ({
@@ -272,6 +272,7 @@ function MarcaEditor({
   onToggle: () => void;
 }) {
   const [codigo, setCodigo] = useState("");
+  const [cod, setCod] = useState("");
   const [nome, setNome] = useState("");
   const [estoque, setEstoque] = useState("");
   const [estoqueMinimo, setEstoqueMinimo] = useState("");
@@ -283,6 +284,7 @@ function MarcaEditor({
     const { error } = await supabase.from("produtos").insert({
       marca_id: marca.id,
       codigo: codigo.trim(),
+      cod: cod.trim(),
       nome: nome.trim(),
       estoque: Number(estoque) || 0,
       estoque_minimo: Number(estoqueMinimo) || 0,
@@ -290,6 +292,7 @@ function MarcaEditor({
     });
     if (error) { toast.error("Não foi possível criar o produto."); return; }
     setCodigo("");
+    setCod("");
     setNome("");
     setEstoque("");
     setEstoqueMinimo("");
@@ -354,8 +357,9 @@ function MarcaEditor({
               </div>
             ))}
           </div>
-          <form onSubmit={addProduto} className="grid grid-cols-2 gap-2 px-3 pb-4 pt-3 sm:grid-cols-[110px_minmax(0,1fr)_105px_105px_44px] sm:px-5">
-            <Input className="h-10" placeholder="Código" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
+          <form onSubmit={addProduto} className="grid grid-cols-2 gap-2 px-3 pb-4 pt-3 sm:grid-cols-[100px_100px_minmax(0,1fr)_95px_95px_44px] sm:px-5">
+            <Input className="h-10" placeholder="SKU" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
+            <Input className="h-10" placeholder="COD" title="Código do fornecedor" value={cod} onChange={(e) => setCod(e.target.value)} />
             <Input className="h-10" placeholder="Novo produto" value={nome} onChange={(e) => setNome(e.target.value)} />
             <Input className="h-10" type="number" min={0} placeholder="Estoque" value={estoque} onChange={(e) => setEstoque(e.target.value)} />
             <Input className="h-10" type="number" min={0} placeholder="Mínimo" aria-label="Estoque mínimo" value={estoqueMinimo} onChange={(e) => setEstoqueMinimo(e.target.value)} />
