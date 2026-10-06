@@ -377,6 +377,18 @@ function ProdutoLinha({ produto, onChange, onDragStart }: { produto: Produto; on
   const [cod, setCod] = useState(produto.cod);
   const [estoque, setEstoque] = useState(String(produto.estoque));
   const [estoqueMinimo, setEstoqueMinimo] = useState(String(produto.estoque_minimo));
+  const [nome, setNome] = useState(produto.nome);
+
+  async function salvarNome() {
+    const valor = nome.trim();
+    if (!valor) { setNome(produto.nome); toast.error("O nome não pode ficar vazio."); return; }
+    if (valor === produto.nome) return;
+    const { error } = await supabase.from("produtos").update({ nome: valor }).eq("id", produto.id);
+    if (error) { setNome(produto.nome); toast.error("Não foi possível salvar o nome."); return; }
+    toast.success("Nome atualizado");
+    onChange();
+  }
+
 
   async function salvarCodigo() {
     const valor = codigo.trim();
@@ -445,7 +457,15 @@ function ProdutoLinha({ produto, onChange, onDragStart }: { produto: Produto; on
         onBlur={salvarCod}
         onKeyDown={(e) => e.key === "Enter" && salvarCod()}
       />
-      <span className="col-span-full flex h-9 min-w-0 items-center truncate rounded-md border border-input px-3 text-sm text-foreground sm:col-span-1">{produto.nome}</span>
+      <Input
+        className="col-span-full h-9 min-w-0 sm:col-span-1"
+        aria-label={`Nome de ${produto.nome}`}
+        value={nome}
+        maxLength={200}
+        onChange={(e) => setNome(e.target.value)}
+        onBlur={salvarNome}
+        onKeyDown={(e) => e.key === "Enter" && salvarNome()}
+      />
       <Input
         className="col-start-2 h-9 min-w-0 text-right sm:col-start-auto"
         type="number"
