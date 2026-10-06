@@ -72,7 +72,7 @@ function CampoProduto({ produtoId, campo, placeholder, onSalvo }: { produtoId: s
     const v = valor.trim();
     if (!v || salvando) return;
     setSalvando(true);
-    const { error } = await supabase.from("produtos").update({ [campo]: v }).eq("id", produtoId);
+    const { error } = await supabase.from("produtos").update(campo === "codigo" ? { codigo: v } : { nome: v }).eq("id", produtoId);
     setSalvando(false);
     if (error) { toast.error("Não foi possível salvar. Só administradores podem editar produtos."); return; }
     toast.success(campo === "codigo" ? "SKU salvo" : "Nome salvo");
