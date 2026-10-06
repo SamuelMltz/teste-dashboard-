@@ -236,10 +236,10 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
         )}
       </div>
 
-      {pendentes.length > 0 && data && doc && (
+      {pendentes[0] && data && doc && (() => { const atual = pendentes[0]; return (
         <NovoProdutoModal
-          key={pendentes[0].cod}
-          linha={pendentes[0]}
+          key={atual.cod}
+          linha={atual}
           restantes={pendentes.length - 1}
           tipo={tipo}
           empresa={doc.empresa}
@@ -247,7 +247,7 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
           produtos={data.produtos}
           onFechar={() => setPendentes((p) => p.slice(1))}
           onPronto={async (produto) => {
-            const ok = await somarItem(produto, pendentes[0].quantidade, doc.itens);
+            const ok = await somarItem(produto, atual.quantidade, doc.itens);
             if (ok) { await atualizar(); setPendentes((p) => p.slice(1)); }
           }}
         />
