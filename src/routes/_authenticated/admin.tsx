@@ -128,6 +128,7 @@ function AdminPage() {
           ))}
         </div>
 
+        {empresa && <DadosEmpresa key={`dados-${empresa.id}`} empresaId={empresa.id} />}
         {empresa && <EmpresaEditor key={empresa.id} empresa={empresa} onChange={recarregar} />}
 
         <ContasAdmin meuId={user.id} />
