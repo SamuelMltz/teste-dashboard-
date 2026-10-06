@@ -251,7 +251,7 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
             if (ok) { await atualizar(); setPendentes((p) => p.slice(1)); }
           }}
         />
-      )}
+      ); })()}
     </div>
   );
 }
