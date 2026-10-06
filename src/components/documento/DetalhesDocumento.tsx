@@ -65,6 +65,27 @@ async function carregar(tipo: Tipo, id: string): Promise<{ doc: Doc; produtos: P
   };
 }
 
+function CampoProduto({ produtoId, campo, placeholder, onSalvo }: { produtoId: string; campo: "codigo" | "nome"; placeholder: string; onSalvo: () => unknown }) {
+  const [valor, setValor] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  async function salvar() {
+    const v = valor.trim();
+    if (!v || salvando) return;
+    setSalvando(true);
+    const { error } = await supabase.from("produtos").update({ [campo]: v }).eq("id", produtoId);
+    setSalvando(false);
+    if (error) { toast.error("Não foi possível salvar. Só administradores podem editar produtos."); return; }
+    toast.success(campo === "codigo" ? "SKU salvo" : "Nome salvo");
+    await onSalvo();
+  }
+  return (
+    <div className="flex items-center gap-1">
+      <Input className="h-8 min-w-24 border-dashboard-amber/60" value={valor} placeholder={placeholder} aria-label={placeholder} maxLength={200} onChange={(e) => setValor(e.target.value)} onKeyDown={(e) => e.key === "Enter" && salvar()} />
+      <Button type="button" size="icon" variant="ghost" className="h-8 w-8" disabled={!valor.trim() || salvando} onClick={salvar} aria-label="Salvar"><Check className="h-4 w-4" /></Button>
+    </div>
+  );
+}
+
 export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
   const c = CFG[tipo];
   const queryClient = useQueryClient();
@@ -208,8 +229,9 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
                 <tbody>
                   {doc.itens.length === 0 ? <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Nenhum produto ainda.</td></tr> : doc.itens.map((i) => (
                     <tr key={i.id} className="border-t border-border text-foreground">
-                      <td className="px-4 py-3">{i.produto.cod || "—"}</td><td className="px-4 py-3">{i.produto.codigo || "—"}</td>
-                      <td className="px-4 py-3">{i.produto.nome}<span className="block text-xs text-muted-foreground">{i.produto.marca}</span></td>
+                      <td className="px-4 py-3">{i.produto.cod || "—"}</td>
+                      <td className="px-4 py-3">{i.produto.codigo ? i.produto.codigo : <CampoProduto key={`sku-${i.produto.id}`} produtoId={i.produto.id} campo="codigo" placeholder="Informar SKU" onSalvo={atualizar} />}</td>
+                      <td className="px-4 py-3">{i.produto.nome ? i.produto.nome : <CampoProduto key={`nome-${i.produto.id}`} produtoId={i.produto.id} campo="nome" placeholder="Informar nome" onSalvo={atualizar} />}<span className="block text-xs text-muted-foreground">{i.produto.marca}</span></td>
                       <td className={`px-4 py-3 font-semibold ${corTexto}`}>{i.quantidade}</td>
                       {editavel && <td className="px-2"><Button variant="ghost" size="icon" onClick={() => removerItem(i.id)} aria-label={`Remover ${i.produto.nome}`}><Trash2 className="h-4 w-4" /></Button></td>}
                     </tr>
