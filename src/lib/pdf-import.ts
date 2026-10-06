@@ -5,22 +5,37 @@ const QTD_BR = /^\d{1,3}(\.\d{3})*,\d{1,4}$|^\d+,\d{1,4}$/;
 const CODIGO = /^[A-Za-z0-9][A-Za-z0-9.\-/]{0,24}$/;
 
 export function interpretarLinhas(linhas: string[]): LinhaPdf[] {
-  const resultado: LinhaPdf[] = [];
-  for (const linha of linhas) {
+  type Linha = { cod: string; quantidade: number; desc: string } | null;
+  const analisadas: Linha[] = linhas.map((linha) => {
     const tokens = linha.trim().split(/\s+/).filter(Boolean);
-    if (tokens.length < 3) continue;
+    if (tokens.length < 2) return null;
     const cod = tokens[0];
-    if (!CODIGO.test(cod) || !/\d/.test(cod) || cod.includes(",")) continue;
-    const idx = tokens.findIndex((t, i) => i > 1 && QTD_BR.test(t));
-    if (idx < 0) continue;
-    let nomeTokens = tokens.slice(1, idx);
-    if (nomeTokens.length > 1 && /^[A-Z]{1,3}$/.test(nomeTokens[nomeTokens.length - 1])) nomeTokens = nomeTokens.slice(0, -1);
-    const nome = nomeTokens.join(" ").replace(/^[-–]\s*/, "");
-    if (nome.length < 3 || !/[A-Za-zÀ-ú]{2}/.test(nome)) continue;
+    if (!CODIGO.test(cod) || !/\d/.test(cod) || cod.includes(",")) return null;
+    const idx = tokens.findIndex((t, i) => i >= 1 && QTD_BR.test(t));
+    if (idx < 0) return null;
+    let desc = tokens.slice(1, idx);
+    if (desc.length && /^[A-Z]{1,3}$/.test(desc[desc.length - 1])) desc = desc.slice(0, -1);
     const quantidade = Math.round(Number(tokens[idx].replace(/\./g, "").replace(",", ".")));
-    if (!Number.isFinite(quantidade) || quantidade <= 0) continue;
-    resultado.push({ cod, nome, quantidade });
-  }
+    if (!Number.isFinite(quantidade) || quantidade <= 0) return null;
+    return { cod, quantidade, desc: desc.join(" ") };
+  });
+  const limpar = (s: string) => s.replace(/\s+\d+,\d+$/, "").replace(/\s+\d$/, "").trim();
+  const ignorar = /p[áa]gina|or[çc]amento|totais|c[óo]digo|descri[çc][ãa]o|:/i;
+  const indices = analisadas.flatMap((a, i) => (a ? [i] : []));
+  const resultado: LinhaPdf[] = indices.map((i, k) => {
+    const atual = analisadas[i]!;
+    const anterior = k > 0 ? indices[k - 1] : Math.max(-1, i - 2);
+    const proximo = k < indices.length - 1 ? indices[k + 1] : Math.min(linhas.length, i + 3);
+    const gapAntes = linhas.slice(anterior + 1, i);
+    const gapDepois = linhas.slice(i + 1, proximo);
+    const prefixo = k > 0 ? gapAntes.slice(Math.ceil(gapAntes.length / 2)) : gapAntes;
+    const sufixo = k < indices.length - 1 ? gapDepois.slice(0, Math.ceil(gapDepois.length / 2)) : gapDepois;
+    const partes = [...prefixo, atual.desc, ...sufixo]
+      .filter((l) => !ignorar.test(l))
+      .map(limpar)
+      .filter((l) => /[A-Za-zÀ-ú]{2}/.test(l));
+    return { cod: atual.cod, quantidade: atual.quantidade, nome: partes.join(" ").replace(/\s+/g, " ").trim() || `Produto ${atual.cod}` };
+  });
   // agrupa códigos repetidos
   const mapa = new Map<string, LinhaPdf>();
   for (const l of resultado) {
