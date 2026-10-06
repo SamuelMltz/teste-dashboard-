@@ -2,11 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Lock } from "lucide-react";
+import { ArrowLeft, KeyRound, Lock, Trash2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { excluirConta, trocarSenhaConta } from "@/lib/contas.functions";
 
 const SENHA_CONTAS = "7894";
 
@@ -77,6 +78,20 @@ function ListaContas({ meuId }: { meuId: string }) {
     qc.invalidateQueries({ queryKey: ["contas-admin"] });
   }
 
+  async function trocarSenha(id: string, email: string) {
+    const senha = prompt(`Nova senha para ${email} (mínimo 6 caracteres):`);
+    if (senha === null) return;
+    if (senha.length < 6) { toast.error("A senha precisa ter pelo menos 6 caracteres."); return; }
+    try { await trocarSenhaConta({ data: { userId: id, senha } }); toast.success("Senha trocada"); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Não foi possível trocar a senha."); }
+  }
+
+  async function excluir(id: string, email: string) {
+    if (!confirm(`Excluir a conta ${email}? Essa pessoa não poderá mais entrar.`)) return;
+    try { await excluirConta({ data: { userId: id } }); toast.success("Conta excluída"); qc.invalidateQueries({ queryKey: ["contas-admin"] }); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Não foi possível excluir a conta."); }
+  }
+
   if (contas.error) return <p className="mt-8 text-muted-foreground">Só administradores podem ver as contas.</p>;
 
   return (
@@ -87,11 +102,15 @@ function ListaContas({ meuId }: { meuId: string }) {
             <p className="truncate font-medium text-foreground">{c.email}{c.id === meuId ? " (você)" : ""}</p>
             <p className="text-xs text-muted-foreground">{c.is_admin ? "Administrador" : "Usuário comum"}</p>
           </div>
-          {c.is_admin ? (
-            <Button variant="outline" disabled={c.id === meuId} onClick={() => alterar(c.id, false)}>Remover administrador</Button>
-          ) : (
-            <Button className="gerenciar-primary" onClick={() => alterar(c.id, true)}>Tornar administrador</Button>
-          )}
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" className="gap-2" onClick={() => trocarSenha(c.id, c.email ?? "")}><KeyRound className="h-4 w-4" />Trocar senha</Button>
+            {c.is_admin ? (
+              <Button variant="outline" disabled={c.id === meuId} onClick={() => alterar(c.id, false)}>Remover administrador</Button>
+            ) : (
+              <Button className="gerenciar-primary" onClick={() => alterar(c.id, true)}>Tornar administrador</Button>
+            )}
+            {c.id !== meuId && <Button variant="ghost" size="icon" className="text-dashboard-red hover:text-dashboard-red" aria-label={`Excluir conta ${c.email}`} onClick={() => excluir(c.id, c.email ?? "")}><Trash2 className="h-4 w-4" /></Button>}
+          </div>
         </div>
       ))}
     </div>
