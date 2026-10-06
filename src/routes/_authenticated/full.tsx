@@ -54,6 +54,11 @@ async function carregarFull(): Promise<{ empresas: Empresa[]; produtos: Produto[
   return { empresas, produtos, cargas };
 }
 
+const SEP = " + ";
+function marcasDaEmpresa(produtos: Produto[], empresaId: string) {
+  return [...new Set(produtos.filter((p) => p.empresa_id === empresaId && p.marca).map((p) => p.marca))];
+}
+
 function codigo(numero: number) {
   return `#${String(numero).padStart(4, "0")}`;
 }
@@ -61,25 +66,26 @@ function codigo(numero: number) {
 function FullPage() {
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["full"], queryFn: carregarFull });
-  const [nome, setNome] = useState("");
+  const [marcasSel, setMarcasSel] = useState<string[]>([]);
   const [empresaId, setEmpresaId] = useState("");
   const [aberta, setAberta] = useState<string | null>(null);
   const [criando, setCriando] = useState(false);
+  const marcasNovas = useMemo(() => marcasDaEmpresa(data?.produtos ?? [], empresaId), [data, empresaId]);
 
   async function atualizar() {
     await queryClient.invalidateQueries({ queryKey: ["full"] });
   }
 
   async function criarCarga() {
-    if (!nome.trim() || !empresaId) { toast.error("Informe o nome e a empresa da carga."); return; }
+    if (!empresaId || marcasSel.length === 0) { toast.error("Escolha a empresa e pelo menos uma marca."); return; }
     setCriando(true);
     const { data: userData } = await supabase.auth.getUser();
     const user = userData.user;
     if (!user) { setCriando(false); toast.error("Sua sessão expirou."); return; }
-    const { data: carga, error } = await supabase.from("full_cargas").insert({ nome: nome.trim(), empresa_id: empresaId, created_by: user.id }).select("id").single();
+    const { data: carga, error } = await supabase.from("full_cargas").insert({ nome: marcasSel.join(SEP), empresa_id: empresaId, created_by: user.id }).select("id").single();
     setCriando(false);
     if (error) { toast.error("Não foi possível criar o planejamento."); return; }
-    setNome(""); setEmpresaId(""); setAberta(carga.id);
+    setMarcasSel([]); setEmpresaId(""); setAberta(carga.id);
     await atualizar();
     toast.success("Planejamento Full criado");
   }
@@ -103,12 +109,17 @@ function FullPage() {
 
         <section className="mt-8 border-y border-border py-6" aria-labelledby="nova-carga">
           <h2 id="nova-carga" className="font-display text-xl font-semibold text-foreground">Novo planejamento</h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(220px,0.7fr)_auto]">
-            <Input value={nome} onChange={(event) => setNome(event.target.value)} placeholder="Nome da carga" maxLength={120} />
-            <select value={empresaId} onChange={(event) => setEmpresaId(event.target.value)} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(220px,0.7fr)_minmax(0,1fr)_auto] sm:items-start">
+            <select value={empresaId} onChange={(event) => { setEmpresaId(event.target.value); setMarcasSel([]); }} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <option value="" className="bg-background">Selecione a empresa</option>
               {data?.empresas.map((empresa) => <option key={empresa.id} value={empresa.id} className="bg-background">{empresa.nome}</option>)}
             </select>
+            <div className="flex min-h-9 flex-wrap items-center gap-2">
+              {!empresaId ? <span className="text-sm text-muted-foreground">Escolha a empresa para ver as marcas</span> : marcasNovas.length === 0 ? <span className="text-sm text-muted-foreground">Essa empresa não tem produtos cadastrados</span> : marcasNovas.map((m) => {
+                const ativa = marcasSel.includes(m);
+                return <Button key={m} type="button" size="sm" variant="outline" aria-pressed={ativa} onClick={() => setMarcasSel(ativa ? marcasSel.filter((x) => x !== m) : [...marcasSel, m])} className={ativa ? "border-dashboard-amber bg-dashboard-amber/20 text-foreground" : "text-muted-foreground"}>{m}</Button>;
+              })}
+            </div>
             <Button onClick={criarCarga} disabled={criando} className="gerenciar-primary gap-2"><Plus className="h-4 w-4" />Criar Full</Button>
           </div>
         </section>
@@ -144,7 +155,20 @@ function CargaPlanejada({ carga, produtos, aberta, onToggle, onAtualizar }: { ca
   const [quantidade, setQuantidade] = useState("1");
   const [nomeCarga, setNomeCarga] = useState(carga.nome);
   const [ocupado, setOcupado] = useState(false);
-  const disponiveis = useMemo(() => produtos.filter((produto) => produto.empresa_id === carga.empresa_id && !carga.itens.some((item) => item.produto_id === produto.id)), [produtos, carga]);
+  const marcasEmpresa = useMemo(() => marcasDaEmpresa(produtos, carga.empresa_id), [produtos, carga.empresa_id]);
+  const marcasCarga = useMemo(() => carga.nome.split(SEP).map((m) => m.trim()).filter((m) => marcasEmpresa.includes(m)), [carga.nome, marcasEmpresa]);
+  const outrasMarcas = marcasEmpresa.filter((m) => !marcasCarga.includes(m));
+  const disponiveis = useMemo(() => produtos.filter((produto) => produto.empresa_id === carga.empresa_id && (marcasCarga.length === 0 || marcasCarga.includes(produto.marca)) && !carga.itens.some((item) => item.produto_id === produto.id)), [produtos, carga, marcasCarga]);
+
+  async function adicionarMarca(marca: string) {
+    if (!marca) return;
+    const novo = [...marcasCarga, marca].join(SEP);
+    const { error } = await supabase.from("full_cargas").update({ nome: novo }).eq("id", carga.id);
+    if (error) { toast.error("Não foi possível adicionar a marca."); return; }
+    setNomeCarga(novo);
+    toast.success(`Marca ${marca} adicionada`);
+    await onAtualizar();
+  }
   const total = carga.itens.reduce((soma, item) => soma + item.quantidade, 0);
 
   async function adicionar() {
@@ -203,7 +227,13 @@ function CargaPlanejada({ carga, produtos, aberta, onToggle, onAtualizar }: { ca
         <Button variant="ghost" size="icon" onClick={excluir} aria-label="Excluir planejamento" className="text-dashboard-red hover:text-dashboard-red"><Trash2 className="h-5 w-5" /></Button>
       </div>
       {aberta && <div className="border-t border-dashboard-amber/25 bg-background/25 p-5">
-        <div className="mb-4"><label className="mb-2 block text-xs text-muted-foreground" htmlFor={`nome-${carga.id}`}>Nome do planejamento</label><Input id={`nome-${carga.id}`} value={nomeCarga} maxLength={120} onChange={(event) => setNomeCarga(event.target.value)} onBlur={salvarNome} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></div>
+        <div className="mb-4">
+          <p className="mb-2 text-xs text-muted-foreground">Marcas deste Full</p>
+          <div className="flex flex-wrap gap-2">
+            {marcasCarga.map((m) => <span key={m} className="rounded-full border border-dashboard-amber/55 px-3 py-1 text-sm text-foreground">{m}</span>)}
+            {outrasMarcas.length > 0 && <select value="" onChange={(event) => adicionarMarca(event.target.value)} className="h-8 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"><option value="" className="bg-background">+ Adicionar marca</option>{outrasMarcas.map((m) => <option key={m} value={m} className="bg-background">{m}</option>)}</select>}
+          </div>
+        </div>
         <div className="grid gap-2">
           {carga.itens.map((item) => <div key={item.id} className="grid gap-3 rounded-md border border-border bg-background/35 p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"><div><p className="font-medium text-foreground">{item.produto.nome}</p><p className="text-xs text-muted-foreground">{item.produto.marca} · SKU {item.produto.codigo || "—"} · COD {item.produto.cod || "—"} · disponível: {item.produto.estoque}</p></div><span className="font-display text-lg font-semibold text-dashboard-amber">{item.quantidade} un.</span><Button variant="ghost" size="icon" onClick={() => removerItem(item.id)} aria-label={`Remover ${item.produto.nome}`}><Trash2 className="h-4 w-4" /></Button></div>)}
         </div>
