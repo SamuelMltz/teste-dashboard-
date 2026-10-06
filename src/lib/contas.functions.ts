@@ -34,7 +34,7 @@ export const excluirConta = createServerFn({ method: "POST" })
     if (data.userId === context.userId) throw new Error("Você não pode excluir a sua própria conta.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.from("user_roles").delete().eq("user_id", data.userId);
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId, true);
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
     if (error) throw new Error("Não foi possível excluir a conta.");
     return { ok: true };
   });
