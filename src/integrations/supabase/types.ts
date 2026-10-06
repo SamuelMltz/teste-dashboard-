@@ -17,7 +17,9 @@ export type Database = {
       empresas: {
         Row: {
           accent: string
+          cnpj: string
           created_at: string
+          endereco: string
           id: string
           nome: string
           ordem: number
@@ -25,7 +27,9 @@ export type Database = {
         }
         Insert: {
           accent?: string
+          cnpj?: string
           created_at?: string
+          endereco?: string
           id?: string
           nome: string
           ordem?: number
@@ -33,7 +37,9 @@ export type Database = {
         }
         Update: {
           accent?: string
+          cnpj?: string
           created_at?: string
+          endereco?: string
           id?: string
           nome?: string
           ordem?: number
