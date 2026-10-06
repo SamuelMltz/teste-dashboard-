@@ -13,7 +13,7 @@ describe("interpretarLinhas", () => {
       "BIVOLT IP20 5",
     ]);
     expect(r.map((l) => [l.cod, l.quantidade])).toEqual([["1133", 300], ["9366", 1000]]);
-    expect(r[0].nome).toBe("FITA COB DETAIL 9W/M 2700K 12V 5MT 900 LÚMENS/M IP20");
+    expect(r[0]?.nome).toBe("FITA COB DETAIL 9W/M 2700K 12V 5MT 900 LÚMENS/M IP20");
   });
   it("soma códigos repetidos", () => {
     const r = interpretarLinhas(["477 FITA ATUS PC 50,00", "477 FITA ATUS PC 25,00"]);

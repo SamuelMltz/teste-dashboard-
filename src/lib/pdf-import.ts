@@ -9,13 +9,13 @@ export function interpretarLinhas(linhas: string[]): LinhaPdf[] {
   const analisadas: Linha[] = linhas.map((linha) => {
     const tokens = linha.trim().split(/\s+/).filter(Boolean);
     if (tokens.length < 2) return null;
-    const cod = tokens[0];
+    const cod = tokens[0] ?? "";
     if (!CODIGO.test(cod) || !/\d/.test(cod) || cod.includes(",")) return null;
     const idx = tokens.findIndex((t, i) => i >= 1 && QTD_BR.test(t));
     if (idx < 0) return null;
     let desc = tokens.slice(1, idx);
-    if (desc.length && /^[A-Z]{1,3}$/.test(desc[desc.length - 1])) desc = desc.slice(0, -1);
-    const quantidade = Math.round(Number(tokens[idx].replace(/\./g, "").replace(",", ".")));
+    if (desc.length && /^[A-Z]{1,3}$/.test(desc[desc.length - 1] ?? "")) desc = desc.slice(0, -1);
+    const quantidade = Math.round(Number((tokens[idx] ?? "").replace(/\./g, "").replace(",", ".")));
     if (!Number.isFinite(quantidade) || quantidade <= 0) return null;
     return { cod, quantidade, desc: desc.join(" ") };
   });
