@@ -369,6 +369,7 @@ function MarcaEditor({
 
 function ProdutoLinha({ produto, onChange, onDragStart }: { produto: Produto; onChange: () => void; onDragStart: () => void }) {
   const [codigo, setCodigo] = useState(produto.codigo);
+  const [cod, setCod] = useState(produto.cod);
   const [estoque, setEstoque] = useState(String(produto.estoque));
   const [estoqueMinimo, setEstoqueMinimo] = useState(String(produto.estoque_minimo));
 
@@ -376,8 +377,17 @@ function ProdutoLinha({ produto, onChange, onDragStart }: { produto: Produto; on
     const valor = codigo.trim();
     if (valor === produto.codigo) return;
     const { error } = await supabase.from("produtos").update({ codigo: valor }).eq("id", produto.id);
-    if (error) { toast.error("Não foi possível salvar o código."); return; }
-    toast.success("Código atualizado");
+    if (error) { toast.error("Não foi possível salvar o SKU."); return; }
+    toast.success("SKU atualizado");
+    onChange();
+  }
+
+  async function salvarCod() {
+    const valor = cod.trim();
+    if (valor === produto.cod) return;
+    const { error } = await supabase.from("produtos").update({ cod: valor }).eq("id", produto.id);
+    if (error) { toast.error("Não foi possível salvar o COD."); return; }
+    toast.success("COD atualizado");
     onChange();
   }
 
@@ -407,20 +417,30 @@ function ProdutoLinha({ produto, onChange, onDragStart }: { produto: Produto; on
   }
 
   return (
-    <div className="grid grid-cols-[32px_minmax(0,0.8fr)_minmax(0,2fr)_44px] items-center gap-2 sm:grid-cols-[32px_110px_minmax(0,1fr)_105px_105px_36px]">
+    <div className="grid grid-cols-[32px_minmax(0,1fr)_minmax(0,1fr)_44px] items-center gap-2 sm:grid-cols-[32px_100px_100px_minmax(0,1fr)_95px_95px_36px]">
       <Button variant="ghost" size="icon" draggable onDragStart={onDragStart} aria-label={`Arrastar produto ${produto.nome}`} title="Arrastar para reordenar" className="h-9 w-8 text-muted-foreground">
         <GripVertical className="h-4 w-4" />
       </Button>
       <Input
         className="h-9 min-w-0 font-mono"
-        aria-label={`Código de ${produto.nome}`}
-        placeholder="Código"
+        aria-label={`SKU de ${produto.nome}`}
+        placeholder="SKU"
         value={codigo}
         onChange={(e) => setCodigo(e.target.value)}
         onBlur={salvarCodigo}
         onKeyDown={(e) => e.key === "Enter" && salvarCodigo()}
       />
-      <span className="flex h-9 min-w-0 items-center truncate rounded-md border border-input px-3 text-sm text-foreground">{produto.nome}</span>
+      <Input
+        className="h-9 min-w-0 font-mono"
+        aria-label={`COD de ${produto.nome}`}
+        title="Código do fornecedor"
+        placeholder="COD"
+        value={cod}
+        onChange={(e) => setCod(e.target.value)}
+        onBlur={salvarCod}
+        onKeyDown={(e) => e.key === "Enter" && salvarCod()}
+      />
+      <span className="col-span-full flex h-9 min-w-0 items-center truncate rounded-md border border-input px-3 text-sm text-foreground sm:col-span-1">{produto.nome}</span>
       <Input
         className="col-start-2 h-9 min-w-0 text-right sm:col-start-auto"
         type="number"
