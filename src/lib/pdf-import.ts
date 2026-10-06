@@ -24,8 +24,8 @@ export function interpretarLinhas(linhas: string[]): LinhaPdf[] {
   const indices = analisadas.flatMap((a, i) => (a ? [i] : []));
   const resultado: LinhaPdf[] = indices.map((i, k) => {
     const atual = analisadas[i]!;
-    const anterior = k > 0 ? indices[k - 1] : Math.max(-1, i - 2);
-    const proximo = k < indices.length - 1 ? indices[k + 1] : Math.min(linhas.length, i + 3);
+    const anterior = k > 0 ? (indices[k - 1] ?? -1) : Math.max(-1, i - 2);
+    const proximo = k < indices.length - 1 ? (indices[k + 1] ?? linhas.length) : Math.min(linhas.length, i + 3);
     const gapAntes = linhas.slice(anterior + 1, i);
     const gapDepois = linhas.slice(i + 1, proximo);
     const prefixo = k > 0 ? gapAntes.slice(Math.ceil(gapAntes.length / 2)) : gapAntes;
