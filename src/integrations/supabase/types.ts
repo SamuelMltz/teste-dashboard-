@@ -247,6 +247,7 @@ export type Database = {
       }
       produtos: {
         Row: {
+          cod: string
           codigo: string
           created_at: string
           estoque: number
@@ -257,6 +258,7 @@ export type Database = {
           ordem: number
         }
         Insert: {
+          cod?: string
           codigo?: string
           created_at?: string
           estoque?: number
@@ -267,6 +269,7 @@ export type Database = {
           ordem?: number
         }
         Update: {
+          cod?: string
           codigo?: string
           created_at?: string
           estoque?: number
