@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, ChevronDown, GripVertical, Package, Plus, Search, Trash2 } from "lucide-react";
 
@@ -468,5 +468,27 @@ function ProdutoLinha({ produto, onChange, onDragStart }: { produto: Produto; on
       />
       <Button variant="ghost" size="icon" onClick={apagar} aria-label="Apagar produto" className="col-start-4 h-9 w-9 sm:col-start-auto"><Trash2 className="h-4 w-4" /></Button>
     </div>
+  );
+}
+
+function DadosEmpresa({ empresaId }: { empresaId: string }) {
+  const [endereco, setEndereco] = useState("");
+  const [cnpj, setCnpj] = useState("");
+  const [carregado, setCarregado] = useState(false);
+  useEffect(() => {
+    supabase.from("empresas").select("endereco, cnpj").eq("id", empresaId).single().then(({ data }) => {
+      setEndereco(data?.endereco ?? ""); setCnpj(data?.cnpj ?? ""); setCarregado(true);
+    });
+  }, [empresaId]);
+  async function salvar() {
+    const { error } = await supabase.from("empresas").update({ endereco: endereco.trim(), cnpj: cnpj.trim() }).eq("id", empresaId);
+    if (error) toast.error("Não foi possível salvar os dados da empresa."); else toast.success("Dados da empresa salvos");
+  }
+  return (
+    <section className="mt-6 grid gap-3 rounded-md border border-border bg-background/30 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end" aria-label="Dados da empresa">
+      <label className="grid gap-1 text-xs text-muted-foreground">Endereço<Input value={endereco} disabled={!carregado} onChange={(e) => setEndereco(e.target.value)} placeholder="Rua, número, bairro, cidade/UF" /></label>
+      <label className="grid gap-1 text-xs text-muted-foreground">CNPJ<Input value={cnpj} disabled={!carregado} onChange={(e) => setCnpj(e.target.value)} placeholder="00.000.000/0000-00" /></label>
+      <Button onClick={salvar} disabled={!carregado} className="gerenciar-primary">Salvar dados</Button>
+    </section>
   );
 }
