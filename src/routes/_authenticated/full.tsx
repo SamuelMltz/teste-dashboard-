@@ -1,113 +1,94 @@
-import { useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, ChevronDown, Package, Plus, Send, Trash2, Truck, FileText } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, FileText, Package, Plus, Trash2, Truck } from "lucide-react";
 import { toast } from "sonner";
 
+import { BotaoImportarPdf } from "@/components/documento/BotaoImportarPdf";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "@tanstack/react-router";
+import { avaliarPrazoFull } from "@/lib/full-prazos";
 import { useEmpresaObrigatoria } from "@/lib/use-empresa-obrigatoria";
 import { criarDocumentoPorPdf } from "@/lib/importar-documento";
-import { AdicionarProdutoModal } from "@/components/documento/ProdutoModais";
-import { BotaoImportarPdf } from "@/components/documento/BotaoImportarPdf";
 
-type Empresa = { id: string; nome: string };
-type Produto = { id: string; nome: string; codigo: string; cod: string; estoque: number; marca_id: string; marca: string; empresa_id: string };
-type Item = { id: string; carga_id: string; produto_id: string; quantidade: number; produto: Produto };
-type Carga = { id: string; numero: number; nome: string; empresa_id: string; empresa: string; status: "planejada" | "confirmada"; created_at: string; confirmed_at: string | null; itens: Item[] };
+type Carga = {
+  id: string;
+  numero: number;
+  nome: string;
+  empresa_id: string;
+  status: "planejada" | "confirmada";
+  frete_ml: string | null;
+  data_prevista: string | null;
+  confirmed_at: string | null;
+  itens: { quantidade: number }[];
+};
 
 export const Route = createFileRoute("/_authenticated/full")({
-  head: () => ({
-    meta: [
-      { title: "Full — Planejamento de entregas" },
-      { name: "description", content: "Planeje cargas Full e confirme a baixa dos produtos no estoque." },
-      { property: "og:title", content: "Full — Planejamento de entregas" },
-      { property: "og:description", content: "Planeje cargas Full e confirme a baixa dos produtos no estoque." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  head: () => ({ meta: [
+    { title: "Full — Planejamento de entregas" },
+    { name: "description", content: "Planeje cargas Full e confirme a baixa dos produtos no estoque." },
+    { property: "og:title", content: "Full — Planejamento de entregas" },
+    { property: "og:description", content: "Planeje cargas Full e confirme a baixa dos produtos no estoque." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: FullPage,
 });
 
-async function carregarFull(): Promise<{ empresas: Empresa[]; produtos: Produto[]; cargas: Carga[] }> {
-  const [empresasRes, produtosRes, cargasRes, itensRes] = await Promise.all([
-    supabase.from("empresas").select("id, nome").order("ordem"),
-    supabase.from("produtos").select("id, nome, codigo, cod, estoque, marca_id, marcas!inner(nome, empresa_id)").order("ordem"),
-    supabase.from("full_cargas").select("id, numero, nome, empresa_id, status, created_at, confirmed_at, empresas(nome)").order("created_at", { ascending: false }),
-    supabase.from("full_itens").select("id, carga_id, produto_id, quantidade"),
-  ]);
-  const erro = empresasRes.error ?? produtosRes.error ?? cargasRes.error ?? itensRes.error;
-  if (erro) throw erro;
+const codigo = (numero: number) => `#${String(numero).padStart(4, "0")}`;
 
-  const empresas = (empresasRes.data ?? []) as Empresa[];
-  const produtos = (produtosRes.data ?? []).map((p) => {
-    const marca = Array.isArray(p.marcas) ? p.marcas[0] : p.marcas;
-    return { id: p.id, nome: p.nome, codigo: p.codigo, cod: p.cod, estoque: p.estoque, marca_id: p.marca_id, marca: marca?.nome ?? "", empresa_id: marca?.empresa_id ?? "" };
-  });
-  const produtoPorId = new Map(produtos.map((produto) => [produto.id, produto]));
-  const itens = (itensRes.data ?? []).flatMap((item) => {
-    const produto = produtoPorId.get(item.produto_id);
-    return produto ? [{ ...item, produto }] : [];
-  });
-  const cargas = (cargasRes.data ?? []).map((carga) => {
-    const empresa = Array.isArray(carga.empresas) ? carga.empresas[0] : carga.empresas;
-    return { ...carga, empresa: empresa?.nome ?? "", itens: itens.filter((item) => item.carga_id === carga.id) } as Carga;
-  });
-  return { empresas, produtos, cargas };
-}
-
-const SEP = " + ";
-function marcasDaEmpresa(produtos: Produto[], empresaId: string) {
-  return [...new Set(produtos.filter((p) => p.empresa_id === empresaId && p.marca).map((p) => p.marca))];
-}
-
-function codigo(numero: number) {
-  return `#${String(numero).padStart(4, "0")}`;
+async function carregarFull(): Promise<Carga[]> {
+  const { data, error } = await supabase
+    .from("full_cargas")
+    .select("id, numero, nome, empresa_id, status, frete_ml, data_prevista, confirmed_at, full_itens(quantidade)")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((carga) => ({ ...carga, itens: carga.full_itens ?? [] }));
 }
 
 function FullPage() {
-  const queryClient = useQueryClient();
-  const { data, isLoading } = useQuery({ queryKey: ["full"], queryFn: carregarFull });
-  const [marcasSel, setMarcasSel] = useState<string[]>([]);
   const empresaAtual = useEmpresaObrigatoria();
-  const navigate = useNavigate();
   const empresaId = empresaAtual?.id ?? "";
-  const [aberta, setAberta] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { data = [], isLoading } = useQuery({ queryKey: ["full", empresaId], queryFn: carregarFull });
+  const [nome, setNome] = useState("");
   const [criando, setCriando] = useState(false);
-  const marcasNovas = useMemo(() => marcasDaEmpresa(data?.produtos ?? [], empresaId), [data, empresaId]);
 
-  async function atualizar() {
-    await queryClient.invalidateQueries({ queryKey: ["full"] });
-  }
+  const atualizar = () => queryClient.invalidateQueries({ queryKey: ["full"] });
+  const planejadas = data.filter((carga) => carga.empresa_id === empresaId && carga.status === "planejada");
+  const confirmadas = data.filter((carga) => carga.empresa_id === empresaId && carga.status === "confirmada");
 
   async function criarCarga() {
-    if (!empresaId || marcasSel.length === 0) { toast.error("Escolha a empresa e pelo menos uma marca."); return; }
+    if (!empresaAtual) return;
     setCriando(true);
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData.user;
-    if (!user) { setCriando(false); toast.error("Sua sessão expirou."); return; }
-    const { data: carga, error } = await supabase.from("full_cargas").insert({ nome: marcasSel.join(SEP), empresa_id: empresaId, created_by: user.id }).select("id").single();
+    const { data: usuario } = await supabase.auth.getUser();
+    if (!usuario.user) { setCriando(false); toast.error("Sua sessão expirou."); return; }
+    const { data: carga, error } = await supabase.from("full_cargas").insert({
+      nome: nome.trim() || "Novo Full",
+      empresa_id: empresaAtual.id,
+      created_by: usuario.user.id,
+    }).select("id").single();
     setCriando(false);
-    if (error) { toast.error("Não foi possível criar o planejamento."); return; }
-    setMarcasSel([]); setAberta(carga.id);
+    if (error) { toast.error("Não foi possível criar o Full."); return; }
+    setNome("");
     await atualizar();
-    toast.success("Planejamento Full criado");
+    navigate({ to: "/full/$id", params: { id: carga.id } });
   }
 
-  const planejadas = data?.cargas.filter((carga) => carga.empresa_id === empresaId && carga.status === "planejada") ?? [];
-  const confirmadas = data?.cargas.filter((carga) => carga.empresa_id === empresaId && carga.status === "confirmada") ?? [];
+  async function excluir(id: string, numero: number) {
+    if (!confirm(`Excluir o planejamento ${codigo(numero)}?`)) return;
+    const { error } = await supabase.from("full_cargas").delete().eq("id", id);
+    if (error) toast.error("Não foi possível excluir o planejamento.");
+    else { await atualizar(); toast.success("Planejamento excluído"); }
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-estoque-canvas">
       <div className="pointer-events-none absolute inset-0 bg-gerenciar-atmosphere" aria-hidden="true" />
       <div className="relative mx-auto max-w-7xl px-5 py-7 sm:px-8 sm:py-9 lg:px-12 lg:py-10">
-        <Button variant="ghost" asChild className="group -ml-3 gap-2 text-muted-foreground hover:text-foreground">
-          <Link to="/"><ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />Voltar ao início</Link>
-        </Button>
-
+        <Button variant="ghost" asChild className="group -ml-3 gap-2 text-muted-foreground hover:text-foreground"><Link to="/"><ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />Voltar ao início</Link></Button>
         <header className="mt-7 flex items-center gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-dashboard-amber-icon text-foreground shadow-dashboard-amber"><Truck className="h-9 w-9" /></div>
           <div><h1 className="font-display text-4xl font-bold text-foreground sm:text-5xl">Full</h1><p className="mt-1 text-muted-foreground">Planeje as cargas antes de confirmar o envio.</p></div>
@@ -116,124 +97,40 @@ function FullPage() {
 
         <section className="mt-8 border-y border-border py-6" aria-labelledby="nova-carga">
           <h2 id="nova-carga" className="font-display text-xl font-semibold text-foreground">Novo planejamento</h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(160px,0.4fr)_minmax(0,1fr)_auto_auto] sm:items-start">
-            <p className="flex h-9 items-center text-sm text-muted-foreground">{empresaAtual?.nome} · escolha as marcas:</p>
-            <div className="flex min-h-9 flex-wrap items-center gap-2">
-              {!empresaId ? <span className="text-sm text-muted-foreground">Escolha a empresa para ver as marcas</span> : marcasNovas.length === 0 ? <span className="text-sm text-muted-foreground">Essa empresa não tem produtos cadastrados</span> : marcasNovas.map((m) => {
-                const ativa = marcasSel.includes(m);
-                return <Button key={m} type="button" size="sm" variant="outline" aria-pressed={ativa} onClick={() => setMarcasSel(ativa ? marcasSel.filter((x) => x !== m) : [...marcasSel, m])} className={ativa ? "border-dashboard-amber bg-dashboard-amber/20 text-foreground" : "text-muted-foreground"}>{m}</Button>;
-              })}
-            </div>
-            <Button onClick={criarCarga} disabled={criando} className="gerenciar-primary gap-2"><Plus className="h-4 w-4" />Criar Full</Button>
-            {empresaAtual && <BotaoImportarPdf rotulo="Importar PDF" onArquivo={async (f) => { const id = await criarDocumentoPorPdf("full", f, empresaAtual); if (id) { await atualizar(); navigate({ to: "/full/$id", params: { id } }); } }} />}
+          <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(160px,0.4fr)_minmax(0,1fr)_auto_auto] sm:items-center">
+            <p className="text-sm text-muted-foreground">{empresaAtual?.nome}</p>
+            <Input value={nome} onChange={(event) => setNome(event.target.value)} placeholder="Nome do Full (opcional)" maxLength={120} />
+            <Button onClick={criarCarga} disabled={criando || !empresaId} className="gerenciar-primary gap-2"><Plus className="h-4 w-4" />Criar Full</Button>
+            {empresaAtual && <BotaoImportarPdf rotulo="Importar PDF" onArquivo={async (arquivo) => { const id = await criarDocumentoPorPdf("full", arquivo, empresaAtual); if (id) { await atualizar(); navigate({ to: "/full/$id", params: { id } }); } }} />}
           </div>
         </section>
 
-        <section className="mt-8" aria-labelledby="planejamentos">
-          <div className="flex items-end justify-between"><div><h2 id="planejamentos" className="font-display text-2xl font-semibold text-foreground">Planejamentos</h2><p className="text-sm text-muted-foreground">{planejadas.length} {planejadas.length === 1 ? "carga em preparação" : "cargas em preparação"}</p></div></div>
-          <div className="mt-4 grid gap-4">
-            {isLoading ? <p className="py-10 text-muted-foreground">Carregando planejamentos…</p> : planejadas.length === 0 ? <div className="rounded-md border border-dashed border-border p-10 text-center text-muted-foreground">Nenhum planejamento em aberto.</div> : planejadas.map((carga) => (
-              <CargaPlanejada key={carga.id} carga={carga} produtos={data?.produtos ?? []} aberta={aberta === carga.id} onToggle={() => setAberta(aberta === carga.id ? null : carga.id)} onAtualizar={atualizar} />
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-10 border-t border-border pt-8" aria-labelledby="historico">
-          <h2 id="historico" className="font-display text-2xl font-semibold text-foreground">Histórico de envios</h2>
-          <div className="mt-4 grid gap-3">
-            {confirmadas.length === 0 ? <p className="text-sm text-muted-foreground">Nenhuma carga foi enviada ainda.</p> : confirmadas.map((carga) => (
-              <article key={carga.id} className="grid gap-3 rounded-md border border-dashboard-green/35 bg-dashboard-green-soft p-5 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-dashboard-green-icon text-foreground"><Check className="h-5 w-5" /></div>
-                <div><p className="font-display text-lg font-semibold text-foreground">{codigo(carga.numero)} · {carga.nome}</p><p className="text-sm text-muted-foreground">{carga.empresa} · {carga.itens.length} {carga.itens.length === 1 ? "produto" : "produtos"}</p></div>
-                <p className="text-sm text-dashboard-green">Enviado em {carga.confirmed_at ? new Date(carga.confirmed_at).toLocaleDateString("pt-BR") : "—"}</p>
-              </article>
-            ))}
-          </div>
-        </section>
+        <Lista titulo="Planejamentos" vazio="Nenhum planejamento em aberto." cargas={planejadas} carregando={isLoading} editavel onExcluir={excluir} />
+        <Lista titulo="Histórico de envios" vazio="Nenhuma carga foi enviada ainda." cargas={confirmadas} />
       </div>
     </div>
   );
 }
 
-function CargaPlanejada({ carga, produtos, aberta, onToggle, onAtualizar }: { carga: Carga; produtos: Produto[]; aberta: boolean; onToggle: () => void; onAtualizar: () => Promise<void> }) {
-  const [adicionando, setAdicionando] = useState(false);
-  const [nomeCarga, setNomeCarga] = useState(carga.nome);
-  const [ocupado, setOcupado] = useState(false);
-  const marcasEmpresa = useMemo(() => marcasDaEmpresa(produtos, carga.empresa_id), [produtos, carga.empresa_id]);
-  const marcasCarga = useMemo(() => carga.nome.split(SEP).map((m) => m.trim()).filter((m) => marcasEmpresa.includes(m)), [carga.nome, marcasEmpresa]);
-  const outrasMarcas = marcasEmpresa.filter((m) => !marcasCarga.includes(m));
-  const disponiveis = useMemo(() => produtos.filter((produto) => produto.empresa_id === carga.empresa_id && (marcasCarga.length === 0 || marcasCarga.includes(produto.marca)) && !carga.itens.some((item) => item.produto_id === produto.id)), [produtos, carga, marcasCarga]);
-
-  async function adicionarMarca(marca: string) {
-    if (!marca) return;
-    const novo = [...marcasCarga, marca].join(SEP);
-    const { error } = await supabase.from("full_cargas").update({ nome: novo }).eq("id", carga.id);
-    if (error) { toast.error("Não foi possível adicionar a marca."); return; }
-    setNomeCarga(novo);
-    toast.success(`Marca ${marca} adicionada`);
-    await onAtualizar();
-  }
-  const total = carga.itens.reduce((soma, item) => soma + item.quantidade, 0);
-
-
-  async function removerItem(id: string) {
-    const { error } = await supabase.from("full_itens").delete().eq("id", id);
-    if (error) { toast.error("Não foi possível remover o produto."); return; }
-    await onAtualizar();
-  }
-
-  async function salvarNome() {
-    const valor = nomeCarga.trim();
-    if (!valor) { setNomeCarga(carga.nome); toast.error("O nome da carga não pode ficar vazio."); return; }
-    if (valor === carga.nome) return;
-    const { error } = await supabase.from("full_cargas").update({ nome: valor }).eq("id", carga.id);
-    if (error) { setNomeCarga(carga.nome); toast.error("Não foi possível alterar o nome."); return; }
-    await onAtualizar();
-    toast.success("Nome da carga atualizado");
-  }
-
-  async function excluir() {
-    if (!confirm(`Excluir o planejamento ${codigo(carga.numero)}?`)) return;
-    const { error } = await supabase.from("full_cargas").delete().eq("id", carga.id);
-    if (error) { toast.error("Não foi possível excluir o planejamento."); return; }
-    await onAtualizar(); toast.success("Planejamento excluído");
-  }
-
-  async function confirmar() {
-    if (!carga.itens.length) { toast.error("Adicione ao menos um produto."); return; }
-    if (!confirm(`Confirmar o envio de ${total} unidades? O estoque será atualizado e esta ação não poderá ser desfeita.`)) return;
-    setOcupado(true);
-    const { error } = await supabase.rpc("confirmar_carga_full", { _carga_id: carga.id });
-    setOcupado(false);
-    if (error) { toast.error(error.message); return; }
-    await onAtualizar();
-    toast.success("Carga enviada e estoque atualizado");
-  }
-
+function Lista({ titulo, vazio, cargas, carregando = false, editavel = false, onExcluir }: { titulo: string; vazio: string; cargas: Carga[]; carregando?: boolean; editavel?: boolean; onExcluir?: (id: string, numero: number) => void }) {
   return (
-    <article className="overflow-hidden rounded-md border border-dashboard-amber/45 bg-dashboard-amber-soft">
-      <div className="flex items-center gap-3 p-5">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-dashboard-amber-icon text-foreground"><Truck className="h-6 w-6" /></div>
-        <Button type="button" variant="ghost" onClick={onToggle} className="h-auto min-w-0 flex-1 justify-start p-0 text-left hover:bg-transparent"><span><span className="block font-display text-lg font-semibold text-foreground">{codigo(carga.numero)} · {carga.nome}</span><span className="block text-sm font-normal text-muted-foreground">{carga.empresa} · {carga.itens.length} {carga.itens.length === 1 ? "produto" : "produtos"} · {total} unidades</span></span></Button>
-        <Button variant="ghost" size="icon" onClick={onToggle} aria-label={aberta ? "Recolher carga" : "Abrir carga"}><ChevronDown className={`h-5 w-5 transition-transform ${aberta ? "rotate-180" : ""}`} /></Button>
-        <Button variant="outline" size="sm" asChild className="gap-2"><Link to="/full/$id" params={{ id: carga.id }}><FileText className="h-4 w-4" />Detalhes</Link></Button>
-        <Button variant="ghost" size="icon" onClick={excluir} aria-label="Excluir planejamento" className="text-dashboard-red hover:text-dashboard-red"><Trash2 className="h-5 w-5" /></Button>
+    <section className="mt-9 border-t border-border pt-8 first:border-0" aria-label={titulo}>
+      <h2 className="font-display text-2xl font-semibold text-foreground">{titulo}</h2>
+      <p className="text-sm text-muted-foreground">{cargas.length} {cargas.length === 1 ? "registro" : "registros"}</p>
+      <div className="mt-4 grid gap-3">
+        {carregando ? <p className="py-10 text-muted-foreground">Carregando…</p> : cargas.length === 0 ? <div className="rounded-md border border-dashed border-border p-10 text-center text-muted-foreground">{vazio}</div> : cargas.map((carga) => {
+          const total = carga.itens.reduce((soma, item) => soma + item.quantidade, 0);
+          const prazo = carga.data_prevista ? avaliarPrazoFull(carga.data_prevista) : null;
+          return <article key={carga.id} className={`flex items-center gap-3 rounded-md border p-3 ${editavel ? "border-dashboard-amber/45 bg-dashboard-amber-soft" : "border-dashboard-green/35 bg-dashboard-green-soft"}`}>
+            <Link to="/full/$id" params={{ id: carga.id }} className="group grid min-w-0 flex-1 gap-3 rounded-md p-2 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
+              <span className={`flex h-11 w-11 items-center justify-center rounded-md ${editavel ? "bg-dashboard-amber-icon" : "bg-dashboard-green-icon"}`}>{editavel ? <Truck className="h-6 w-6" /> : <Check className="h-5 w-5" />}</span>
+              <span className="min-w-0"><span className="block truncate font-display text-lg font-semibold text-foreground">{codigo(carga.numero)} · {carga.nome}</span><span className="block text-sm text-muted-foreground">{carga.status === "planejada" ? "Em preparação" : "Enviado"} · {carga.itens.length} {carga.itens.length === 1 ? "produto" : "produtos"} · {total} unidades</span></span>
+              <span className="flex items-center gap-4 text-sm"><span className={prazo?.prazo === "normal" ? "text-muted-foreground" : prazo ? "text-dashboard-red" : "text-muted-foreground"}>{prazo ? <><CalendarDays className="mr-1 inline h-4 w-4" />{prazo.rotulo}</> : carga.confirmed_at ? `Enviado em ${new Date(carga.confirmed_at).toLocaleDateString("pt-BR")}` : "Sem data"}</span><FileText className="h-5 w-5 transition-transform group-hover:translate-x-1" /></span>
+            </Link>
+            {editavel && onExcluir && <Button variant="ghost" size="icon" onClick={() => onExcluir(carga.id, carga.numero)} aria-label={`Excluir ${codigo(carga.numero)}`} className="shrink-0 text-dashboard-red hover:text-dashboard-red"><Trash2 className="h-5 w-5" /></Button>}
+          </article>;
+        })}
       </div>
-      {aberta && <div className="border-t border-dashboard-amber/25 bg-background/25 p-5">
-        <div className="mb-4">
-          <p className="mb-2 text-xs text-muted-foreground">Marcas deste Full</p>
-          <div className="flex flex-wrap gap-2">
-            {marcasCarga.map((m) => <span key={m} className="rounded-full border border-dashboard-amber/55 px-3 py-1 text-sm text-foreground">{m}</span>)}
-            {outrasMarcas.length > 0 && <select value="" onChange={(event) => adicionarMarca(event.target.value)} className="h-8 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"><option value="" className="bg-background">+ Adicionar marca</option>{outrasMarcas.map((m) => <option key={m} value={m} className="bg-background">{m}</option>)}</select>}
-          </div>
-        </div>
-        <div className="grid gap-2">
-          {carga.itens.map((item) => <div key={item.id} className="grid gap-3 rounded-md border border-border bg-background/35 p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"><div><p className="font-medium text-foreground">{item.produto.nome}</p><p className="text-xs text-muted-foreground">{item.produto.marca} · SKU {item.produto.codigo || "—"} · COD {item.produto.cod || "—"} · disponível: {item.produto.estoque}</p></div><span className="font-display text-lg font-semibold text-dashboard-amber">{item.quantidade} un.</span><Button variant="ghost" size="icon" onClick={() => removerItem(item.id)} aria-label={`Remover ${item.produto.nome}`}><Trash2 className="h-4 w-4" /></Button></div>)}
-        </div>
-        <Button variant="outline" onClick={() => setAdicionando(true)} className="mt-4 gap-2 border-dashboard-amber/55"><Plus className="h-4 w-4" />Adicionar produto</Button>
-        {adicionando && <AdicionarProdutoModal tipo="full" docId={carga.id} empresa={{ id: carga.empresa_id, nome: carga.empresa }} produtos={disponiveis} onFechar={() => setAdicionando(false)} onAdicionado={onAtualizar} />}
-        <div className="mt-5 flex flex-col justify-between gap-3 border-t border-border pt-5 sm:flex-row sm:items-center"><p className="text-sm text-muted-foreground"><Package className="mr-2 inline h-4 w-4" />Total planejado: <strong className="text-foreground">{total} unidades</strong></p><Button onClick={confirmar} disabled={ocupado || !carga.itens.length} className="gerenciar-primary gap-2"><Send className="h-4 w-4" />Confirmar envio</Button></div>
-      </div>}
-    </article>
+    </section>
   );
 }
