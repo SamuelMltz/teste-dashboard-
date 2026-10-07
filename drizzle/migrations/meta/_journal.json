@@ -64,6 +64,13 @@
       "when": 1791312955566,
       "tag": "0008_empresa_endereco_cnpj",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791399130803,
+      "tag": "0009_full_frete_mercado_livre",
+      "breakpoints": true
     }
   ]
 }

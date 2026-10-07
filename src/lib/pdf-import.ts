@@ -1,5 +1,10 @@
 // Leitura simples de PDFs de notas/orçamentos no navegador.
-export type LinhaPdf = { cod: string; nome: string; quantidade: number };
+export type LinhaPdf = {
+  cod: string; nome: string; quantidade: number;
+  // Campos do Mercado Livre (identificadores distintos do COD do fornecedor).
+  sku?: string; codigoMl?: string; codigoUniversal?: string; identificacao?: string; incerto?: boolean;
+};
+import { ehListaMl, interpretarMl, type ItemPdf, type CabecalhoMl } from "./pdf-ml";
 
 const QTD_BR = /^\d{1,3}(\.\d{3})*,\d{1,4}$|^\d+,\d{1,4}$/;
 const CODIGO = /^[A-Za-z0-9][A-Za-z0-9.\-/]{0,24}$/;
@@ -45,26 +50,47 @@ export function interpretarLinhas(linhas: string[]): LinhaPdf[] {
   return Array.from(mapa.values());
 }
 
-export async function lerPdf(arquivo: File): Promise<LinhaPdf[]> {
+export async function lerItensPdf(arquivo: File): Promise<ItemPdf[]> {
   const pdfjs = await import("pdfjs-dist");
   const worker = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
   pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
   const doc = await pdfjs.getDocument({ data: await arquivo.arrayBuffer() }).promise;
-  const linhas: string[] = [];
+  const itens: ItemPdf[] = [];
   for (let p = 1; p <= doc.numPages; p++) {
-    const pagina = await doc.getPage(p);
-    const conteudo = await pagina.getTextContent();
-    const grupos: { y: number; itens: { x: number; s: string }[] }[] = [];
+    const conteudo = await (await doc.getPage(p)).getTextContent();
     for (const item of conteudo.items) {
       if (!("str" in item) || !item.str.trim()) continue;
-      const x = item.transform[4];
-      const y = item.transform[5];
-      let g = grupos.find((gr) => Math.abs(gr.y - y) < 3);
-      if (!g) { g = { y, itens: [] }; grupos.push(g); }
-      g.itens.push({ x, s: item.str });
+      itens.push({ p, x: item.transform[4], y: item.transform[5], s: item.str });
+    }
+  }
+  return itens;
+}
+
+function agruparLinhas(itens: ItemPdf[]): string[] {
+  const linhas: string[] = [];
+  const paginas = Array.from(new Set(itens.map((i) => i.p))).sort((a, b) => a - b);
+  for (const p of paginas) {
+    const grupos: { y: number; itens: ItemPdf[] }[] = [];
+    for (const it of itens.filter((i) => i.p === p)) {
+      let g = grupos.find((gr) => Math.abs(gr.y - it.y) < 3);
+      if (!g) { g = { y: it.y, itens: [] }; grupos.push(g); }
+      g.itens.push(it);
     }
     grupos.sort((a, b) => b.y - a.y);
     for (const g of grupos) linhas.push(g.itens.sort((a, b) => a.x - b.x).map((i) => i.s.trim()).join(" "));
   }
-  return interpretarLinhas(linhas);
+  return linhas;
+}
+
+export type LeituraPdf = { linhas: LinhaPdf[]; ml: CabecalhoMl | null };
+
+/** Lê o PDF e detecta automaticamente se é uma lista de envio Full do Mercado Livre. */
+export async function lerDocumentoPdf(arquivo: File): Promise<LeituraPdf> {
+  const itens = await lerItensPdf(arquivo);
+  if (ehListaMl(itens)) { const r = interpretarMl(itens); return { linhas: r.linhas, ml: r.cabecalho }; }
+  return { linhas: interpretarLinhas(agruparLinhas(itens)), ml: null };
+}
+
+export async function lerPdf(arquivo: File): Promise<LinhaPdf[]> {
+  return interpretarLinhas(agruparLinhas(await lerItensPdf(arquivo)));
 }

@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { lerPdf } from "@/lib/pdf-import";
+import { lerDocumentoPdf } from "@/lib/pdf-import";
 import { casarLinhas, type Pendente } from "@/lib/casar-produtos";
 import { lerPendentes, salvarPendentes } from "@/lib/importar-documento";
 import { AdicionarProdutoModal, NovoProdutoModal, somarItem } from "./ProdutoModais";
@@ -17,7 +17,7 @@ export type Tipo = "full" | "pedido";
 
 type Produto = { id: string; nome: string; codigo: string; cod: string; estoque: number; marca_id: string; marca: string; empresa_id: string };
 type Item = { id: string; produto_id: string; quantidade: number; produto: Produto };
-type Doc = { id: string; numero: number; nome: string; status: string; created_at: string; empresa: { id: string; nome: string; endereco: string; cnpj: string }; itens: Item[] };
+type Doc = { id: string; numero: number; nome: string; status: string; frete_ml?: string | null; ml_total_produtos?: number | null; ml_total_unidades?: number | null; created_at: string; empresa: { id: string; nome: string; endereco: string; cnpj: string }; itens: Item[] };
 type Marca = { id: string; nome: string; empresa_id: string };
 
 const CFG = {
@@ -44,7 +44,7 @@ const codigo = (n: number) => `#${String(n).padStart(4, "0")}`;
 async function carregar(tipo: Tipo, id: string): Promise<{ doc: Doc; produtos: Produto[]; marcas: Marca[] }> {
   const c = CFG[tipo];
   const [docRes, itensRes, produtosRes, marcasRes] = await Promise.all([
-    db.from(c.tabela).select("id, numero, nome, status, created_at, empresas(id, nome, endereco, cnpj)").eq("id", id).single(),
+    db.from(c.tabela).select(tipo === "full" ? "id, numero, nome, status, created_at, frete_ml, ml_total_produtos, ml_total_unidades, empresas(id, nome, endereco, cnpj)" : "id, numero, nome, status, created_at, empresas(id, nome, endereco, cnpj)").eq("id", id).single(),
     db.from(c.itens).select("id, produto_id, quantidade").eq(c.fk, id).order("created_at"),
     supabase.from("produtos").select("id, nome, codigo, cod, estoque, marca_id, marcas!inner(nome, empresa_id)").order("ordem"),
     supabase.from("marcas").select("id, nome, empresa_id").order("ordem"),
@@ -120,9 +120,17 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
     if (!data || !doc) return;
     setOcupado(true);
     try {
-      let linhas;
-      try { linhas = await lerPdf(arquivo); } catch { toast.error("Não foi possível ler esse PDF. Verifique se ele não é uma imagem escaneada ou protegido por senha."); return; }
+      let linhas, ml;
+      try { ({ linhas, ml } = await lerDocumentoPdf(arquivo)); } catch { toast.error("Não foi possível ler esse PDF. Verifique se ele não é uma imagem escaneada ou protegido por senha."); return; }
       if (!linhas.length) { toast.error("Nenhum produto com código e quantidade foi encontrado nesse PDF."); return; }
+      if (ml && tipo !== "full") { toast.error("Este PDF é uma lista de envio Full do Mercado Livre. Importe-o na tela Full."); return; }
+      if (ml?.frete && tipo === "full") {
+        if (doc.frete_ml && doc.frete_ml !== ml.frete && !confirm(`Este Full é do Frete #${doc.frete_ml}, mas o PDF é do Frete #${ml.frete}. Importar mesmo assim?`)) return;
+        if (!doc.frete_ml) {
+          const { error: e } = await db.from("full_cargas").update({ frete_ml: ml.frete, ml_total_produtos: ml.totalProdutos, ml_total_unidades: ml.totalUnidades }).eq("id", id);
+          if (e) { toast.error(e.code === "23505" ? `O Frete #${ml.frete} já foi importado em outro Full desta empresa.` : e.message); return; }
+        }
+      }
       const { casados, pendentes: novos } = casarLinhas(linhas, data.produtos);
       let adicionados = 0;
       for (const item of casados) {
@@ -153,6 +161,11 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
   async function confirmar() {
     if (!doc?.itens.length) { toast.error("Adicione ao menos um produto."); return; }
     if (pendentes.length && !confirm(`Ainda há ${pendentes.length} ${pendentes.length === 1 ? "item do PDF não resolvido" : "itens do PDF não resolvidos"}. Eles NÃO entrarão no estoque. Continuar?`)) return;
+    if (tipo === "full") {
+      const falta = doc.itens.filter((i) => i.quantidade > i.produto.estoque);
+      if (falta.length) { toast.error(`Estoque insuficiente: ${falta.map((i) => i.produto.codigo || i.produto.nome).join(", ")}.`); return; }
+      if (divergencias.length && !confirm(`Divergência com o PDF:\n${divergencias.join("\n")}\n\nConfirmar o envio mesmo assim?`)) return;
+    }
     const total = doc.itens.reduce((s, i) => s + i.quantidade, 0);
     if (!confirm(`${c.confirmar}: ${total} unidades? O estoque será atualizado e esta ação não poderá ser desfeita.`)) return;
     setOcupado(true);
@@ -164,6 +177,10 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
   }
 
   const atual = resolvendo !== null ? pendentes[resolvendo] : undefined;
+  const somaItens = (doc?.itens ?? []).reduce((s, i) => s + i.quantidade, 0);
+  const divergencias: string[] = [];
+  if (doc?.ml_total_produtos != null && doc.itens.length !== doc.ml_total_produtos) divergencias.push(`Produtos: ${doc.itens.length} na lista, ${doc.ml_total_produtos} no PDF${pendentes.length ? ` (${pendentes.length} pendentes)` : ""}`);
+  if (doc?.ml_total_unidades != null && somaItens !== doc.ml_total_unidades) divergencias.push(`Unidades: ${somaItens} na lista, ${doc.ml_total_unidades} no PDF`);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-estoque-canvas">
@@ -188,6 +205,7 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
                 <p className="text-muted-foreground">CNPJ: {doc.empresa.cnpj || "não cadastrado"}</p>
                 <p className="text-muted-foreground">Data: {new Date().toLocaleDateString("pt-BR")}</p>
                 {tipo === "full" && <p className="text-muted-foreground">Planejamento: {doc.nome}</p>}
+                {doc.frete_ml && <p className="text-muted-foreground">Mercado Livre: <span className="font-semibold text-foreground">Frete #{doc.frete_ml}</span></p>}
               </div>
               <div className="md:text-right">
                 <p className={`text-xs font-semibold tracking-wide ${corTexto}`}>{c.rotuloNumero}</p>
@@ -201,15 +219,22 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
               </div>
             </div>
 
+            {doc.frete_ml && (doc.ml_total_produtos != null || doc.ml_total_unidades != null) && (
+              <div className={`mt-6 rounded-md border p-4 text-sm ${divergencias.length ? "border-dashboard-red/50 bg-dashboard-red-soft" : "border-dashboard-green/45 bg-dashboard-green-soft"}`}>
+                <p className="flex items-center gap-2 font-medium text-foreground">{divergencias.length ? <AlertTriangle className="h-4 w-4 text-dashboard-red" /> : <Check className="h-4 w-4 text-dashboard-green" />}Conferência com o PDF</p>
+                <p className="mt-1 text-muted-foreground">Produtos: {doc.itens.length} de {doc.ml_total_produtos ?? "—"} · Unidades: {somaItens} de {doc.ml_total_unidades ?? "—"}{pendentes.length ? ` · ${pendentes.length} pendente(s) com ${pendentes.reduce((s, p) => s + p.quantidade, 0)} un.` : ""}</p>
+              </div>
+            )}
+
             {editavel && pendentes.length > 0 && (
               <div className="mt-6 rounded-md border border-dashboard-red/50 bg-dashboard-red-soft p-4">
                 <p className="flex items-center gap-2 font-medium text-foreground"><AlertTriangle className="h-4 w-4 text-dashboard-red" />{pendentes.length} {pendentes.length === 1 ? "item do PDF precisa" : "itens do PDF precisam"} de revisão</p>
                 <div className="mt-3 grid gap-2">
                   {pendentes.map((p, i) => (
                     <div key={`${p.cod}-${i}`} className="grid gap-2 rounded-md border border-border bg-background/40 p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
-                      <div className="min-w-0"><p className="truncate text-foreground">{p.nome}</p><p className="text-xs text-muted-foreground">COD {p.cod} · {p.quantidade} un. · {p.opcoes.length ? `${p.opcoes.length} produtos com esse código — escolha o certo` : "não encontrado no cadastro"}</p></div>
+                      <div className="min-w-0"><p className="truncate text-foreground">{p.nome}</p><p className="text-xs text-muted-foreground">{p.sku !== undefined ? `SKU ${p.sku || "—"} · ML ${p.codigoMl || "—"}${p.codigoUniversal ? ` · Universal ${p.codigoUniversal}` : ""}` : `COD ${p.cod}`} · {p.quantidade} un. · {p.incerto ? "leitura incerta, confira · " : ""}{p.opcoes.length ? `${p.opcoes.length} produtos com esse código — escolha o certo` : "não encontrado no cadastro"}</p></div>
                       <Button size="sm" variant="outline" className={corBorda} onClick={() => setResolvendo(i)}>{p.opcoes.length ? "Escolher produto" : "Cadastrar ou vincular"}</Button>
-                      <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={() => { if (confirm(`Descartar o item ${p.cod}? Ele não será incluído.`)) setPendentes(pendentes.filter((_, k) => k !== i)); }}>Descartar</Button>
+                      <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={() => { if (confirm(`Descartar o item ${p.sku || p.cod || p.nome}? Ele não será incluído.`)) setPendentes(pendentes.filter((_, k) => k !== i)); }}>Descartar</Button>
                     </div>
                   ))}
                 </div>
@@ -219,15 +244,16 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
             <div className="mt-6 overflow-x-auto rounded-md border border-border">
               <table className="w-full min-w-[560px] text-sm">
                 <thead className="bg-background/50 text-left text-xs font-semibold tracking-wide text-muted-foreground">
-                  <tr><th className="px-4 py-3">COD</th><th className="px-4 py-3">SKU</th><th className="px-4 py-3">PRODUTO</th><th className="px-4 py-3">QUANTIDADE</th>{editavel && <th className="w-10" />}</tr>
+                  <tr><th className="px-4 py-3">COD</th><th className="px-4 py-3">SKU</th><th className="px-4 py-3">PRODUTO</th><th className="px-4 py-3">QUANTIDADE</th>{tipo === "full" && <th className="px-4 py-3">ESTOQUE</th>}{editavel && <th className="w-10" />}</tr>
                 </thead>
                 <tbody>
-                  {doc.itens.length === 0 ? <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Nenhum produto ainda.</td></tr> : doc.itens.map((i) => (
+                  {doc.itens.length === 0 ? <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Nenhum produto ainda.</td></tr> : doc.itens.map((i) => (
                     <tr key={i.id} className="border-t border-border text-foreground">
                       <td className="px-4 py-3">{i.produto.cod || "—"}</td>
                       <td className="px-4 py-3">{i.produto.codigo ? i.produto.codigo : <CampoProduto key={`sku-${i.produto.id}`} produtoId={i.produto.id} campo="codigo" placeholder="Informar SKU" onSalvo={atualizar} />}</td>
                       <td className="px-4 py-3">{i.produto.nome ? i.produto.nome : <CampoProduto key={`nome-${i.produto.id}`} produtoId={i.produto.id} campo="nome" placeholder="Informar nome" onSalvo={atualizar} />}<span className="block text-xs text-muted-foreground">{i.produto.marca}</span></td>
                       <td className={`px-4 py-3 font-semibold ${corTexto}`}>{i.quantidade}</td>
+                      {tipo === "full" && <td className={`px-4 py-3 ${editavel && i.quantidade > i.produto.estoque ? "font-semibold text-dashboard-red" : "text-muted-foreground"}`}>{i.produto.estoque}{editavel && i.quantidade > i.produto.estoque ? " (insuficiente)" : ""}</td>}
                       {editavel && <td className="px-2"><Button variant="ghost" size="icon" onClick={() => removerItem(i.id)} aria-label={`Remover ${i.produto.nome}`}><Trash2 className="h-4 w-4" /></Button></td>}
                     </tr>
                   ))}

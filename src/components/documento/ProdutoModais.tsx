@@ -117,8 +117,9 @@ export function NovoProdutoModal({ linha, restantes = 0, tipo, empresa, produtos
   const ambiguo = !!opcoes?.length;
   const [modo, setModo] = useState<"novo" | "vincular">(ambiguo ? "vincular" : "novo");
   const [nome, setNome] = useState(linha?.nome ?? "");
+  const ehMl = linha?.sku !== undefined;
   const [cod, setCod] = useState(linha?.cod ?? "");
-  const [sku, setSku] = useState("");
+  const [sku, setSku] = useState(linha?.sku ?? "");
   const [marcaId, setMarcaId] = useState("");
   const [existenteId, setExistenteId] = useState("");
   const [salvando, setSalvando] = useState(false);
@@ -131,13 +132,16 @@ export function NovoProdutoModal({ linha, restantes = 0, tipo, empresa, produtos
       return data ?? [];
     },
   });
-  const candidatos = ambiguo ? produtos.filter((p) => opcoes!.includes(p.id)) : produtos;
+  const palavras = (t: string) => new Set(t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/[^a-z0-9]+/).filter((w) => w.length > 1));
+  const alvo = palavras(linha?.nome ?? "");
+  const nota = (p: ProdutoDoc) => { let n = 0; for (const w of palavras(p.nome)) if (alvo.has(w)) n++; return n; };
+  const candidatos = ambiguo ? produtos.filter((p) => opcoes!.includes(p.id)) : [...produtos].sort((a, b) => nota(b) - nota(a));
 
   async function salvar() {
     setSalvando(true);
     try {
       if (modo === "novo") {
-        if (!nome.trim() || !sku.trim() || !marcaId || (linha && !cod.trim())) { toast.error("Preencha todos os campos obrigatórios."); return; }
+        if (!nome.trim() || !sku.trim() || !marcaId || (linha && !ehMl && !cod.trim())) { toast.error("Preencha todos os campos obrigatórios."); return; }
         const ordem = produtos.filter((p) => p.marca_id === marcaId).length;
         const { data, error } = await supabase.from("produtos").insert({ nome: nome.trim(), cod: cod.trim(), codigo: sku.trim(), marca_id: marcaId, ordem }).select("id, nome, codigo, cod, estoque, marca_id").single();
         if (error) { toast.error(error.message.includes("row-level") ? "Só administradores podem cadastrar produtos." : error.message); return; }
@@ -147,6 +151,15 @@ export function NovoProdutoModal({ linha, restantes = 0, tipo, empresa, produtos
       } else {
         const produto = produtos.find((p) => p.id === existenteId);
         if (!produto) { toast.error("Escolha o produto."); return; }
+        if (linha && ehMl) {
+          // ML: grava o SKU só se o produto ainda não tiver um; nunca mexe no COD.
+          if (!ambiguo && !produto.codigo && linha.sku) {
+            const { error } = await supabase.from("produtos").update({ codigo: linha.sku }).eq("id", produto.id);
+            if (error) { toast.error(error.message.includes("row-level") ? "Só administradores podem editar produtos." : error.message); return; }
+          }
+          await onPronto({ ...produto, codigo: produto.codigo || linha.sku || "" });
+          return;
+        }
         if (linha && !ambiguo && produto.cod !== linha.cod) {
           const { error } = await supabase.from("produtos").update({ cod: linha.cod }).eq("id", produto.id);
           if (error) { toast.error(error.message.includes("row-level") ? "Só administradores podem editar produtos." : error.message); return; }
@@ -175,14 +188,14 @@ export function NovoProdutoModal({ linha, restantes = 0, tipo, empresa, produtos
         {linha && (
           <div className={`mt-6 flex gap-4 rounded-md border p-4 ${corBg}`}>
             <FileText className={`h-6 w-6 shrink-0 ${corTx}`} />
-            <div><p className={`text-xs font-semibold ${corTx}`}>Item identificado no PDF</p><p className="font-medium text-foreground">{linha.nome}</p><p className="text-xs text-muted-foreground">COD: {linha.cod} · Quantidade: {linha.quantidade}</p></div>
+            <div><p className={`text-xs font-semibold ${corTx}`}>Item identificado no PDF</p><p className="font-medium text-foreground">{linha.nome}</p><p className="text-xs text-muted-foreground">{ehMl ? `SKU: ${linha.sku || "—"} · Código ML: ${linha.codigoMl || "—"}${linha.codigoUniversal ? ` · Universal: ${linha.codigoUniversal}` : ""}` : `COD: ${linha.cod}`} · Quantidade: {linha.quantidade}</p>{linha.identificacao && <p className="text-xs text-muted-foreground">{linha.identificacao}</p>}</div>
           </div>
         )}
 
         {modo === "novo" ? (
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <label className="grid gap-1 text-sm text-foreground sm:col-span-2">Nome do produto *<Input value={nome} onChange={(e) => setNome(e.target.value)} className="h-10" /></label>
-            <label className="grid gap-1 text-sm text-foreground">COD do fornecedor {linha ? "*" : ""}<Input value={cod} onChange={(e) => setCod(e.target.value)} className="h-10" /></label>
+            <label className="grid gap-1 text-sm text-foreground">COD do fornecedor {linha && !ehMl ? "*" : ""}<Input value={cod} onChange={(e) => setCod(e.target.value)} className="h-10" /></label>
             <label className="grid gap-1 text-sm text-foreground">SKU interno *<Input value={sku} placeholder="Informe o SKU" onChange={(e) => setSku(e.target.value)} className="h-10" /></label>
             <label className="grid gap-1 text-sm text-foreground">Empresa *<select disabled className={sel}><option className="bg-background">{empresa.nome}</option></select></label>
             <label className="grid gap-1 text-sm text-foreground">Marca *<select value={marcaId} onChange={(e) => setMarcaId(e.target.value)} className={sel}><option value="" className="bg-background">Selecione a marca</option>{(marcas.data ?? []).map((m) => <option key={m.id} value={m.id} className="bg-background">{m.nome}</option>)}</select></label>
@@ -190,7 +203,7 @@ export function NovoProdutoModal({ linha, restantes = 0, tipo, empresa, produtos
         ) : (
           <label className="mt-5 grid gap-1 text-sm text-foreground">Produto já cadastrado *
             <select value={existenteId} onChange={(e) => setExistenteId(e.target.value)} className={sel}><option value="" className="bg-background">Selecione o produto</option>{candidatos.map((p) => <option key={p.id} value={p.id} className="bg-background">{p.marca} · {p.nome} {p.codigo ? `(SKU ${p.codigo})` : ""}</option>)}</select>
-            {linha && !ambiguo && <span className="text-xs text-muted-foreground">O COD {linha.cod} será gravado nesse produto.</span>}
+            {linha && !ambiguo && <span className="text-xs text-muted-foreground">{ehMl ? "Confira se é a mesma variante (voltagem, cor, tamanho). O SKU só é gravado se o produto não tiver um." : `O COD ${linha.cod} será gravado nesse produto.`}</span>}
           </label>
         )}
 
