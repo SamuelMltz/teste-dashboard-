@@ -7,6 +7,7 @@ import { ArrowLeft, ChevronDown, GripVertical, Package, Plus, Search, Trash2 } f
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useEmpresaObrigatoria } from "@/lib/use-empresa-obrigatoria";
 import vivalleLogo from "@/assets/logos/vivalle-refined.png";
 import luminartechLogo from "@/assets/logos/luminartech-refined.png";
 import vitrineLogo from "@/assets/logos/vitrine-refined.png";
@@ -43,7 +44,7 @@ function AdminPage() {
   const { user } = Route.useRouteContext();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [empresaId, setEmpresaId] = useState<string | null>(null);
+  const empresaAtual = useEmpresaObrigatoria();
 
   const admin = useQuery({
     queryKey: ["is-admin", user.id],
@@ -92,7 +93,7 @@ function AdminPage() {
   }
 
   const empresas = dados.data ?? [];
-  const empresa = empresas.find((e) => e.id === empresaId) ?? empresas[0];
+  const empresa = empresas.find((e) => e.id === empresaAtual?.id);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-estoque-canvas">
@@ -110,23 +111,7 @@ function AdminPage() {
           <div className="mt-4 h-1 w-12 rounded-full bg-dashboard-amber" aria-hidden="true" />
         </header>
 
-        <div className="mt-8 flex flex-wrap gap-3" role="tablist" aria-label="Empresas">
-          {empresas.map((e) => (
-            <Button
-              key={e.id}
-              type="button"
-              variant="outline"
-              onClick={() => setEmpresaId(e.id)}
-              role="tab"
-              aria-selected={e.id === empresa?.id}
-              className={`gerenciar-tab h-11 gap-3 px-4 ${e.id === empresa?.id ? "is-active" : ""}`}
-              style={{ ["--empresa-accent" as string]: e.accent }}
-            >
-              {LOGOS[e.nome] ? <img src={LOGOS[e.nome]} alt="" className="h-7 w-7 rounded-full object-cover" /> : null}
-              {e.nome}
-            </Button>
-          ))}
-        </div>
+        {empresa && <p className="mt-8 font-display text-xl font-semibold text-foreground">{empresa.nome}</p>}
 
         {empresa && <DadosEmpresa key={`dados-${empresa.id}`} empresaId={empresa.id} />}
         {empresa && <EmpresaEditor key={empresa.id} empresa={empresa} onChange={recarregar} />}

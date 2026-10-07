@@ -7,6 +7,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "@tanstack/react-router";
+import { useEmpresaObrigatoria } from "@/lib/use-empresa-obrigatoria";
+import { criarDocumentoPorPdf } from "@/lib/importar-documento";
+import { AdicionarProdutoModal } from "@/components/documento/ProdutoModais";
+import { BotaoImportarPdf } from "@/components/documento/BotaoImportarPdf";
 
 type Empresa = { id: string; nome: string };
 type Produto = { id: string; nome: string; codigo: string; cod: string; estoque: number; marca_id: string; marca: string; empresa_id: string };
@@ -67,7 +72,9 @@ function FullPage() {
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["full"], queryFn: carregarFull });
   const [marcasSel, setMarcasSel] = useState<string[]>([]);
-  const [empresaId, setEmpresaId] = useState("");
+  const empresaAtual = useEmpresaObrigatoria();
+  const navigate = useNavigate();
+  const empresaId = empresaAtual?.id ?? "";
   const [aberta, setAberta] = useState<string | null>(null);
   const [criando, setCriando] = useState(false);
   const marcasNovas = useMemo(() => marcasDaEmpresa(data?.produtos ?? [], empresaId), [data, empresaId]);
@@ -85,13 +92,13 @@ function FullPage() {
     const { data: carga, error } = await supabase.from("full_cargas").insert({ nome: marcasSel.join(SEP), empresa_id: empresaId, created_by: user.id }).select("id").single();
     setCriando(false);
     if (error) { toast.error("Não foi possível criar o planejamento."); return; }
-    setMarcasSel([]); setEmpresaId(""); setAberta(carga.id);
+    setMarcasSel([]); setAberta(carga.id);
     await atualizar();
     toast.success("Planejamento Full criado");
   }
 
-  const planejadas = data?.cargas.filter((carga) => carga.status === "planejada") ?? [];
-  const confirmadas = data?.cargas.filter((carga) => carga.status === "confirmada") ?? [];
+  const planejadas = data?.cargas.filter((carga) => carga.empresa_id === empresaId && carga.status === "planejada") ?? [];
+  const confirmadas = data?.cargas.filter((carga) => carga.empresa_id === empresaId && carga.status === "confirmada") ?? [];
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-estoque-canvas">
@@ -109,11 +116,8 @@ function FullPage() {
 
         <section className="mt-8 border-y border-border py-6" aria-labelledby="nova-carga">
           <h2 id="nova-carga" className="font-display text-xl font-semibold text-foreground">Novo planejamento</h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(220px,0.7fr)_minmax(0,1fr)_auto] sm:items-start">
-            <select value={empresaId} onChange={(event) => { setEmpresaId(event.target.value); setMarcasSel([]); }} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              <option value="" className="bg-background">Selecione a empresa</option>
-              {data?.empresas.map((empresa) => <option key={empresa.id} value={empresa.id} className="bg-background">{empresa.nome}</option>)}
-            </select>
+          <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(160px,0.4fr)_minmax(0,1fr)_auto_auto] sm:items-start">
+            <p className="flex h-9 items-center text-sm text-muted-foreground">{empresaAtual?.nome} · escolha as marcas:</p>
             <div className="flex min-h-9 flex-wrap items-center gap-2">
               {!empresaId ? <span className="text-sm text-muted-foreground">Escolha a empresa para ver as marcas</span> : marcasNovas.length === 0 ? <span className="text-sm text-muted-foreground">Essa empresa não tem produtos cadastrados</span> : marcasNovas.map((m) => {
                 const ativa = marcasSel.includes(m);
@@ -121,6 +125,7 @@ function FullPage() {
               })}
             </div>
             <Button onClick={criarCarga} disabled={criando} className="gerenciar-primary gap-2"><Plus className="h-4 w-4" />Criar Full</Button>
+            {empresaAtual && <BotaoImportarPdf rotulo="Importar PDF" onArquivo={async (f) => { const id = await criarDocumentoPorPdf("full", f, empresaAtual); if (id) { await atualizar(); navigate({ to: "/full/$id", params: { id } }); } }} />}
           </div>
         </section>
 
@@ -151,8 +156,7 @@ function FullPage() {
 }
 
 function CargaPlanejada({ carga, produtos, aberta, onToggle, onAtualizar }: { carga: Carga; produtos: Produto[]; aberta: boolean; onToggle: () => void; onAtualizar: () => Promise<void> }) {
-  const [produtoId, setProdutoId] = useState("");
-  const [quantidade, setQuantidade] = useState("1");
+  const [adicionando, setAdicionando] = useState(false);
   const [nomeCarga, setNomeCarga] = useState(carga.nome);
   const [ocupado, setOcupado] = useState(false);
   const marcasEmpresa = useMemo(() => marcasDaEmpresa(produtos, carga.empresa_id), [produtos, carga.empresa_id]);
@@ -171,17 +175,6 @@ function CargaPlanejada({ carga, produtos, aberta, onToggle, onAtualizar }: { ca
   }
   const total = carga.itens.reduce((soma, item) => soma + item.quantidade, 0);
 
-  async function adicionar() {
-    const qtd = Number(quantidade);
-    const produto = produtos.find((item) => item.id === produtoId);
-    if (!produto || !Number.isInteger(qtd) || qtd <= 0) { toast.error("Escolha um produto e uma quantidade válida."); return; }
-    if (qtd > produto.estoque) { toast.error(`Há somente ${produto.estoque} unidades disponíveis.`); return; }
-    setOcupado(true);
-    const { error } = await supabase.from("full_itens").insert({ carga_id: carga.id, produto_id: produto.id, quantidade: qtd });
-    setOcupado(false);
-    if (error) { toast.error(error.message); return; }
-    setProdutoId(""); setQuantidade("1"); await onAtualizar();
-  }
 
   async function removerItem(id: string) {
     const { error } = await supabase.from("full_itens").delete().eq("id", id);
@@ -237,11 +230,8 @@ function CargaPlanejada({ carga, produtos, aberta, onToggle, onAtualizar }: { ca
         <div className="grid gap-2">
           {carga.itens.map((item) => <div key={item.id} className="grid gap-3 rounded-md border border-border bg-background/35 p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"><div><p className="font-medium text-foreground">{item.produto.nome}</p><p className="text-xs text-muted-foreground">{item.produto.marca} · SKU {item.produto.codigo || "—"} · COD {item.produto.cod || "—"} · disponível: {item.produto.estoque}</p></div><span className="font-display text-lg font-semibold text-dashboard-amber">{item.quantidade} un.</span><Button variant="ghost" size="icon" onClick={() => removerItem(item.id)} aria-label={`Remover ${item.produto.nome}`}><Trash2 className="h-4 w-4" /></Button></div>)}
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_110px_auto]">
-          <select value={produtoId} onChange={(event) => setProdutoId(event.target.value)} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"><option value="" className="bg-background">Adicionar produto</option>{disponiveis.map((produto) => <option key={produto.id} value={produto.id} className="bg-background">{produto.marca} · {produto.nome} ({produto.estoque})</option>)}</select>
-          <Input type="number" min={1} value={quantidade} onChange={(event) => setQuantidade(event.target.value)} aria-label="Quantidade" />
-          <Button variant="outline" onClick={adicionar} disabled={ocupado} className="gap-2 border-dashboard-amber/55"><Plus className="h-4 w-4" />Adicionar</Button>
-        </div>
+        <Button variant="outline" onClick={() => setAdicionando(true)} className="mt-4 gap-2 border-dashboard-amber/55"><Plus className="h-4 w-4" />Adicionar produto</Button>
+        {adicionando && <AdicionarProdutoModal tipo="full" docId={carga.id} empresa={{ id: carga.empresa_id, nome: carga.empresa }} produtos={disponiveis} onFechar={() => setAdicionando(false)} onAdicionado={onAtualizar} />}
         <div className="mt-5 flex flex-col justify-between gap-3 border-t border-border pt-5 sm:flex-row sm:items-center"><p className="text-sm text-muted-foreground"><Package className="mr-2 inline h-4 w-4" />Total planejado: <strong className="text-foreground">{total} unidades</strong></p><Button onClick={confirmar} disabled={ocupado || !carga.itens.length} className="gerenciar-primary gap-2"><Send className="h-4 w-4" />Confirmar envio</Button></div>
       </div>}
     </article>

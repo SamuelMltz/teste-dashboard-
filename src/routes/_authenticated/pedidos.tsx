@@ -7,6 +7,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "@tanstack/react-router";
+import { useEmpresaObrigatoria } from "@/lib/use-empresa-obrigatoria";
+import { criarDocumentoPorPdf } from "@/lib/importar-documento";
+import { AdicionarProdutoModal } from "@/components/documento/ProdutoModais";
+import { BotaoImportarPdf } from "@/components/documento/BotaoImportarPdf";
 
 type Empresa = { id: string; nome: string };
 type Produto = { id: string; nome: string; codigo: string; cod: string; estoque: number; marca_id: string; marca: string; empresa_id: string };
@@ -62,7 +67,9 @@ function PedidosPage() {
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["pedidos"], queryFn: carregarPedidos });
   const [nome, setNome] = useState("");
-  const [empresaId, setEmpresaId] = useState("");
+  const empresaAtual = useEmpresaObrigatoria();
+  const navigate = useNavigate();
+  const empresaId = empresaAtual?.id ?? "";
   const [aberta, setAberta] = useState<string | null>(null);
   const [criando, setCriando] = useState(false);
 
@@ -81,14 +88,14 @@ function PedidosPage() {
     const { data: pedido, error } = await supabase.from("pedidos").insert({ nome: nome.trim(), fornecedor: empresa.nome, empresa_id: empresaId, created_by: user.id }).select("id").single();
     setCriando(false);
     if (error) { toast.error("Não foi possível criar o pedido."); return; }
-    setNome(""); setEmpresaId(""); setAberta(pedido.id);
+    setNome(""); setAberta(pedido.id);
     await atualizar();
     toast.success("Pedido criado");
   }
 
   const marcasDaEmpresa = useMemo(() => Array.from(new Set((data?.produtos ?? []).filter((p) => p.empresa_id === empresaId).map((p) => p.marca))), [data, empresaId]);
-  const planejadas = data?.pedidos.filter((pedido) => pedido.status === "planejado") ?? [];
-  const confirmadas = data?.pedidos.filter((pedido) => pedido.status === "recebido") ?? [];
+  const planejadas = data?.pedidos.filter((pedido) => pedido.empresa_id === empresaId && pedido.status === "planejado") ?? [];
+  const confirmadas = data?.pedidos.filter((pedido) => pedido.empresa_id === empresaId && pedido.status === "recebido") ?? [];
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-estoque-canvas">
@@ -106,16 +113,14 @@ function PedidosPage() {
 
         <section className="mt-8 border-y border-border py-6" aria-labelledby="novo-pedido">
           <h2 id="novo-pedido" className="font-display text-xl font-semibold text-foreground">Novo pedido</h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
-            <select value={empresaId} onChange={(event) => { setEmpresaId(event.target.value); setNome(""); }} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              <option value="" className="bg-background">Selecione a empresa</option>
-              {data?.empresas.map((empresa) => <option key={empresa.id} value={empresa.id} className="bg-background">{empresa.nome}</option>)}
-            </select>
+          <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,0.6fr)_minmax(0,1fr)_auto_auto]">
+            <p className="flex h-9 items-center text-sm text-muted-foreground">{empresaAtual?.nome}</p>
             <select value={nome} onChange={(event) => setNome(event.target.value)} disabled={!empresaId} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50">
               <option value="" className="bg-background">Selecione a marca</option>
               {marcasDaEmpresa.map((marca) => <option key={marca} value={marca} className="bg-background">{marca}</option>)}
             </select>
             <Button onClick={criarPedido} disabled={criando} className="gerenciar-primary gap-2"><Plus className="h-4 w-4" />Criar pedido</Button>
+            {empresaAtual && <BotaoImportarPdf rotulo="Importar PDF" onArquivo={async (f) => { const id = await criarDocumentoPorPdf("pedido", f, empresaAtual); if (id) { await atualizar(); navigate({ to: "/pedidos/$id", params: { id } }); } }} />}
           </div>
         </section>
 
@@ -146,22 +151,11 @@ function PedidosPage() {
 }
 
 function PedidoPlanejado({ pedido, produtos, aberta, onToggle, onAtualizar }: { pedido: Pedido; produtos: Produto[]; aberta: boolean; onToggle: () => void; onAtualizar: () => Promise<void> }) {
-  const [produtoId, setProdutoId] = useState("");
-  const [quantidade, setQuantidade] = useState("1");
+  const [adicionando, setAdicionando] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const disponiveis = useMemo(() => produtos.filter((produto) => produto.empresa_id === pedido.empresa_id && !pedido.itens.some((item) => item.produto_id === produto.id)), [produtos, pedido]);
   const total = pedido.itens.reduce((soma, item) => soma + item.quantidade, 0);
 
-  async function adicionar() {
-    const qtd = Number(quantidade);
-    const produto = produtos.find((item) => item.id === produtoId);
-    if (!produto || !Number.isInteger(qtd) || qtd <= 0) { toast.error("Escolha um produto e uma quantidade válida."); return; }
-        setOcupado(true);
-    const { error } = await supabase.from("pedido_itens").insert({ pedido_id: pedido.id, produto_id: produto.id, quantidade: qtd });
-    setOcupado(false);
-    if (error) { toast.error(error.message); return; }
-    setProdutoId(""); setQuantidade("1"); await onAtualizar();
-  }
 
   async function removerItem(id: string) {
     const { error } = await supabase.from("pedido_itens").delete().eq("id", id);
@@ -200,11 +194,8 @@ function PedidoPlanejado({ pedido, produtos, aberta, onToggle, onAtualizar }: { 
         <div className="grid gap-2">
           {pedido.itens.map((item) => <div key={item.id} className="grid gap-3 rounded-md border border-border bg-background/35 p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"><div><p className="font-medium text-foreground">{item.produto.nome}</p><p className="text-xs text-muted-foreground">{item.produto.marca} · SKU {item.produto.codigo || "—"} · COD {item.produto.cod || "—"} · estoque atual: {item.produto.estoque}</p></div><span className="font-display text-lg font-semibold text-dashboard-amber">{item.quantidade} un.</span><Button variant="ghost" size="icon" onClick={() => removerItem(item.id)} aria-label={`Remover ${item.produto.nome}`}><Trash2 className="h-4 w-4" /></Button></div>)}
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_110px_auto]">
-          <select value={produtoId} onChange={(event) => setProdutoId(event.target.value)} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"><option value="" className="bg-background">Adicionar produto</option>{disponiveis.map((produto) => <option key={produto.id} value={produto.id} className="bg-background">{produto.marca} · {produto.nome} ({produto.estoque})</option>)}</select>
-          <Input type="number" min={1} value={quantidade} onChange={(event) => setQuantidade(event.target.value)} aria-label="Quantidade" />
-          <Button variant="outline" onClick={adicionar} disabled={ocupado} className="gap-2 border-dashboard-amber/55"><Plus className="h-4 w-4" />Adicionar</Button>
-        </div>
+        <Button variant="outline" onClick={() => setAdicionando(true)} className="mt-4 gap-2 border-dashboard-amber/55"><Plus className="h-4 w-4" />Adicionar produto</Button>
+        {adicionando && <AdicionarProdutoModal tipo="pedido" docId={pedido.id} empresa={{ id: pedido.empresa_id, nome: pedido.empresa }} produtos={disponiveis} onFechar={() => setAdicionando(false)} onAdicionado={onAtualizar} />}
         <div className="mt-5 flex flex-col justify-between gap-3 border-t border-border pt-5 sm:flex-row sm:items-center"><p className="text-sm text-muted-foreground"><Package className="mr-2 inline h-4 w-4" />Total planejado: <strong className="text-foreground">{total} unidades</strong></p><Button onClick={confirmar} disabled={ocupado || !pedido.itens.length} className="gerenciar-primary gap-2"><Check className="h-4 w-4" />Confirmar recebimento</Button></div>
       </div>}
     </article>
