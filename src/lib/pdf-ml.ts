@@ -29,14 +29,14 @@ export function interpretarMl(itens: ItemPdf[]): LeituraMl {
   const topo = new Map<number, number>(); // y do cabeçalho "PRODUTO" por página
   for (const i of itens) if (/^PRODUTO$/i.test(i.s.trim())) topo.set(i.p, Math.max(topo.get(i.p) ?? -Infinity, i.y));
 
-  type Bloco = { p: number; y: number; partes: string[]; ultimoY: number; qtd: number | null; ident: string[]; instr: string[] };
+  type Bloco = { p0: number; p: number; y: number; partes: string[]; ultimoY: number; qtd: number | null; ident: string[]; instr: string[] };
   const blocos: Bloco[] = [];
   const tabela = itens.filter((i) => topo.has(i.p) && i.y < topo.get(i.p)! - 1).sort((a, b) => a.p - b.p || b.y - a.y || a.x - b.x);
   let atual: Bloco | null = null;
   let primeiroDaPagina = 0;
   for (const i of tabela.filter((t) => t.x < xUn - 3)) {
     if (ML.test(i.s)) {
-      atual = { p: i.p, y: i.y, partes: [i.s], ultimoY: i.y, qtd: null, ident: [], instr: [] };
+      atual = { p0: i.p, p: i.p, y: i.y, partes: [i.s], ultimoY: i.y, qtd: null, ident: [], instr: [] };
       blocos.push(atual); primeiroDaPagina = i.p; continue;
     }
     if (!atual) continue;
@@ -46,12 +46,11 @@ export function interpretarMl(itens: ItemPdf[]): LeituraMl {
     }
   }
   // Quantidade e identificação: mesma faixa vertical do início de cada bloco.
+  const itensBlocoPagina = (b: Bloco, p: number) => b.p0 === p;
   const doBloco = (i: ItemPdf) => {
     const naPagina = blocos.filter((b) => itensBlocoPagina(b, i.p));
     return naPagina.find((b) => b.y + 10 >= i.y && i.y > b.y - 50) ?? null;
   };
-  const inicio = new Map(blocos.map((b) => [b, { p: itens.find((t) => t.s === b.partes[0] && ML.test(t.s))?.p ?? b.p }]));
-  function itensBlocoPagina(b: Bloco, p: number) { return (inicio.get(b)?.p ?? b.p) === p; }
   for (const i of tabela) {
     if (i.x >= xUn - 10 && i.x < xId - 3 && /^\d+$/.test(i.s.trim())) {
       const b = blocos.filter((bl) => itensBlocoPagina(bl, i.p)).find((bl) => Math.abs(bl.y - i.y) <= 8);
