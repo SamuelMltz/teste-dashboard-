@@ -54,7 +54,10 @@ export type Database = {
           created_at: string
           created_by: string
           empresa_id: string
+          frete_ml: string | null
           id: string
+          ml_total_produtos: number | null
+          ml_total_unidades: number | null
           nome: string
           numero: number
           status: Database["public"]["Enums"]["full_status"]
@@ -65,7 +68,10 @@ export type Database = {
           created_at?: string
           created_by?: string
           empresa_id: string
+          frete_ml?: string | null
           id?: string
+          ml_total_produtos?: number | null
+          ml_total_unidades?: number | null
           nome: string
           numero?: never
           status?: Database["public"]["Enums"]["full_status"]
@@ -76,7 +82,10 @@ export type Database = {
           created_at?: string
           created_by?: string
           empresa_id?: string
+          frete_ml?: string | null
           id?: string
+          ml_total_produtos?: number | null
+          ml_total_unidades?: number | null
           nome?: string
           numero?: never
           status?: Database["public"]["Enums"]["full_status"]
