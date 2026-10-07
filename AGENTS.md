@@ -21,3 +21,5 @@
 - O sistema Full mantém várias cargas por empresa; itens podem misturar marcas da mesma empresa e a confirmação desconta o estoque atomicamente pelo banco.
 - O sistema Pedidos mantém várias compras por empresa e fornecedor; itens podem misturar marcas da mesma empresa e o recebimento soma ao estoque atomicamente pelo banco.
 - Full e Pedidos têm telas de detalhe (`full_.$id`, `pedidos_.$id`) compartilhando `DetalhesDocumento`; importar PDF é leitura de texto no navegador (`src/lib/pdf-import.ts`, casa pelo COD) e baixar PDF é gerado no cliente (`src/lib/pdf-export.ts`) — sem custo de IA.
+- Após o login o usuário escolhe uma empresa (guardada no navegador via `src/lib/empresa-atual.ts`); todas as telas filtram por ela e mandam de volta à escolha se não houver — mantém cada empresa isolada sem mudar as permissões do banco.
+- Importar PDF nas listas de Full/Pedidos cria o registro (`src/lib/importar-documento.ts`), casa por COD e depois SKU exatos (`casar-produtos.ts`) e guarda itens não resolvidos no navegador até serem revisados nos Detalhes; o estoque só muda na confirmação.
