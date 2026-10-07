@@ -12,12 +12,13 @@ import { casarLinhas, type Pendente } from "@/lib/casar-produtos";
 import { lerPendentes, salvarPendentes } from "@/lib/importar-documento";
 import { AdicionarProdutoModal, NovoProdutoModal, somarItem } from "./ProdutoModais";
 import { gerarPdf } from "@/lib/pdf-export";
+import { paraInputData } from "@/lib/full-prazos";
 
 export type Tipo = "full" | "pedido";
 
 type Produto = { id: string; nome: string; codigo: string; cod: string; estoque: number; marca_id: string; marca: string; empresa_id: string };
 type Item = { id: string; produto_id: string; quantidade: number; produto: Produto };
-type Doc = { id: string; numero: number; nome: string; status: string; frete_ml?: string | null; ml_total_produtos?: number | null; ml_total_unidades?: number | null; created_at: string; empresa: { id: string; nome: string; endereco: string; cnpj: string }; itens: Item[] };
+type Doc = { id: string; numero: number; nome: string; status: string; frete_ml?: string | null; data_prevista?: string | null; ml_total_produtos?: number | null; ml_total_unidades?: number | null; created_at: string; empresa: { id: string; nome: string; endereco: string; cnpj: string }; itens: Item[] };
 type Marca = { id: string; nome: string; empresa_id: string };
 
 const CFG = {
@@ -44,7 +45,7 @@ const codigo = (n: number) => `#${String(n).padStart(4, "0")}`;
 async function carregar(tipo: Tipo, id: string): Promise<{ doc: Doc; produtos: Produto[]; marcas: Marca[] }> {
   const c = CFG[tipo];
   const [docRes, itensRes, produtosRes, marcasRes] = await Promise.all([
-    db.from(c.tabela).select(tipo === "full" ? "id, numero, nome, status, created_at, frete_ml, ml_total_produtos, ml_total_unidades, empresas(id, nome, endereco, cnpj)" : "id, numero, nome, status, created_at, empresas(id, nome, endereco, cnpj)").eq("id", id).single(),
+    db.from(c.tabela).select(tipo === "full" ? "id, numero, nome, status, created_at, frete_ml, data_prevista, ml_total_produtos, ml_total_unidades, empresas(id, nome, endereco, cnpj)" : "id, numero, nome, status, created_at, empresas(id, nome, endereco, cnpj)").eq("id", id).single(),
     db.from(c.itens).select("id, produto_id, quantidade").eq(c.fk, id).order("created_at"),
     supabase.from("produtos").select("id, nome, codigo, cod, estoque, marca_id, marcas!inner(nome, empresa_id)").order("ordem"),
     supabase.from("marcas").select("id, nome, empresa_id").order("ordem"),
@@ -114,6 +115,14 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
   async function removerItem(itemId: string) {
     const { error } = await db.from(c.itens).delete().eq("id", itemId);
     if (error) toast.error("Não foi possível remover o produto."); else await atualizar();
+  }
+
+  async function salvarDataPrevista(valor: string) {
+    const dataPrevista = valor ? new Date(valor).toISOString() : null;
+    const { error } = await supabase.from("full_cargas").update({ data_prevista: dataPrevista }).eq("id", id);
+    if (error) { toast.error("Não foi possível salvar a data do Full."); return; }
+    await atualizar();
+    toast.success(dataPrevista ? "Data do Full salva" : "Data do Full removida");
   }
 
   async function importar(arquivo: File) {
@@ -205,7 +214,21 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
                 <p className="text-muted-foreground">CNPJ: {doc.empresa.cnpj || "não cadastrado"}</p>
                 <p className="text-muted-foreground">Data: {new Date().toLocaleDateString("pt-BR")}</p>
                 {tipo === "full" && <p className="text-muted-foreground">Planejamento: {doc.nome}</p>}
-                {doc.frete_ml && <p className="text-muted-foreground">Mercado Livre: <span className="font-semibold text-foreground">Frete #{doc.frete_ml}</span></p>}
+                {tipo === "full" && (
+                  <div className="mt-3 flex flex-wrap items-end gap-3">
+                    {doc.frete_ml && <p className="pb-2 text-muted-foreground">Frete <span className="font-semibold text-foreground">#{doc.frete_ml}</span></p>}
+                    <label className="grid gap-1 text-xs text-muted-foreground">
+                      Data do Full
+                      <Input
+                        type="datetime-local"
+                        defaultValue={paraInputData(doc.data_prevista)}
+                        disabled={!editavel}
+                        className="w-56 text-sm text-foreground"
+                        onBlur={(event) => void salvarDataPrevista(event.target.value)}
+                      />
+                    </label>
+                  </div>
+                )}
               </div>
               <div className="md:text-right">
                 <p className={`text-xs font-semibold tracking-wide ${corTexto}`}>{c.rotuloNumero}</p>

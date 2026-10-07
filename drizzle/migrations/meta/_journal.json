@@ -71,6 +71,13 @@
       "when": 1791399130803,
       "tag": "0009_full_frete_mercado_livre",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791402985276,
+      "tag": "0010_add_full_scheduled_date",
+      "breakpoints": true
     }
   ]
 }

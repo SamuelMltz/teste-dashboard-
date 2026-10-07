@@ -53,6 +53,7 @@ export type Database = {
           confirmed_by: string | null
           created_at: string
           created_by: string
+          data_prevista: string | null
           empresa_id: string
           frete_ml: string | null
           id: string
@@ -67,6 +68,7 @@ export type Database = {
           confirmed_by?: string | null
           created_at?: string
           created_by?: string
+          data_prevista?: string | null
           empresa_id: string
           frete_ml?: string | null
           id?: string
@@ -81,6 +83,7 @@ export type Database = {
           confirmed_by?: string | null
           created_at?: string
           created_by?: string
+          data_prevista?: string | null
           empresa_id?: string
           frete_ml?: string | null
           id?: string

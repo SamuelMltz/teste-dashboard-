@@ -14,6 +14,6 @@
 - [x] Exibir contagem e tela detalhada de alertas de estoque.
 - [x] Criar o sistema Full para planejar cargas e dar baixa no estoque ao confirmar o envio.
 - [x] Criar Pedidos para planejar compras de fornecedores e somar ao estoque no recebimento.
-- [ ] Simplificar as listagens de Pedidos e Full para cartões-resumo que abrem os detalhes.
-- [ ] Permitir criar Pedidos e Fulls sem selecionar marca, usando a empresa atual.
-- [ ] Adicionar data prevista ao Full e alertas de prazo no Dashboard.
+- [x] Simplificar as listagens de Pedidos e Full para cartões-resumo que abrem os detalhes.
+- [x] Permitir criar Pedidos e Fulls sem selecionar marca, usando a empresa atual.
+- [x] Adicionar data prevista ao Full e alertas de prazo no Dashboard.
