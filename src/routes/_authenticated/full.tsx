@@ -7,6 +7,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "@tanstack/react-router";
+import { useEmpresaObrigatoria } from "@/lib/use-empresa-obrigatoria";
+import { criarDocumentoPorPdf } from "@/lib/importar-documento";
+import { AdicionarProdutoModal } from "@/components/documento/ProdutoModais";
+import { BotaoImportarPdf } from "@/components/documento/BotaoImportarPdf";
 
 type Empresa = { id: string; nome: string };
 type Produto = { id: string; nome: string; codigo: string; cod: string; estoque: number; marca_id: string; marca: string; empresa_id: string };
@@ -67,7 +72,9 @@ function FullPage() {
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["full"], queryFn: carregarFull });
   const [marcasSel, setMarcasSel] = useState<string[]>([]);
-  const [empresaId, setEmpresaId] = useState("");
+  const empresaAtual = useEmpresaObrigatoria();
+  const navigate = useNavigate();
+  const empresaId = empresaAtual?.id ?? "";
   const [aberta, setAberta] = useState<string | null>(null);
   const [criando, setCriando] = useState(false);
   const marcasNovas = useMemo(() => marcasDaEmpresa(data?.produtos ?? [], empresaId), [data, empresaId]);
@@ -85,13 +92,13 @@ function FullPage() {
     const { data: carga, error } = await supabase.from("full_cargas").insert({ nome: marcasSel.join(SEP), empresa_id: empresaId, created_by: user.id }).select("id").single();
     setCriando(false);
     if (error) { toast.error("Não foi possível criar o planejamento."); return; }
-    setMarcasSel([]); setEmpresaId(""); setAberta(carga.id);
+    setMarcasSel([]); setAberta(carga.id);
     await atualizar();
     toast.success("Planejamento Full criado");
   }
 
-  const planejadas = data?.cargas.filter((carga) => carga.status === "planejada") ?? [];
-  const confirmadas = data?.cargas.filter((carga) => carga.status === "confirmada") ?? [];
+  const planejadas = data?.cargas.filter((carga) => carga.empresa_id === empresaId && carga.status === "planejada") ?? [];
+  const confirmadas = data?.cargas.filter((carga) => carga.empresa_id === empresaId && carga.status === "confirmada") ?? [];
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-estoque-canvas">
@@ -109,11 +116,8 @@ function FullPage() {
 
         <section className="mt-8 border-y border-border py-6" aria-labelledby="nova-carga">
           <h2 id="nova-carga" className="font-display text-xl font-semibold text-foreground">Novo planejamento</h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(220px,0.7fr)_minmax(0,1fr)_auto] sm:items-start">
-            <select value={empresaId} onChange={(event) => { setEmpresaId(event.target.value); setMarcasSel([]); }} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              <option value="" className="bg-background">Selecione a empresa</option>
-              {data?.empresas.map((empresa) => <option key={empresa.id} value={empresa.id} className="bg-background">{empresa.nome}</option>)}
-            </select>
+          <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(160px,0.4fr)_minmax(0,1fr)_auto_auto] sm:items-start">
+            <p className="flex h-9 items-center text-sm text-muted-foreground">{empresaAtual?.nome} · escolha as marcas:</p>
             <div className="flex min-h-9 flex-wrap items-center gap-2">
               {!empresaId ? <span className="text-sm text-muted-foreground">Escolha a empresa para ver as marcas</span> : marcasNovas.length === 0 ? <span className="text-sm text-muted-foreground">Essa empresa não tem produtos cadastrados</span> : marcasNovas.map((m) => {
                 const ativa = marcasSel.includes(m);
@@ -121,6 +125,7 @@ function FullPage() {
               })}
             </div>
             <Button onClick={criarCarga} disabled={criando} className="gerenciar-primary gap-2"><Plus className="h-4 w-4" />Criar Full</Button>
+            {empresaAtual && <BotaoImportarPdf rotulo="Importar PDF" onArquivo={async (f) => { const id = await criarDocumentoPorPdf("full", f, empresaAtual); if (id) { await atualizar(); navigate({ to: "/full/$id", params: { id } }); } }} />}
           </div>
         </section>
 
