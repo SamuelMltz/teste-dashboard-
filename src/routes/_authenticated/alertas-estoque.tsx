@@ -3,6 +3,7 @@ import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react
 
 import { Button } from "@/components/ui/button";
 import { listarEmpresas } from "@/lib/empresas.functions";
+import { useEmpresaObrigatoria } from "@/lib/use-empresa-obrigatoria";
 import { listarAlertas } from "@/lib/estoque";
 
 export const Route = createFileRoute("/_authenticated/alertas-estoque")({
@@ -21,7 +22,8 @@ export const Route = createFileRoute("/_authenticated/alertas-estoque")({
 });
 
 function AlertasEstoque() {
-  const alertas = listarAlertas(Route.useLoaderData());
+  const empresaAtual = useEmpresaObrigatoria();
+  const alertas = listarAlertas(Route.useLoaderData().filter((e) => e.slug === empresaAtual?.slug));
   const criticos = alertas.filter((produto) => produto.nivel === "critico").length;
 
   return (

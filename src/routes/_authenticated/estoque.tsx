@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, Navigate, useNavigate } from "@tanstack/react-router";
+import { useEmpresaObrigatoria } from "@/lib/use-empresa-obrigatoria";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
@@ -41,6 +42,7 @@ export const Route = createFileRoute("/_authenticated/estoque")({
 
 function Index() {
   const EMPRESAS = Route.useLoaderData();
+  const empresaAtual = useEmpresaObrigatoria();
   const { user } = Route.useRouteContext();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -58,6 +60,8 @@ function Index() {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
+
+  if (empresaAtual) return <Navigate to="/empresa/$slug" params={{ slug: empresaAtual.slug }} replace />;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-estoque-canvas">
