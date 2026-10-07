@@ -156,8 +156,7 @@ function FullPage() {
 }
 
 function CargaPlanejada({ carga, produtos, aberta, onToggle, onAtualizar }: { carga: Carga; produtos: Produto[]; aberta: boolean; onToggle: () => void; onAtualizar: () => Promise<void> }) {
-  const [produtoId, setProdutoId] = useState("");
-  const [quantidade, setQuantidade] = useState("1");
+  const [adicionando, setAdicionando] = useState(false);
   const [nomeCarga, setNomeCarga] = useState(carga.nome);
   const [ocupado, setOcupado] = useState(false);
   const marcasEmpresa = useMemo(() => marcasDaEmpresa(produtos, carga.empresa_id), [produtos, carga.empresa_id]);
@@ -176,17 +175,6 @@ function CargaPlanejada({ carga, produtos, aberta, onToggle, onAtualizar }: { ca
   }
   const total = carga.itens.reduce((soma, item) => soma + item.quantidade, 0);
 
-  async function adicionar() {
-    const qtd = Number(quantidade);
-    const produto = produtos.find((item) => item.id === produtoId);
-    if (!produto || !Number.isInteger(qtd) || qtd <= 0) { toast.error("Escolha um produto e uma quantidade válida."); return; }
-    if (qtd > produto.estoque) { toast.error(`Há somente ${produto.estoque} unidades disponíveis.`); return; }
-    setOcupado(true);
-    const { error } = await supabase.from("full_itens").insert({ carga_id: carga.id, produto_id: produto.id, quantidade: qtd });
-    setOcupado(false);
-    if (error) { toast.error(error.message); return; }
-    setProdutoId(""); setQuantidade("1"); await onAtualizar();
-  }
 
   async function removerItem(id: string) {
     const { error } = await supabase.from("full_itens").delete().eq("id", id);
@@ -242,11 +230,8 @@ function CargaPlanejada({ carga, produtos, aberta, onToggle, onAtualizar }: { ca
         <div className="grid gap-2">
           {carga.itens.map((item) => <div key={item.id} className="grid gap-3 rounded-md border border-border bg-background/35 p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"><div><p className="font-medium text-foreground">{item.produto.nome}</p><p className="text-xs text-muted-foreground">{item.produto.marca} · SKU {item.produto.codigo || "—"} · COD {item.produto.cod || "—"} · disponível: {item.produto.estoque}</p></div><span className="font-display text-lg font-semibold text-dashboard-amber">{item.quantidade} un.</span><Button variant="ghost" size="icon" onClick={() => removerItem(item.id)} aria-label={`Remover ${item.produto.nome}`}><Trash2 className="h-4 w-4" /></Button></div>)}
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_110px_auto]">
-          <select value={produtoId} onChange={(event) => setProdutoId(event.target.value)} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"><option value="" className="bg-background">Adicionar produto</option>{disponiveis.map((produto) => <option key={produto.id} value={produto.id} className="bg-background">{produto.marca} · {produto.nome} ({produto.estoque})</option>)}</select>
-          <Input type="number" min={1} value={quantidade} onChange={(event) => setQuantidade(event.target.value)} aria-label="Quantidade" />
-          <Button variant="outline" onClick={adicionar} disabled={ocupado} className="gap-2 border-dashboard-amber/55"><Plus className="h-4 w-4" />Adicionar</Button>
-        </div>
+        <Button variant="outline" onClick={() => setAdicionando(true)} className="mt-4 gap-2 border-dashboard-amber/55"><Plus className="h-4 w-4" />Adicionar produto</Button>
+        {adicionando && <AdicionarProdutoModal tipo="full" docId={carga.id} empresa={{ id: carga.empresa_id, nome: carga.empresa }} produtos={disponiveis} onFechar={() => setAdicionando(false)} onAdicionado={onAtualizar} />}
         <div className="mt-5 flex flex-col justify-between gap-3 border-t border-border pt-5 sm:flex-row sm:items-center"><p className="text-sm text-muted-foreground"><Package className="mr-2 inline h-4 w-4" />Total planejado: <strong className="text-foreground">{total} unidades</strong></p><Button onClick={confirmar} disabled={ocupado || !carga.itens.length} className="gerenciar-primary gap-2"><Send className="h-4 w-4" />Confirmar envio</Button></div>
       </div>}
     </article>
