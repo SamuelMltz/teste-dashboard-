@@ -1,10 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { definirEmpresaAtual, useEmpresaAtual } from "@/lib/empresa-atual";
+import vivalleLogo from "@/assets/logos/vivalle-refined.png";
+import luminartechLogo from "@/assets/logos/luminartech-refined.png";
+import vitrineLogo from "@/assets/logos/vitrine-refined.png";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   AlertTriangle,
   ArrowRight,
+  ArrowLeftRight,
   Boxes,
   ClipboardPlus,
   Home,
@@ -97,9 +102,52 @@ const CORES = {
   },
 } as const;
 
+const LOGOS: Record<string, string> = { vivalle: vivalleLogo, luminartech: luminartechLogo, vitrine: vitrineLogo };
+
 function Inicio() {
+  const atual = useEmpresaAtual();
+  return atual ? <Painel /> : <EscolherEmpresa />;
+}
+
+function EscolherEmpresa() {
+  const queryClient = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["empresas-escolha"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("empresas").select("id, slug, nome").order("ordem");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  function escolher(e: { id: string; slug: string; nome: string }) {
+    queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== "empresas-escolha" });
+    definirEmpresaAtual(e);
+  }
+  return (
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-estoque-canvas px-5 py-10">
+      <div className="pointer-events-none absolute inset-0 bg-gerenciar-atmosphere" aria-hidden="true" />
+      <div className="relative w-full max-w-5xl text-center">
+        <h1 className="font-display text-4xl font-bold text-foreground sm:text-5xl">Escolha a empresa</h1>
+        <p className="mt-2 text-muted-foreground">Todo o painel vai funcionar só com os dados da empresa escolhida.</p>
+        <div className="mx-auto mt-4 h-1 w-16 rounded-full bg-dashboard-amber" />
+        <div className="mt-10 grid gap-5 sm:grid-cols-3">
+          {isLoading ? <p className="text-muted-foreground sm:col-span-3">Carregando empresas…</p> : (data ?? []).map((e) => (
+            <button key={e.id} type="button" onClick={() => escolher(e)} className="estoque-card group flex flex-col items-center gap-4 rounded-md border border-border p-8 transition-transform hover:-translate-y-1">
+              {LOGOS[e.slug] ? <img src={LOGOS[e.slug]} alt="" className="h-24 w-24 rounded-full object-cover" /> : <span className="flex h-24 w-24 items-center justify-center rounded-full bg-dashboard-avatar font-display text-3xl text-foreground">{e.nome[0]}</span>}
+              <span className="font-display text-2xl font-semibold text-foreground">{e.nome}</span>
+              <span className="inline-flex items-center gap-2 text-sm text-muted-foreground group-hover:text-foreground">Entrar <ArrowRight className="h-4 w-4" /></span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Painel() {
+  const empresaAtual = useEmpresaAtual()!;
   const empresas = Route.useLoaderData();
-  const alertas = listarAlertas(empresas);
+  const alertas = listarAlertas(empresas.filter((e) => e.slug === empresaAtual.slug));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [menuRecolhido, setMenuRecolhido] = useState(false);
@@ -107,6 +155,7 @@ function Inicio() {
   async function sair() {
     await queryClient.cancelQueries();
     queryClient.clear();
+    definirEmpresaAtual(null);
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
@@ -116,7 +165,8 @@ function Inicio() {
       <header className="flex h-17 items-center justify-between border-b border-border bg-dashboard-header px-5 sm:px-8">
         <div className="flex items-center gap-4">
           <UserRound className="h-9 w-9 text-foreground" strokeWidth={1.8} aria-hidden="true" />
-          <span className="font-display text-base font-semibold text-foreground sm:text-lg">Administrador</span>
+          <span className="font-display text-base font-semibold text-foreground sm:text-lg">{empresaAtual.nome}</span>
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => { queryClient.clear(); definirEmpresaAtual(null); }}><ArrowLeftRight className="h-4 w-4" />Trocar empresa</Button>
         </div>
         <Button variant="ghost" onClick={sair} className="gap-3 text-muted-foreground hover:text-foreground">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-dashboard-avatar text-foreground">
