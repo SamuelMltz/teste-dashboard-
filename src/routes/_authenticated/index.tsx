@@ -8,6 +8,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   AlertTriangle,
+  Bell,
   ArrowRight,
   ArrowLeftRight,
   Boxes,
@@ -27,6 +28,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { listarEmpresas } from "@/lib/empresas.functions";
 import { listarAlertas } from "@/lib/estoque";
+import { avaliarPrazoFull } from "@/lib/full-prazos";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export const Route = createFileRoute("/_authenticated/")({
   loader: () => listarEmpresas(),
@@ -151,6 +154,15 @@ function Painel() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [menuRecolhido, setMenuRecolhido] = useState(false);
+  const { data: fullsAgendados = [] } = useQuery({
+    queryKey: ["full-prazos", empresaAtual.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("full_cargas").select("id, numero, nome, frete_ml, data_prevista").eq("empresa_id", empresaAtual.id).eq("status", "planejada").not("data_prevista", "is", null).order("data_prevista");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const temPrazoCritico = fullsAgendados.some((full) => full.data_prevista && avaliarPrazoFull(full.data_prevista).prazo !== "normal");
 
   async function sair() {
     await queryClient.cancelQueries();
@@ -168,13 +180,32 @@ function Painel() {
           <span className="font-display text-base font-semibold text-foreground sm:text-lg">{empresaAtual.nome}</span>
           <Button variant="outline" size="sm" className="gap-2" onClick={() => { queryClient.clear(); definirEmpresaAtual(null); }}><ArrowLeftRight className="h-4 w-4" />Trocar empresa</Button>
         </div>
-        <Button variant="ghost" onClick={sair} className="gap-3 text-muted-foreground hover:text-foreground">
+        <div className="flex items-center gap-1 sm:gap-3">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className={`relative ${temPrazoCritico ? "text-dashboard-red hover:text-dashboard-red" : "text-muted-foreground hover:text-foreground"}`} aria-label={`${fullsAgendados.length} Fulls agendados`}>
+                <Bell className="h-5 w-5" />
+                {fullsAgendados.length > 0 && <span className={`absolute right-0 top-0 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold ${temPrazoCritico ? "bg-dashboard-red text-foreground" : "bg-dashboard-amber text-background"}`}>{fullsAgendados.length}</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="pointer-events-auto w-80 border-border bg-popover p-0">
+              <div className="border-b border-border p-4"><p className="font-display font-semibold text-foreground">Prazos dos Fulls</p><p className="text-xs text-muted-foreground">Datas da empresa {empresaAtual.nome}</p></div>
+              <div className="max-h-80 overflow-y-auto p-2">
+                {fullsAgendados.length === 0 ? <p className="p-4 text-sm text-muted-foreground">Nenhum Full com data marcada.</p> : fullsAgendados.map((full) => {
+                  const prazo = avaliarPrazoFull(full.data_prevista ?? "");
+                  return <Link key={full.id} to="/full/$id" params={{ id: full.id }} className={`block rounded-md p-3 hover:bg-accent ${prazo.prazo === "normal" ? "text-foreground" : "bg-dashboard-red-soft text-dashboard-red"}`}><p className="font-medium">#{String(full.numero).padStart(4, "0")} · {full.nome}</p><p className="mt-1 text-xs">{full.frete_ml ? `Frete #${full.frete_ml} · ` : ""}{prazo.rotulo}</p><p className="text-xs text-muted-foreground">{new Date(full.data_prevista ?? "").toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</p></Link>;
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Button variant="ghost" onClick={sair} className="gap-3 text-muted-foreground hover:text-foreground">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-dashboard-avatar text-foreground">
             <UserRound className="h-5 w-5" aria-hidden="true" />
           </span>
           <span>Sair</span>
           <LogOut className="hidden h-4 w-4 sm:block" aria-hidden="true" />
-        </Button>
+          </Button>
+        </div>
       </header>
 
       <div
