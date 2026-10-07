@@ -1,13 +1,16 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, Download, FileText, Link2, PackagePlus, Plus, Trash2, Truck, Upload, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Check, Download, PackagePlus, Plus, Trash2, Truck, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { lerPdf, type LinhaPdf } from "@/lib/pdf-import";
+import { lerPdf } from "@/lib/pdf-import";
+import { casarLinhas, type Pendente } from "@/lib/casar-produtos";
+import { lerPendentes, salvarPendentes } from "@/lib/importar-documento";
+import { AdicionarProdutoModal, NovoProdutoModal, somarItem } from "./ProdutoModais";
 import { gerarPdf } from "@/lib/pdf-export";
 
 export type Tipo = "full" | "pedido";
@@ -91,11 +94,14 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
   const queryClient = useQueryClient();
   const chave = ["documento", tipo, id];
   const { data, isLoading, error } = useQuery({ queryKey: chave, queryFn: () => carregar(tipo, id) });
-  const [produtoId, setProdutoId] = useState("");
-  const [qtd, setQtd] = useState("");
   const [ocupado, setOcupado] = useState(false);
-  const [pendentes, setPendentes] = useState<LinhaPdf[]>([]);
+  const [pendentes, setPendentesState] = useState<Pendente[]>([]);
+  const [resolvendo, setResolvendo] = useState<number | null>(null);
+  const [adicionando, setAdicionando] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { setPendentesState(lerPendentes(tipo, id)); }, [tipo, id]);
+  function setPendentes(lista: Pendente[]) { setPendentesState(lista); salvarPendentes(tipo, id, lista); }
 
   const atualizar = () => queryClient.invalidateQueries({ queryKey: chave });
   const doc = data?.doc;
@@ -104,25 +110,6 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
   const corBorda = c.cor === "amber" ? "border-dashboard-amber/70" : "border-dashboard-green/70";
   const corIcone = c.cor === "amber" ? "bg-dashboard-amber-icon shadow-dashboard-amber" : "bg-dashboard-green-icon";
   const corLinha = c.cor === "amber" ? "bg-dashboard-amber" : "bg-dashboard-green";
-
-  async function somarItem(produto: Produto, quantidade: number, itensAtuais: Item[]) {
-    const existente = itensAtuais.find((i) => i.produto_id === produto.id);
-    const res = existente
-      ? await db.from(c.itens).update({ quantidade: existente.quantidade + quantidade }).eq("id", existente.id)
-      : await db.from(c.itens).insert({ [c.fk]: id, produto_id: produto.id, quantidade });
-    if (res.error) { toast.error(`${produto.nome}: ${res.error.message}`); return false; }
-    return true;
-  }
-
-  async function adicionar() {
-    const produto = data?.produtos.find((p) => p.id === produtoId);
-    const n = Number(qtd);
-    if (!produto || !Number.isInteger(n) || n <= 0) { toast.error("Escolha um produto e uma quantidade válida."); return; }
-    setOcupado(true);
-    const ok = await somarItem(produto, n, doc?.itens ?? []);
-    setOcupado(false);
-    if (ok) { setProdutoId(""); setQtd(""); await atualizar(); }
-  }
 
   async function removerItem(itemId: string) {
     const { error } = await db.from(c.itens).delete().eq("id", itemId);
@@ -133,27 +120,19 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
     if (!data || !doc) return;
     setOcupado(true);
     try {
-      const linhas = await lerPdf(arquivo);
-      if (!linhas.length) { toast.error("Nenhum produto com código foi encontrado nesse PDF."); return; }
-      const porCod = new Map(data.produtos.filter((p) => p.cod.trim()).map((p) => [p.cod.trim().toLowerCase(), p]));
-      const naoEncontrados: LinhaPdf[] = [];
+      let linhas;
+      try { linhas = await lerPdf(arquivo); } catch { toast.error("Não foi possível ler esse PDF. Verifique se ele não é uma imagem escaneada ou protegido por senha."); return; }
+      if (!linhas.length) { toast.error("Nenhum produto com código e quantidade foi encontrado nesse PDF."); return; }
+      const { casados, pendentes: novos } = casarLinhas(linhas, data.produtos);
       let adicionados = 0;
-      let itens = [...doc.itens];
-      for (const l of linhas) {
-        const produto = porCod.get(l.cod.toLowerCase());
-        if (!produto) { naoEncontrados.push(l); continue; }
-        if (await somarItem(produto, l.quantidade, itens)) {
-          adicionados++;
-          const ex = itens.find((i) => i.produto_id === produto.id);
-          itens = ex ? itens.map((i) => (i === ex ? { ...i, quantidade: i.quantidade + l.quantidade } : i)) : [...itens, { id: "", produto_id: produto.id, quantidade: l.quantidade, produto }];
-        }
+      for (const item of casados) {
+        const produto = data.produtos.find((p) => p.id === item.produtoId);
+        if (produto && (await somarItem(tipo, id, produto, item.quantidade))) adicionados++;
       }
       await atualizar();
       toast.success(`${adicionados} ${adicionados === 1 ? "produto adicionado" : "produtos adicionados"} do PDF`);
-      if (naoEncontrados.length) toast.warning(`${naoEncontrados.length} ${naoEncontrados.length === 1 ? "código não reconhecido" : "códigos não reconhecidos"}`);
-      setPendentes(naoEncontrados);
-    } catch {
-      toast.error("Não foi possível ler esse PDF.");
+      if (novos.length) toast.warning(`${novos.length} ${novos.length === 1 ? "item precisa" : "itens precisam"} de revisão`);
+      setPendentes([...pendentes, ...novos]);
     } finally {
       setOcupado(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -173,6 +152,7 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
 
   async function confirmar() {
     if (!doc?.itens.length) { toast.error("Adicione ao menos um produto."); return; }
+    if (pendentes.length && !confirm(`Ainda há ${pendentes.length} ${pendentes.length === 1 ? "item do PDF não resolvido" : "itens do PDF não resolvidos"}. Eles NÃO entrarão no estoque. Continuar?`)) return;
     const total = doc.itens.reduce((s, i) => s + i.quantidade, 0);
     if (!confirm(`${c.confirmar}: ${total} unidades? O estoque será atualizado e esta ação não poderá ser desfeita.`)) return;
     setOcupado(true);
@@ -183,7 +163,7 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
     toast.success("Estoque atualizado");
   }
 
-  const disponiveis = useMemo(() => data?.produtos ?? [], [data]);
+  const atual = resolvendo !== null ? pendentes[resolvendo] : undefined;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-estoque-canvas">
@@ -221,6 +201,21 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
               </div>
             </div>
 
+            {editavel && pendentes.length > 0 && (
+              <div className="mt-6 rounded-md border border-dashboard-red/50 bg-dashboard-red-soft p-4">
+                <p className="flex items-center gap-2 font-medium text-foreground"><AlertTriangle className="h-4 w-4 text-dashboard-red" />{pendentes.length} {pendentes.length === 1 ? "item do PDF precisa" : "itens do PDF precisam"} de revisão</p>
+                <div className="mt-3 grid gap-2">
+                  {pendentes.map((p, i) => (
+                    <div key={`${p.cod}-${i}`} className="grid gap-2 rounded-md border border-border bg-background/40 p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+                      <div className="min-w-0"><p className="truncate text-foreground">{p.nome}</p><p className="text-xs text-muted-foreground">COD {p.cod} · {p.quantidade} un. · {p.opcoes.length ? `${p.opcoes.length} produtos com esse código — escolha o certo` : "não encontrado no cadastro"}</p></div>
+                      <Button size="sm" variant="outline" className={corBorda} onClick={() => setResolvendo(i)}>{p.opcoes.length ? "Escolher produto" : "Cadastrar ou vincular"}</Button>
+                      <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={() => { if (confirm(`Descartar o item ${p.cod}? Ele não será incluído.`)) setPendentes(pendentes.filter((_, k) => k !== i)); }}>Descartar</Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="mt-6 overflow-x-auto rounded-md border border-border">
               <table className="w-full min-w-[560px] text-sm">
                 <thead className="bg-background/50 text-left text-xs font-semibold tracking-wide text-muted-foreground">
@@ -241,15 +236,7 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
             </div>
 
             {editavel ? <>
-              <h3 className="mt-8 font-display text-lg font-semibold text-foreground">Adicionar produto</h3>
-              <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_140px_auto]">
-                <select value={produtoId} onChange={(e) => setProdutoId(e.target.value)} className="h-10 rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  <option value="" className="bg-background">Selecione o produto</option>
-                  {disponiveis.map((p) => <option key={p.id} value={p.id} className="bg-background">{p.marca} · {p.nome} {p.cod ? `(COD ${p.cod})` : ""} — estoque {p.estoque}</option>)}
-                </select>
-                <Input type="number" min={1} placeholder="Qtd." value={qtd} onChange={(e) => setQtd(e.target.value)} aria-label="Quantidade" className="h-10" />
-                <Button variant="outline" onClick={adicionar} disabled={ocupado} className={`h-10 gap-2 ${corBorda} ${corTexto}`}><Plus className="h-4 w-4" />Adicionar</Button>
-              </div>
+              <Button variant="outline" onClick={() => setAdicionando(true)} className={`mt-6 h-11 gap-2 ${corBorda} ${corTexto}`}><Plus className="h-4 w-4" />Adicionar produto</Button>
               <div className="mt-6 flex justify-end border-t border-border pt-6">
                 <Button onClick={confirmar} disabled={ocupado || !doc.itens.length} className="h-11 gap-2 bg-foreground px-8 text-background hover:bg-foreground/90"><Check className="h-4 w-4" />{c.confirmar}</Button>
               </div>
@@ -258,104 +245,26 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
         )}
       </div>
 
-      {pendentes[0] && data && doc && (() => { const atual = pendentes[0]; return (
+      {adicionando && data && doc && (
+        <AdicionarProdutoModal tipo={tipo} docId={id} empresa={doc.empresa} produtos={data.produtos} onFechar={() => setAdicionando(false)} onAdicionado={atualizar} />
+      )}
+
+      {atual && resolvendo !== null && data && doc && (
         <NovoProdutoModal
-          key={atual.cod}
+          key={`${atual.cod}-${resolvendo}`}
           linha={atual}
+          opcoes={atual.opcoes}
           restantes={pendentes.length - 1}
           tipo={tipo}
           empresa={doc.empresa}
-          marcas={data.marcas}
           produtos={data.produtos}
-          onFechar={() => setPendentes((p) => p.slice(1))}
+          onFechar={() => setResolvendo(null)}
           onPronto={async (produto) => {
-            const ok = await somarItem(produto, atual.quantidade, doc.itens);
-            if (ok) { await atualizar(); setPendentes((p) => p.slice(1)); }
+            const ok = await somarItem(tipo, id, produto, atual.quantidade);
+            if (ok) { await atualizar(); setPendentes(pendentes.filter((_, k) => k !== resolvendo)); setResolvendo(null); }
           }}
         />
-      ); })()}
-    </div>
-  );
-}
-
-function NovoProdutoModal({ linha, restantes, tipo, empresa, marcas, produtos, onFechar, onPronto }: {
-  linha: LinhaPdf; restantes: number; tipo: Tipo; empresa: { id: string; nome: string }; marcas: Marca[]; produtos: Produto[];
-  onFechar: () => void; onPronto: (p: Produto) => Promise<void>;
-}) {
-  const [modo, setModo] = useState<"novo" | "vincular">("novo");
-  const [nome, setNome] = useState(linha.nome);
-  const [cod, setCod] = useState(linha.cod);
-  const [sku, setSku] = useState("");
-  const [marcaId, setMarcaId] = useState("");
-  const [existenteId, setExistenteId] = useState("");
-  const [salvando, setSalvando] = useState(false);
-  const destino = tipo === "full" ? "ao envio" : "ao pedido";
-
-  async function salvar() {
-    setSalvando(true);
-    try {
-      if (modo === "novo") {
-        if (!nome.trim() || !cod.trim() || !sku.trim() || !marcaId) { toast.error("Preencha todos os campos obrigatórios."); return; }
-        const ordem = produtos.filter((p) => p.marca_id === marcaId).length;
-        const { data, error } = await supabase.from("produtos").insert({ nome: nome.trim(), cod: cod.trim(), codigo: sku.trim(), marca_id: marcaId, ordem }).select("id, nome, codigo, cod, estoque, marca_id").single();
-        if (error) { toast.error(error.message.includes("row-level") ? "Só administradores podem cadastrar produtos." : error.message); return; }
-        const marca = marcas.find((m) => m.id === marcaId);
-        await onPronto({ ...data, marca: marca?.nome ?? "", empresa_id: empresa.id });
-        toast.success("Produto cadastrado");
-      } else {
-        const produto = produtos.find((p) => p.id === existenteId);
-        if (!produto) { toast.error("Escolha o produto."); return; }
-        const { error } = await supabase.from("produtos").update({ cod: linha.cod }).eq("id", produto.id);
-        if (error) { toast.error(error.message.includes("row-level") ? "Só administradores podem editar produtos." : error.message); return; }
-        await onPronto({ ...produto, cod: linha.cod });
-        toast.success("COD vinculado ao produto");
-      }
-    } finally { setSalvando(false); }
-  }
-
-  const corBg = tipo === "full" ? "bg-dashboard-amber-soft border-dashboard-amber/45" : "bg-dashboard-green-soft border-dashboard-green/45";
-  const corTx = tipo === "full" ? "text-dashboard-amber" : "text-dashboard-green";
-  const sel = "h-10 w-full rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring";
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="titulo-modal">
-      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-md border border-border bg-estoque-canvas p-6 sm:p-8">
-        <div className="flex items-start gap-4">
-          <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-md text-foreground ${tipo === "full" ? "bg-dashboard-amber-icon" : "bg-dashboard-green-icon"}`}><PackagePlus className="h-7 w-7" /></div>
-          <div className="flex-1"><h2 id="titulo-modal" className="font-display text-2xl font-semibold text-foreground">{modo === "novo" ? "Cadastrar novo produto" : "Vincular a um cadastro existente"}</h2><p className="text-sm text-muted-foreground">Este item do PDF não foi encontrado no cadastro.{restantes > 0 ? ` Faltam mais ${restantes}.` : ""}</p></div>
-          <Button variant="ghost" size="icon" onClick={onFechar} aria-label="Pular este item"><X className="h-5 w-5" /></Button>
-        </div>
-
-        <div className={`mt-6 flex gap-4 rounded-md border p-4 ${corBg}`}>
-          <FileText className={`h-6 w-6 shrink-0 ${corTx}`} />
-          <div><p className={`text-xs font-semibold ${corTx}`}>Item identificado no PDF</p><p className="font-medium text-foreground">{linha.nome}</p><p className="text-xs text-muted-foreground">COD: {linha.cod} · Quantidade: {linha.quantidade}</p></div>
-        </div>
-
-        {modo === "novo" ? (
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-1 text-sm text-foreground sm:col-span-2">Nome do produto *<Input value={nome} onChange={(e) => setNome(e.target.value)} className="h-10" /></label>
-            <label className="grid gap-1 text-sm text-foreground">COD do fornecedor *<Input value={cod} onChange={(e) => setCod(e.target.value)} className="h-10" /></label>
-            <label className="grid gap-1 text-sm text-foreground">SKU interno *<Input value={sku} placeholder="Informe o SKU" onChange={(e) => setSku(e.target.value)} className="h-10" /></label>
-            <label className="grid gap-1 text-sm text-foreground">Empresa *<select disabled className={sel}><option className="bg-background">{empresa.nome}</option></select></label>
-            <label className="grid gap-1 text-sm text-foreground">Marca *<select value={marcaId} onChange={(e) => setMarcaId(e.target.value)} className={sel}><option value="" className="bg-background">Selecione a marca</option>{marcas.map((m) => <option key={m.id} value={m.id} className="bg-background">{m.nome}</option>)}</select></label>
-          </div>
-        ) : (
-          <label className="mt-5 grid gap-1 text-sm text-foreground">Produto já cadastrado *
-            <select value={existenteId} onChange={(e) => setExistenteId(e.target.value)} className={sel}><option value="" className="bg-background">Selecione o produto</option>{produtos.map((p) => <option key={p.id} value={p.id} className="bg-background">{p.marca} · {p.nome} {p.codigo ? `(SKU ${p.codigo})` : ""}</option>)}</select>
-            <span className="text-xs text-muted-foreground">O COD {linha.cod} será gravado nesse produto.</span>
-          </label>
-        )}
-
-        <button type="button" onClick={() => setModo(modo === "novo" ? "vincular" : "novo")} className={`mt-5 inline-flex items-center gap-2 text-sm underline underline-offset-4 ${corTx}`}>
-          <Link2 className="h-4 w-4" />{modo === "novo" ? "O produto já existe? Vincular a um cadastro existente" : "Cadastrar como novo produto"}
-        </button>
-
-        <p className="mt-5 border-t border-border pt-4 text-sm text-muted-foreground">O produto será adicionado {destino}. O estoque será atualizado após {tipo === "full" ? "confirmar o envio" : "confirmar o recebimento"}.</p>
-        <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <Button variant="outline" onClick={onFechar}>Pular</Button>
-          <Button onClick={salvar} disabled={salvando} className="gerenciar-primary">{modo === "novo" ? `Cadastrar e adicionar ${destino}` : `Vincular e adicionar ${destino}`}</Button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
