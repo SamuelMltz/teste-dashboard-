@@ -99,6 +99,13 @@
       "when": 1791478925447,
       "tag": "0013_pedidos_data_endereco_entrega",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791481701144,
+      "tag": "0014_restringir_leituras",
+      "breakpoints": true
     }
   ]
 }
