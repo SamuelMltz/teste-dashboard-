@@ -284,7 +284,7 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
                 </thead>
                 <tbody>
                   {doc.itens.length === 0 ? <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum produto ainda.</td></tr> : doc.itens.map((i) => (
-                    <tr key={i.id} className={`border-t border-border text-foreground transition-colors ${tipo === "full" && i.preparado ? "bg-dashboard-green-soft shadow-[inset_3px_0_0_hsl(var(--dashboard-green,142_60%_45%))]" : ""}`}>
+                    <tr key={i.id} className={`border-t border-border text-foreground transition-colors ${tipo === "full" && i.preparado ? "bg-dashboard-green-soft shadow-[inset_3px_0_0_var(--dashboard-green)]" : ""}`}>
                       {tipo === "full" && <td className="px-3"><button type="button" role="checkbox" aria-checked={!!i.preparado} aria-label={`Preparado: ${i.produto.nome}`} disabled={!editavel} onClick={() => void alternarPreparado(i)} className={`flex h-5 w-5 items-center justify-center rounded border transition-colors disabled:opacity-60 ${i.preparado ? "border-dashboard-green bg-dashboard-green text-background" : "border-muted-foreground/50 hover:border-dashboard-green"}`}>{i.preparado && <Check className="h-3.5 w-3.5" strokeWidth={3} />}</button></td>}
                       <td className="px-4 py-3">{i.produto.cod || "—"}</td>
                       <td className="px-4 py-3">{i.produto.codigo ? i.produto.codigo : <CampoProduto key={`sku-${i.produto.id}`} produtoId={i.produto.id} campo="codigo" placeholder="Informar SKU" onSalvo={atualizar} />}</td>
