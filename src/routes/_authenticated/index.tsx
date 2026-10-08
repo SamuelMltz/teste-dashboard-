@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { definirEmpresaAtual, useEmpresaAtual } from "@/lib/empresa-atual";
+import { AvatarEmpresa } from "@/components/AvatarEmpresa";
 import vivalleLogo from "@/assets/logos/vivalle-refined.png";
 import luminartechLogo from "@/assets/logos/luminartech-refined.png";
 import vitrineLogo from "@/assets/logos/vitrine-refined.png";
@@ -176,8 +177,7 @@ function Painel() {
     <div className="min-h-screen overflow-hidden bg-background">
       <header className="flex h-17 items-center justify-between border-b border-border bg-dashboard-header px-5 sm:px-8">
         <div className="flex items-center gap-4">
-          <UserRound className="h-9 w-9 text-foreground" strokeWidth={1.8} aria-hidden="true" />
-          <span className="font-display text-base font-semibold text-foreground sm:text-lg">{empresaAtual.nome}</span>
+          <AvatarEmpresa key={empresaAtual.slug} slug={empresaAtual.slug} nome={empresaAtual.nome} />
           <Button variant="outline" size="sm" className="gap-2" onClick={() => { queryClient.clear(); definirEmpresaAtual(null); }}><ArrowLeftRight className="h-4 w-4" />Trocar empresa</Button>
         </div>
         <div className="flex items-center gap-1 sm:gap-3">
