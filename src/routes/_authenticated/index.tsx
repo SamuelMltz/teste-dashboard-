@@ -155,6 +155,7 @@ function Painel() {
   const alertas = listarAlertas(empresas.filter((e) => e.slug === empresaAtual.slug));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [modal, setModal] = useState<"produto" | "marca" | null>(null);
   const [menuRecolhido, setMenuRecolhido] = useState(false);
   const { data: fullsAgendados = [] } = useQuery({
     queryKey: ["full-prazos", empresaAtual.id],
