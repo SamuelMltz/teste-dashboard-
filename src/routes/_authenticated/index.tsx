@@ -84,6 +84,13 @@ const OPCOES = [
     Icon: PackagePlus,
     secao: "pedidos",
   },
+  {
+    to: "/graficos",
+    titulo: "Gráficos",
+    desc: "Compare o estoque e acompanhe a reposição do Full.",
+    Icon: BarChart3,
+    secao: "graficos",
+  },
 ] as const;
 
 const LOGOS: Record<string, string> = { vivalle: vivalleLogo, luminartech: luminartechLogo, vitrine: vitrineLogo };

@@ -358,7 +358,12 @@
   --section-icon: var(--dashboard-green-icon);
   --section-wave: var(--dashboard-green-wave);
 }
-[data-section="garantia"] {
+[data-section="graficos"] {
+  --graficos-full: var(--dashboard-green);
+  --graficos-fisico: var(--dashboard-blue);
+  --graficos-vendas: oklch(0.72 0.15 300);
+}
+[data-section="garantia"], [data-section="graficos"] {
   --section-accent: var(--dashboard-blue);
   --section-soft: var(--dashboard-blue-soft);
   --section-icon: var(--dashboard-blue-icon);
