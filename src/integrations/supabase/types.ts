@@ -223,7 +223,9 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          data_pedido: string
           empresa_id: string
+          endereco_entrega: string
           fornecedor: string
           id: string
           nome: string
@@ -235,7 +237,9 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string
+          data_pedido?: string
           empresa_id: string
+          endereco_entrega?: string
           fornecedor: string
           id?: string
           nome: string
@@ -247,7 +251,9 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          data_pedido?: string
           empresa_id?: string
+          endereco_entrega?: string
           fornecedor?: string
           id?: string
           nome?: string

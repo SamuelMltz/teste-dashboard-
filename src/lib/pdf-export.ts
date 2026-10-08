@@ -6,6 +6,7 @@ export type DadosPdf = {
   numero: string;
   empresa: { nome: string; endereco: string; cnpj: string };
   data: string;
+  rotuloEndereco?: string;
   marcas: string[];
   itens: { cod: string; nome: string; quantidade: number }[];
   arquivo: string;
@@ -31,7 +32,7 @@ export async function gerarPdf(d: DadosPdf) {
 
   doc.setTextColor(20, 30, 50).setFontSize(14).text(d.empresa.nome, 15, 45 + o);
   doc.setFont("helvetica", "normal").setFontSize(10);
-  doc.text(`Endereço: ${d.empresa.endereco || "—"}`, 15, 52 + o);
+  doc.text(`${d.rotuloEndereco ?? "Endereço"}: ${d.empresa.endereco || "—"}`, 15, 52 + o);
   doc.text(`CNPJ: ${d.empresa.cnpj || "—"}`, 15, 58 + o);
   doc.text(`Data: ${d.data}`, 15, 64 + o);
   doc.setFont("helvetica", "bold").text("Marca:", 15, 71 + o);

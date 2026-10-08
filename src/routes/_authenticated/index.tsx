@@ -193,7 +193,7 @@ function Painel() {
               <div className="max-h-80 overflow-y-auto p-2">
                 {fullsAgendados.length === 0 ? <p className="p-4 text-sm text-muted-foreground">Nenhum Full com data marcada.</p> : fullsAgendados.map((full) => {
                   const prazo = avaliarPrazoFull(full.data_prevista ?? "");
-                  return <Link key={full.id} to="/full/$id" params={{ id: full.id }} className={`block rounded-md p-3 hover:bg-accent ${prazo.prazo === "normal" ? "text-foreground" : "bg-dashboard-red-soft text-dashboard-red"}`}><p className="font-medium">#{String(full.numero).padStart(4, "0")} · {full.nome}</p><p className="mt-1 text-xs">{full.frete_ml ? `Frete #${full.frete_ml} · ` : ""}{prazo.rotulo}</p><p className="text-xs text-muted-foreground">{new Date(full.data_prevista ?? "").toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</p></Link>;
+                  return <Link key={full.id} to="/full/$id" params={{ id: full.id }} className={`block rounded-md p-3 hover:bg-accent ${prazo.prazo === "normal" ? "text-foreground" : "bg-dashboard-red-soft text-dashboard-red"}`}><p className="font-medium">#{String(full.numero).padStart(4, "0")} · {full.nome}</p><p className="mt-1 text-xs">{full.frete_ml ? `Frete #${full.frete_ml} · ` : ""}{prazo.rotulo}</p><p className="text-xs text-muted-foreground">{new Date(full.data_prevista ?? "").toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}</p></Link>;
                 })}
               </div>
             </PopoverContent>
