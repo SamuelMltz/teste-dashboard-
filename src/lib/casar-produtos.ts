@@ -30,6 +30,22 @@ export function casarLinhas(linhas: LinhaPdf[], produtos: ProdutoBase[]) {
   return { casados: Array.from(casados, ([produtoId, quantidade]) => ({ produtoId, quantidade })), pendentes };
 }
 
+/**
+ * Pedidos de compra: casa primeiro na empresa selecionada; o que não for encontrado
+ * é procurado nas outras empresas. Um único achado vincula; vários pedem escolha.
+ */
+export function casarEntreEmpresas(linhas: LinhaPdf[], locais: ProdutoBase[], outros: ProdutoBase[]) {
+  const r1 = casarLinhas(linhas, locais);
+  const naoAchados = r1.pendentes.filter((p) => p.opcoes.length === 0);
+  const r2 = casarLinhas(naoAchados.map(({ opcoes: _o, ...l }) => l), outros);
+  const casados = new Map(r1.casados.map((c) => [c.produtoId, c.quantidade]));
+  for (const c of r2.casados) casados.set(c.produtoId, (casados.get(c.produtoId) ?? 0) + c.quantidade);
+  return {
+    casados: Array.from(casados, ([produtoId, quantidade]) => ({ produtoId, quantidade })),
+    pendentes: [...r1.pendentes.filter((p) => p.opcoes.length > 0), ...r2.pendentes],
+  };
+}
+
 /** Assinatura estável do conteúdo do PDF, para avisar sobre importações repetidas. */
 export function assinaturaLinhas(linhas: LinhaPdf[]) {
   return linhas.map((l) => `${norm(l.cod || l.sku || l.codigoMl || "")}:${l.quantidade}`).sort().join("|");
