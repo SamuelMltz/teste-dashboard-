@@ -24,3 +24,4 @@
 - Após o login o usuário escolhe uma empresa (guardada no navegador via `src/lib/empresa-atual.ts`); todas as telas filtram por ela e mandam de volta à escolha se não houver — mantém cada empresa isolada sem mudar as permissões do banco.
 - Importar PDF nas listas de Full/Pedidos cria o registro (`src/lib/importar-documento.ts`), casa por COD e depois SKU exatos (`casar-produtos.ts`) e guarda itens não resolvidos no navegador até serem revisados nos Detalhes; o estoque só muda na confirmação.
 - PDFs de envio Full do Mercado Livre são detectados e lidos por posição de coluna (`src/lib/pdf-ml.ts`); casam só por SKU exato, o número do frete fica no Full (único por empresa) para evitar duplicatas e conferir totais.
+- Pedidos de compra podem conter produtos de outras empresas (casa primeiro na empresa do pedido, depois nas demais); o pedido fica na empresa de origem e o recebimento soma no estoque do próprio produto. Full continua restrito à empresa selecionada.

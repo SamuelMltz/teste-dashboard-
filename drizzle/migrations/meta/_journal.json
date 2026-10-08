@@ -78,6 +78,13 @@
       "when": 1791402985276,
       "tag": "0010_add_full_scheduled_date",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791478252451,
+      "tag": "0011_pedido_itens_outras_empresas",
+      "breakpoints": true
     }
   ]
 }

@@ -25,3 +25,21 @@ describe("casarLinhas", () => {
     expect(r.pendentes[0]?.opcoes).toEqual([]);
   });
 });
+
+import { casarEntreEmpresas } from "../casar-produtos";
+
+describe("casarEntreEmpresas (pedidos de compra)", () => {
+  const luminar = [{ id: "l1", cod: "100", codigo: "L-1" }];
+  const outras = [{ id: "v1", cod: "100", codigo: "V-1" }, { id: "v2", cod: "300", codigo: "V-2" }, { id: "t1", cod: "400", codigo: "T" }, { id: "v4", cod: "400", codigo: "V4" }];
+  it("prefere a empresa selecionada", () => {
+    expect(casarEntreEmpresas([{ cod: "100", nome: "x", quantidade: 1 }], luminar, outras).casados).toEqual([{ produtoId: "l1", quantidade: 1 }]);
+  });
+  it("vincula ao produto da outra empresa quando só existe lá", () => {
+    expect(casarEntreEmpresas([{ cod: "300", nome: "x", quantidade: 5 }], luminar, outras).casados).toEqual([{ produtoId: "v2", quantidade: 5 }]);
+  });
+  it("várias correspondências em outras empresas pedem escolha", () => {
+    const r = casarEntreEmpresas([{ cod: "400", nome: "x", quantidade: 2 }], luminar, outras);
+    expect(r.casados).toEqual([]);
+    expect(r.pendentes[0]?.opcoes).toEqual(["t1", "v4"]);
+  });
+});
