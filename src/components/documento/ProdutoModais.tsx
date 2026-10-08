@@ -38,8 +38,8 @@ export function AdicionarProdutoModal({ tipo, docId, empresa, produtos, onFechar
   const [qtd, setQtd] = useState("1");
   const [salvando, setSalvando] = useState(false);
   const [cadastrando, setCadastrando] = useState(false);
-  const cor = tipo === "full" ? "text-dashboard-amber" : "text-dashboard-green";
-  const borda = tipo === "full" ? "border-dashboard-amber" : "border-dashboard-green";
+  const cor = "text-section";
+  const borda = "border-section";
 
   const resultados = useMemo(() => {
     const q = busca.trim().toLowerCase();
@@ -98,7 +98,7 @@ export function AdicionarProdutoModal({ tipo, docId, empresa, produtos, onFechar
           <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_120px_auto] sm:items-center">
             <p className="truncate text-sm text-foreground">Selecionado: <strong>{produto.nome}</strong></p>
             <Input type="number" min={1} value={qtd} onChange={(e) => setQtd(e.target.value)} onKeyDown={(e) => e.key === "Enter" && adicionar()} aria-label="Quantidade" className="h-10" />
-            <Button onClick={() => adicionar()} disabled={salvando} className="gerenciar-primary h-10 gap-2"><Plus className="h-4 w-4" />Adicionar</Button>
+            <Button onClick={() => adicionar()} disabled={salvando} className="bg-section text-primary-foreground hover:bg-section/90 h-10 gap-2"><Plus className="h-4 w-4" />Adicionar</Button>
           </div>
         )}
         <div className="mt-6 flex items-center justify-between gap-3 border-t border-border pt-5">
@@ -170,8 +170,8 @@ export function NovoProdutoModal({ linha, restantes = 0, tipo, empresa, produtos
     } finally { setSalvando(false); }
   }
 
-  const corBg = tipo === "full" ? "bg-dashboard-amber-soft border-dashboard-amber/45" : "bg-dashboard-green-soft border-dashboard-green/45";
-  const corTx = tipo === "full" ? "text-dashboard-amber" : "text-dashboard-green";
+  const corBg = "bg-section-soft border-section/45";
+  const corTx = "text-section";
   const sel = "h-10 w-full rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring";
   const titulo = ambiguo ? "Escolha o produto correto" : modo === "novo" ? "Cadastrar novo produto" : "Vincular a um cadastro existente";
   const sub = ambiguo ? "Mais de um produto tem esse código." : linha ? "Este item do PDF não foi encontrado no cadastro." : `Novo produto da ${empresa.nome}.`;
@@ -180,7 +180,7 @@ export function NovoProdutoModal({ linha, restantes = 0, tipo, empresa, produtos
     <div className={overlay} role="dialog" aria-modal="true" aria-labelledby="titulo-modal">
       <div className={`${caixa} max-w-2xl p-6 sm:p-8`}>
         <div className="flex items-start gap-4">
-          <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-md text-foreground ${tipo === "full" ? "bg-dashboard-amber-icon" : "bg-dashboard-green-icon"}`}><PackagePlus className="h-7 w-7" /></div>
+          <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-md text-foreground bg-section-icon`}><PackagePlus className="h-7 w-7" /></div>
           <div className="flex-1"><h2 id="titulo-modal" className="font-display text-2xl font-semibold text-foreground">{titulo}</h2><p className="text-sm text-muted-foreground">{sub}{restantes > 0 ? ` Faltam mais ${restantes}.` : ""}</p></div>
           <Button variant="ghost" size="icon" onClick={onFechar} aria-label="Fechar"><X className="h-5 w-5" /></Button>
         </div>
@@ -216,7 +216,7 @@ export function NovoProdutoModal({ linha, restantes = 0, tipo, empresa, produtos
         <p className="mt-5 border-t border-border pt-4 text-sm text-muted-foreground">O produto será adicionado {destino}. O estoque só muda ao {tipo === "full" ? "confirmar o envio" : "confirmar o recebimento"}.</p>
         <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <Button variant="outline" onClick={onFechar}>{linha ? "Agora não" : "Cancelar"}</Button>
-          <Button onClick={salvar} disabled={salvando} className="gerenciar-primary">{modo === "novo" ? `Cadastrar e adicionar ${destino}` : `Adicionar ${destino}`}</Button>
+          <Button onClick={salvar} disabled={salvando} className="bg-section text-primary-foreground hover:bg-section/90">{modo === "novo" ? `Cadastrar e adicionar ${destino}` : `Adicionar ${destino}`}</Button>
         </div>
       </div>
     </div>

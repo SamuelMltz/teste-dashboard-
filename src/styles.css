@@ -82,6 +82,10 @@
   --color-dashboard-red-soft: var(--dashboard-red-soft);
   --color-dashboard-red-icon: var(--dashboard-red-icon);
   --color-estoque-canvas: var(--estoque-canvas);
+  --color-section: var(--section-accent);
+  --color-section-soft: var(--section-soft);
+  --color-section-icon: var(--section-icon);
+  --color-section-wave: var(--section-wave);
   --shadow-dashboard-amber: 0 0 22px color-mix(in oklab, var(--dashboard-amber) 35%, transparent);
   --shadow-dashboard-blue: 0 0 22px color-mix(in oklab, var(--dashboard-blue) 35%, transparent);
   --shadow-dashboard-green: 0 0 22px color-mix(in oklab, var(--dashboard-green) 35%, transparent);
@@ -340,3 +344,43 @@
     color: var(--color-foreground);
   }
 }
+
+/* Section palettes are independent of functional error/warning/success colors. */
+[data-section="estoque"], [data-section="full"] {
+  --section-accent: var(--dashboard-amber);
+  --section-soft: var(--dashboard-amber-soft);
+  --section-icon: var(--dashboard-amber-icon);
+  --section-wave: var(--dashboard-amber-wave);
+}
+[data-section="pedidos"], [data-section="gerenciar"], [data-section="contas"] {
+  --section-accent: var(--dashboard-green);
+  --section-soft: var(--dashboard-green-soft);
+  --section-icon: var(--dashboard-green-icon);
+  --section-wave: var(--dashboard-green-wave);
+}
+[data-section="garantia"] {
+  --section-accent: var(--dashboard-blue);
+  --section-soft: var(--dashboard-blue-soft);
+  --section-icon: var(--dashboard-blue-icon);
+  --section-wave: var(--dashboard-blue-wave);
+}
+[data-section="alertas"] {
+  --section-accent: var(--dashboard-red);
+  --section-soft: var(--dashboard-red-soft);
+  --section-icon: var(--dashboard-red-icon);
+  --section-wave: var(--dashboard-red-soft);
+}
+[data-section] {
+  --empresa-accent: var(--section-accent);
+  --primary: var(--section-accent);
+  --primary-foreground: var(--estoque-canvas);
+  --ring: var(--section-accent);
+  --accent: var(--section-soft);
+  --accent-foreground: var(--foreground);
+}
+[data-section] :is(.bg-gerenciar-atmosphere, .bg-estoque-atmosphere) {
+  background: linear-gradient(145deg, color-mix(in oklab, var(--section-accent) 8%, transparent), transparent 32%);
+}
+.section-icon { background-color: var(--section-icon); color: var(--foreground); box-shadow: 0 0 22px color-mix(in oklab, var(--section-accent) 25%, transparent); }
+.section-tab { color: var(--section-accent); border-bottom: 2px solid transparent; }
+.section-tab[aria-selected="true"] { border-bottom-color: var(--section-accent); background-color: var(--section-soft); }

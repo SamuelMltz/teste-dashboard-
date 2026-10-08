@@ -72,15 +72,15 @@ function PedidosPage() {
       <div className="pointer-events-none absolute inset-0 bg-gerenciar-atmosphere" aria-hidden="true" />
       <div className="relative mx-auto max-w-7xl px-5 py-7 sm:px-8 sm:py-9 lg:px-12 lg:py-10">
         <Button variant="ghost" asChild className="group -ml-3 gap-2 text-muted-foreground hover:text-foreground"><Link to="/"><ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />Voltar ao início</Link></Button>
-        <header className="mt-7 flex items-center gap-4"><div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-dashboard-amber-icon text-foreground shadow-dashboard-amber"><PackagePlus className="h-9 w-9" /></div><div><h1 className="font-display text-4xl font-bold text-foreground sm:text-5xl">Pedidos</h1><p className="mt-1 text-muted-foreground">Monte as listas e confirme quando os produtos chegarem.</p></div></header>
-        <div className="mt-5 h-1 w-16 rounded-full bg-dashboard-amber" />
+        <header className="mt-7 flex items-center gap-4"><div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md section-icon text-foreground"><PackagePlus className="h-9 w-9" /></div><div><h1 className="font-display text-4xl font-bold text-foreground sm:text-5xl">Pedidos</h1><p className="mt-1 text-muted-foreground">Monte as listas e confirme quando os produtos chegarem.</p></div></header>
+        <div className="mt-5 h-1 w-16 rounded-full bg-section" />
 
         <section className="mt-8 border-y border-border py-6" aria-labelledby="novo-pedido">
           <h2 id="novo-pedido" className="font-display text-xl font-semibold text-foreground">Novo pedido</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(160px,0.4fr)_minmax(0,1fr)_auto_auto] sm:items-center">
             <p className="text-sm text-muted-foreground">{empresaAtual?.nome}</p>
             <Input value={nome} onChange={(event) => setNome(event.target.value)} placeholder="Nome do pedido (opcional)" maxLength={120} />
-            <Button onClick={criarPedido} disabled={criando || !empresaId} className="gerenciar-primary gap-2"><Plus className="h-4 w-4" />Criar pedido</Button>
+            <Button onClick={criarPedido} disabled={criando || !empresaId} className="bg-section text-primary-foreground hover:bg-section/90 gap-2"><Plus className="h-4 w-4" />Criar pedido</Button>
             {empresaAtual && <BotaoImportarPdf rotulo="Importar PDF" onArquivo={async (arquivo) => { const id = await criarDocumentoPorPdf("pedido", arquivo, empresaAtual); if (id) { await atualizar(); navigate({ to: "/pedidos/$id", params: { id } }); } }} />}
           </div>
         </section>
@@ -97,9 +97,9 @@ function Lista({ titulo, vazio, pedidos, carregando = false, editavel = false, o
     <h2 className="font-display text-2xl font-semibold text-foreground">{titulo}</h2><p className="text-sm text-muted-foreground">{pedidos.length} {pedidos.length === 1 ? "registro" : "registros"}</p>
     <div className="mt-4 grid gap-3">{carregando ? <p className="py-10 text-muted-foreground">Carregando…</p> : pedidos.length === 0 ? <div className="rounded-md border border-dashed border-border p-10 text-center text-muted-foreground">{vazio}</div> : pedidos.map((pedido) => {
       const total = pedido.itens.reduce((soma, item) => soma + item.quantidade, 0);
-      return <article key={pedido.id} className={`flex items-center gap-3 rounded-md border p-3 ${editavel ? "border-dashboard-amber/45 bg-dashboard-amber-soft" : "border-dashboard-green/35 bg-dashboard-green-soft"}`}>
+      return <article key={pedido.id} className={`flex items-center gap-3 rounded-md border p-3 ${editavel ? "border-section/45 bg-section-soft" : "border-dashboard-green/35 bg-dashboard-green-soft"}`}>
         <Link to="/pedidos/$id" params={{ id: pedido.id }} className="group grid min-w-0 flex-1 gap-3 rounded-md p-2 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
-          <span className={`flex h-11 w-11 items-center justify-center rounded-md ${editavel ? "bg-dashboard-amber-icon" : "bg-dashboard-green-icon"}`}>{editavel ? <PackagePlus className="h-6 w-6" /> : <Check className="h-5 w-5" />}</span>
+          <span className={`flex h-11 w-11 items-center justify-center rounded-md ${editavel ? "bg-section-icon" : "bg-dashboard-green-icon"}`}>{editavel ? <PackagePlus className="h-6 w-6" /> : <Check className="h-5 w-5" />}</span>
           <span className="min-w-0"><span className="block truncate font-display text-lg font-semibold text-foreground">{codigo(pedido.numero)} · {pedido.nome}</span><span className="block text-sm text-muted-foreground">{pedido.status === "planejado" ? "Em preparação" : "Recebido"} · {pedido.itens.length} {pedido.itens.length === 1 ? "produto" : "produtos"} · {total} unidades</span></span>
           <span className="flex items-center gap-3 text-sm text-muted-foreground">{pedido.received_at ? `Recebido em ${new Date(pedido.received_at).toLocaleDateString("pt-BR")}` : "Abrir detalhes"}<FileText className="h-5 w-5 text-foreground transition-transform group-hover:translate-x-1" /></span>
         </Link>

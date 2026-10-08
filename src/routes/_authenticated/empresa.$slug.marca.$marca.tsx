@@ -34,7 +34,7 @@ function MarcaEstoque() {
   const { empresa, marca } = Route.useLoaderData();
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-estoque-canvas" style={{ ["--empresa-accent" as string]: empresa.accent }}>
+    <div className="relative min-h-screen overflow-hidden bg-estoque-canvas">
       <div className="pointer-events-none absolute inset-0 bg-estoque-atmosphere" aria-hidden="true" />
       <div className="relative mx-auto max-w-6xl px-5 py-7 sm:px-8 sm:py-9 lg:px-12 lg:py-10">
         <Button variant="ghost" asChild className="group -ml-3 gap-2 text-muted-foreground hover:text-foreground">

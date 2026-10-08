@@ -93,7 +93,7 @@ function Index() {
               Toque em um dos cartões abaixo para abrir a visão detalhada de cada
               unidade de negócio.
             </p>
-            <div className="mt-5 h-1 w-16 rounded-full bg-dashboard-amber" aria-hidden="true" />
+            <div className="mt-5 h-1 w-16 rounded-full bg-section" aria-hidden="true" />
           </header>
 
           <section aria-label="Empresas" className="grid gap-6 md:grid-cols-3">
@@ -105,7 +105,6 @@ function Index() {
                 to="/empresa/$slug"
                 params={{ slug: empresa.slug }}
                 className="estoque-card group relative isolate flex min-h-80 flex-col overflow-hidden rounded-md border p-7 backdrop-blur-xl transition-[transform,border-color,box-shadow] duration-500 hover:-translate-y-2 sm:p-8"
-                style={{ ["--empresa-accent" as string]: empresa.accent }}
               >
                 <div className="estoque-card-wave pointer-events-none absolute -bottom-16 -right-12 -z-10 h-40 w-4/5 rotate-[-14deg] rounded-[50%] transition-transform duration-700 group-hover:scale-110" aria-hidden="true" />
 

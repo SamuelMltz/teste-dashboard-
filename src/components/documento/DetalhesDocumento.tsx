@@ -87,7 +87,7 @@ function CampoProduto({ produtoId, campo, placeholder, onSalvo }: { produtoId: s
   }
   return (
     <div className="flex items-center gap-1">
-      <Input className="h-8 min-w-24 border-dashboard-amber/60" value={valor} placeholder={placeholder} aria-label={placeholder} maxLength={200} onChange={(e) => setValor(e.target.value)} onKeyDown={(e) => e.key === "Enter" && salvar()} />
+      <Input className="h-8 min-w-24 border-section/60" value={valor} placeholder={placeholder} aria-label={placeholder} maxLength={200} onChange={(e) => setValor(e.target.value)} onKeyDown={(e) => e.key === "Enter" && salvar()} />
       <Button type="button" size="icon" variant="ghost" className="h-8 w-8" disabled={!valor.trim() || salvando} onClick={salvar} aria-label="Salvar"><Check className="h-4 w-4" /></Button>
     </div>
   );
@@ -110,10 +110,10 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
   const atualizar = () => queryClient.invalidateQueries({ queryKey: chave });
   const doc = data?.doc;
   const editavel = doc?.status === c.planejado;
-  const corTexto = c.cor === "amber" ? "text-dashboard-amber" : "text-dashboard-green";
-  const corBorda = c.cor === "amber" ? "border-dashboard-amber/70" : "border-dashboard-green/70";
-  const corIcone = c.cor === "amber" ? "bg-dashboard-amber-icon shadow-dashboard-amber" : "bg-dashboard-green-icon";
-  const corLinha = c.cor === "amber" ? "bg-dashboard-amber" : "bg-dashboard-green";
+  const corTexto = "text-section";
+  const corBorda = "border-section/70";
+  const corIcone = "section-icon";
+  const corLinha = "bg-section";
 
   async function removerItem(itemId: string) {
     const { error } = await db.from(c.itens).delete().eq("id", itemId);
@@ -270,8 +270,8 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
                 <p className="font-display text-2xl font-semibold text-foreground">{c.prefixo} {codigo(doc.numero)}</p>
                 <div className="mt-4 flex flex-wrap gap-2 md:justify-end">
                   <input ref={fileRef} type="file" accept="application/pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void importar(f); }} />
-                  <Button variant="outline" className="gap-2" disabled={!editavel || ocupado} onClick={() => fileRef.current?.click()}><Upload className="h-4 w-4" />Importar PDF</Button>
-                  <Button variant="outline" className="gap-2" onClick={baixar}><Download className="h-4 w-4" />Baixar PDF</Button>
+                  <Button variant="outline" className="gap-2 border-section/60 text-section" disabled={!editavel || ocupado} onClick={() => fileRef.current?.click()}><Upload className="h-4 w-4" />Importar PDF</Button>
+                  <Button variant="outline" className="gap-2 border-section/60 text-section" onClick={baixar}><Download className="h-4 w-4" />Baixar PDF</Button>
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">{c.ajuda}</p>
               </div>
@@ -312,7 +312,7 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
                       <td className="px-4 py-3">{i.produto.codigo ? i.produto.codigo : <CampoProduto key={`sku-${i.produto.id}`} produtoId={i.produto.id} campo="codigo" placeholder="Informar SKU" onSalvo={atualizar} />}</td>
                       <td className="px-4 py-3">{i.produto.nome ? i.produto.nome : <CampoProduto key={`nome-${i.produto.id}`} produtoId={i.produto.id} campo="nome" placeholder="Informar nome" onSalvo={atualizar} />}<span className="block text-xs text-muted-foreground">{i.produto.marca}</span></td>
                       <td className={`px-4 py-3 font-semibold ${corTexto}`}>{i.quantidade}</td>
-                      {tipo === "pedido" && <td className="px-4 py-3">{i.produto.empresa_id === doc.empresa.id ? <span className="text-muted-foreground">{i.produto.empresa_nome}</span> : <span className="rounded-md border border-dashboard-amber/60 bg-dashboard-amber-soft px-2 py-1 text-xs font-semibold text-dashboard-amber">{i.produto.empresa_nome} · outra empresa</span>}</td>}
+                      {tipo === "pedido" && <td className="px-4 py-3">{i.produto.empresa_id === doc.empresa.id ? <span className="text-muted-foreground">{i.produto.empresa_nome}</span> : <span className="rounded-md border border-section/60 bg-section-soft px-2 py-1 text-xs font-semibold text-section">{i.produto.empresa_nome} · outra empresa</span>}</td>}
                       {tipo === "full" && <td className={`px-4 py-3 ${editavel && i.quantidade > i.produto.estoque ? "font-semibold text-dashboard-red" : "text-muted-foreground"}`}>{i.produto.estoque}{editavel && i.quantidade > i.produto.estoque ? " (insuficiente)" : ""}</td>}
                       {editavel && <td className="px-2"><Button variant="ghost" size="icon" onClick={() => removerItem(i.id)} aria-label={`Remover ${i.produto.nome}`}><Trash2 className="h-4 w-4" /></Button></td>}
                     </tr>
@@ -324,7 +324,7 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
             {editavel ? <>
               <Button variant="outline" onClick={() => setAdicionando(true)} className={`mt-6 h-11 gap-2 ${corBorda} ${corTexto}`}><Plus className="h-4 w-4" />Adicionar produto</Button>
               <div className="mt-6 flex justify-end border-t border-border pt-6">
-                <Button onClick={confirmar} disabled={ocupado || !doc.itens.length} className="h-11 gap-2 bg-foreground px-8 text-background hover:bg-foreground/90"><Check className="h-4 w-4" />{c.confirmar}</Button>
+                <Button onClick={confirmar} disabled={ocupado || !doc.itens.length} className="h-11 gap-2 bg-section px-8 text-primary-foreground hover:bg-section/90"><Check className="h-4 w-4" />{c.confirmar}</Button>
               </div>
             </> : <p className={`mt-6 text-sm ${corTexto}`}>{tipo === "full" ? "Envio confirmado." : "Recebimento confirmado."} Esta lista não pode mais ser alterada.</p>}
           </section>
