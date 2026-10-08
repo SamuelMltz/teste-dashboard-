@@ -12,7 +12,8 @@
 # AGENTS.md
 
 - Dados vêm do banco (tabelas empresas → marcas → produtos, leitura pública); lidos via server functions em `src/lib/empresas.functions.ts`.
-- Cada empresa tem uma cor de destaque (`accent`) usada em cartões e detalhes; trocar a cor lá, não nos componentes.
+- Company accents remain stored in the database; section decoration uses the centralized CSS section tokens instead, so changing a company does not change a section's visual identity.
+- SectionTheme maps authenticated paths to section identities; portaled controls inherit that identity through React context to keep dialogs and calendars consistent without changing business logic.
 - Estrutura: empresa → marcas ordenáveis → produtos ordenáveis (código, estoque atual e mínimo); alertas incluem níveis até 20% acima do mínimo.
 - Tema escuro global via `class="dark"` no `<html>` em `__root.tsx`.
 - Todo o painel fica sob `_authenticated` (login obrigatório, `/auth` é a única rota pública). Cadastro em `/admin`, escrita pelo cliente do navegador protegida por RLS `has_role(auth.uid(),'admin')`; primeiro usuário vira admin via trigger e admins promovem/removem outros pelas funções `listar_usuarios_admin`/`definir_admin` (checam admin no banco).
