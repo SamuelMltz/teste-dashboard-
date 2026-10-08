@@ -179,7 +179,10 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
       if (divergencias.length && !confirm(`Divergência com o PDF:\n${divergencias.join("\n")}\n\nConfirmar o envio mesmo assim?`)) return;
     }
     const total = doc.itens.reduce((s, i) => s + i.quantidade, 0);
-    if (!confirm(`${c.confirmar}: ${total} unidades? O estoque será atualizado e esta ação não poderá ser desfeita.`)) return;
+    const porEmpresa = new Map<string, number>();
+    for (const i of doc.itens) porEmpresa.set(i.produto.empresa_nome, (porEmpresa.get(i.produto.empresa_nome) ?? 0) + i.quantidade);
+    const destinos = tipo === "pedido" && porEmpresa.size > 1 ? `\n\nEntrada no estoque:\n${Array.from(porEmpresa, ([e, q]) => `• ${e}: ${q} un.`).join("\n")}` : "";
+    if (!confirm(`${c.confirmar}: ${total} unidades?${destinos}\n\nO estoque será atualizado e esta ação não poderá ser desfeita.`)) return;
     setOcupado(true);
     const { error } = await db.rpc(c.rpc, { [c.rpcArg]: id });
     setOcupado(false);
