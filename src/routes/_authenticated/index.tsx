@@ -10,6 +10,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   AlertTriangle,
+  BarChart3,
   Bell,
   ArrowRight,
   ArrowLeftRight,
