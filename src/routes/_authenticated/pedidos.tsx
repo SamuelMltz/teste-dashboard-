@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check, FileText, PackagePlus, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { hojeSP } from "@/lib/datas";
 
 import { BotaoImportarPdf } from "@/components/documento/BotaoImportarPdf";
 import { Button } from "@/components/ui/button";
@@ -50,7 +51,8 @@ function PedidosPage() {
     setCriando(true);
     const { data: usuario } = await supabase.auth.getUser();
     if (!usuario.user) { setCriando(false); toast.error("Sua sessão expirou."); return; }
-    const { data: pedido, error } = await supabase.from("pedidos").insert({ nome: nome.trim() || "Novo pedido", fornecedor: empresaAtual.nome, empresa_id: empresaAtual.id, created_by: usuario.user.id }).select("id").single();
+    const { data: emp } = await supabase.from("empresas").select("endereco").eq("id", empresaAtual.id).maybeSingle();
+    const { data: pedido, error } = await supabase.from("pedidos").insert({ nome: nome.trim() || "Novo pedido", fornecedor: empresaAtual.nome, empresa_id: empresaAtual.id, created_by: usuario.user.id, data_pedido: hojeSP(), endereco_entrega: emp?.endereco ?? "" }).select("id").single();
     setCriando(false);
     if (error) { toast.error("Não foi possível criar o pedido."); return; }
     setNome("");

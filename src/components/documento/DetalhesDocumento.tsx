@@ -12,13 +12,14 @@ import { casarEntreEmpresas, casarLinhas, type Pendente } from "@/lib/casar-prod
 import { lerPendentes, salvarPendentes } from "@/lib/importar-documento";
 import { AdicionarProdutoModal, NovoProdutoModal, somarItem } from "./ProdutoModais";
 import { gerarPdf } from "@/lib/pdf-export";
-import { paraInputData } from "@/lib/full-prazos";
+import { CampoData } from "./CampoData";
+import { hojeSP, ymdEmSP, ymdParaBr, ymdParaInstanteSP } from "@/lib/datas";
 
 export type Tipo = "full" | "pedido";
 
 type Produto = { id: string; nome: string; codigo: string; cod: string; estoque: number; marca_id: string; marca: string; empresa_id: string; empresa_nome: string };
 type Item = { id: string; produto_id: string; quantidade: number; preparado?: boolean; produto: Produto };
-type Doc = { id: string; numero: number; nome: string; status: string; frete_ml?: string | null; data_prevista?: string | null; ml_total_produtos?: number | null; ml_total_unidades?: number | null; created_at: string; empresa: { id: string; nome: string; endereco: string; cnpj: string }; itens: Item[] };
+type Doc = { id: string; numero: number; nome: string; status: string; frete_ml?: string | null; data_prevista?: string | null; data_pedido?: string; endereco_entrega?: string; ml_total_produtos?: number | null; ml_total_unidades?: number | null; created_at: string; empresa: { id: string; nome: string; endereco: string; cnpj: string }; itens: Item[] };
 type Marca = { id: string; nome: string; empresa_id: string };
 
 const CFG = {
@@ -45,7 +46,7 @@ const codigo = (n: number) => `#${String(n).padStart(4, "0")}`;
 async function carregar(tipo: Tipo, id: string): Promise<{ doc: Doc; produtos: Produto[]; outros: Produto[]; marcas: Marca[] }> {
   const c = CFG[tipo];
   const [docRes, itensRes, produtosRes, marcasRes] = await Promise.all([
-    db.from(c.tabela).select(tipo === "full" ? "id, numero, nome, status, created_at, frete_ml, data_prevista, ml_total_produtos, ml_total_unidades, empresas(id, nome, endereco, cnpj)" : "id, numero, nome, status, created_at, empresas(id, nome, endereco, cnpj)").eq("id", id).single(),
+    db.from(c.tabela).select(tipo === "full" ? "id, numero, nome, status, created_at, frete_ml, data_prevista, ml_total_produtos, ml_total_unidades, empresas(id, nome, endereco, cnpj)" : "id, numero, nome, status, created_at, data_pedido, endereco_entrega, empresas(id, nome, endereco, cnpj)").eq("id", id).single(),
     db.from(c.itens).select(tipo === "full" ? "id, produto_id, quantidade, preparado" : "id, produto_id, quantidade").eq(c.fk, id).order("created_at"),
     supabase.from("produtos").select("id, nome, codigo, cod, estoque, marca_id, marcas!inner(nome, empresa_id, empresas(nome))").order("ordem"),
     supabase.from("marcas").select("id, nome, empresa_id").order("ordem"),
@@ -126,8 +127,24 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
     if (error) { toast.error("Não foi possível salvar a marcação."); await atualizar(); }
   }
 
-  async function salvarDataPrevista(valor: string) {
-    const dataPrevista = valor ? new Date(valor).toISOString() : null;
+  async function salvarEnderecoEntrega(valor: string) {
+    if (valor === (doc?.endereco_entrega ?? "")) return;
+    const { error } = await supabase.from("pedidos").update({ endereco_entrega: valor }).eq("id", id);
+    if (error) { toast.error("Não foi possível salvar o endereço de entrega."); return; }
+    await atualizar();
+    toast.success("Endereço de entrega salvo");
+  }
+
+  async function salvarDataPedido(ymd: string | null) {
+    if (!ymd) return;
+    const { error } = await supabase.from("pedidos").update({ data_pedido: ymd }).eq("id", id);
+    if (error) { toast.error("Não foi possível salvar a data do pedido."); return; }
+    await atualizar();
+    toast.success("Data do pedido salva");
+  }
+
+  async function salvarDataPrevista(ymd: string | null) {
+    const dataPrevista = ymd ? ymdParaInstanteSP(ymd) : null;
     const { error } = await supabase.from("full_cargas").update({ data_prevista: dataPrevista }).eq("id", id);
     if (error) { toast.error("Não foi possível salvar a data do Full."); return; }
     await atualizar();
@@ -170,7 +187,9 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
     if (!doc) return;
     await gerarPdf({
       titulo: c.pdfTitulo, rotuloNumero: c.rotuloNumero, numero: `${c.prefixo} ${codigo(doc.numero)}`,
-      empresa: doc.empresa, data: new Date().toLocaleDateString("pt-BR"),
+      empresa: tipo === "pedido" ? { ...doc.empresa, endereco: doc.endereco_entrega ?? "" } : doc.empresa,
+      rotuloEndereco: tipo === "pedido" ? "Endereço de entrega" : "Endereço",
+      data: ymdParaBr(dataDoc),
       marcas: Array.from(new Set(doc.itens.map((i) => i.produto.marca))),
       itens: doc.itens.map((i) => ({ cod: i.produto.cod, nome: i.produto.nome, quantidade: i.quantidade })),
       arquivo: `${c.prefixo.toLowerCase()}-${String(doc.numero).padStart(4, "0")}.pdf`,
@@ -198,6 +217,7 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
     toast.success("Estoque atualizado");
   }
 
+  const dataDoc = tipo === "pedido" ? (doc?.data_pedido ?? hojeSP()) : doc?.data_prevista ? ymdEmSP(doc.data_prevista) : hojeSP();
   const atual = resolvendo !== null ? pendentes[resolvendo] : undefined;
   const somaItens = (doc?.itens ?? []).reduce((s, i) => s + i.quantidade, 0);
   const divergencias: string[] = [];
@@ -223,22 +243,24 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
             <div className="flex flex-col justify-between gap-6 border-b border-border pb-6 md:flex-row">
               <div>
                 <h2 className="font-display text-2xl font-semibold text-foreground">{doc.empresa.nome}</h2>
-                <p className="mt-2 text-muted-foreground">Endereço: {doc.empresa.endereco || "não cadastrado"}</p>
+                {tipo === "pedido" ? (
+                  <label className="mt-2 grid gap-1 text-xs text-muted-foreground">Endereço de entrega
+                    <Input key={doc.endereco_entrega} defaultValue={doc.endereco_entrega ?? ""} disabled={!editavel} maxLength={300} placeholder="Informe o endereço de entrega" className="w-full max-w-md text-sm text-foreground" onBlur={(e) => void salvarEnderecoEntrega(e.target.value.trim())} />
+                  </label>
+                ) : <p className="mt-2 text-muted-foreground">Endereço: {doc.empresa.endereco || "não cadastrado"}</p>}
                 <p className="text-muted-foreground">CNPJ: {doc.empresa.cnpj || "não cadastrado"}</p>
-                <p className="text-muted-foreground">Data: {new Date().toLocaleDateString("pt-BR")}</p>
+                {tipo === "pedido" ? (
+                  <label className="mt-2 grid gap-1 text-xs text-muted-foreground">Data do pedido
+                    <CampoData valor={doc.data_pedido ?? null} disabled={!editavel} onSalvar={salvarDataPedido} />
+                  </label>
+                ) : null}
                 {tipo === "full" && <p className="text-muted-foreground">Planejamento: {doc.nome}</p>}
                 {tipo === "full" && (
                   <div className="mt-3 flex flex-wrap items-end gap-3">
                     {doc.frete_ml && <p className="pb-2 text-muted-foreground">Frete <span className="font-semibold text-foreground">#{doc.frete_ml}</span></p>}
                     <label className="grid gap-1 text-xs text-muted-foreground">
                       Data do Full
-                      <Input
-                        type="datetime-local"
-                        defaultValue={paraInputData(doc.data_prevista)}
-                        disabled={!editavel}
-                        className="w-56 text-sm text-foreground"
-                        onBlur={(event) => void salvarDataPrevista(event.target.value)}
-                      />
+                      <CampoData valor={doc.data_prevista ? ymdEmSP(doc.data_prevista) : null} disabled={!editavel} permitirVazio onSalvar={salvarDataPrevista} />
                     </label>
                   </div>
                 )}

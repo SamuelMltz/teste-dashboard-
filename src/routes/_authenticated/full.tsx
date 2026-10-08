@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CalendarDays, Check, FileText, Package, Plus, Trash2, Truck } from "lucide-react";
 import { toast } from "sonner";
+import { hojeSP, ymdParaInstanteSP } from "@/lib/datas";
 
 import { BotaoImportarPdf } from "@/components/documento/BotaoImportarPdf";
 import { Button } from "@/components/ui/button";
@@ -69,6 +70,7 @@ function FullPage() {
       nome: nome.trim() || "Novo Full",
       empresa_id: empresaAtual.id,
       created_by: usuario.user.id,
+      data_prevista: ymdParaInstanteSP(hojeSP()),
     }).select("id").single();
     setCriando(false);
     if (error) { toast.error("Não foi possível criar o Full."); return; }

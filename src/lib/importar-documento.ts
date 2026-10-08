@@ -3,6 +3,7 @@ import { lerDocumentoPdf, type LinhaPdf } from "./pdf-import";
 import type { CabecalhoMl } from "./pdf-ml";
 import { assinaturaLinhas, casarEntreEmpresas, casarLinhas, type Pendente } from "./casar-produtos";
 import type { EmpresaAtual } from "./empresa-atual";
+import { hojeSP } from "./datas";
 
 export type TipoDoc = "full" | "pedido";
 
@@ -72,7 +73,10 @@ export async function criarDocumentoPorPdf(tipo: TipoDoc, arquivo: File, empresa
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) throw new Error("Sua sessão expirou. Entre novamente.");
   const registro: Record<string, unknown> = { nome, empresa_id: empresa.id, created_by: userData.user.id };
-  if (tipo === "pedido") registro["fornecedor"] = empresa.nome;
+  if (tipo === "pedido") {
+    const { data: emp } = await supabase.from("empresas").select("endereco").eq("id", empresa.id).maybeSingle();
+    Object.assign(registro, { fornecedor: empresa.nome, data_pedido: hojeSP(), endereco_entrega: emp?.endereco ?? "" });
+  }
   if (ml) Object.assign(registro, { frete_ml: ml.frete || null, ml_total_produtos: ml.totalProdutos, ml_total_unidades: ml.totalUnidades });
   const { data: doc, error } = await db.from(t.tabela).insert(registro).select("id").single();
   if (error || !doc) throw new Error(error?.code === "23505" ? "Esse frete já foi importado nesta empresa." : "Não foi possível criar o registro.");
