@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { LinhaPdf } from "@/lib/pdf-import";
 import type { TipoDoc } from "@/lib/importar-documento";
 
-export type ProdutoDoc = { id: string; nome: string; codigo: string; cod: string; estoque: number; marca_id: string; marca: string; empresa_id: string };
+export type ProdutoDoc = { id: string; nome: string; codigo: string; cod: string; estoque: number; marca_id: string; marca: string; empresa_id: string; empresa_nome?: string };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
@@ -202,7 +202,7 @@ export function NovoProdutoModal({ linha, restantes = 0, tipo, empresa, produtos
           </div>
         ) : (
           <label className="mt-5 grid gap-1 text-sm text-foreground">Produto já cadastrado *
-            <select value={existenteId} onChange={(e) => setExistenteId(e.target.value)} className={sel}><option value="" className="bg-background">Selecione o produto</option>{candidatos.map((p) => <option key={p.id} value={p.id} className="bg-background">{p.marca} · {p.nome} {p.codigo ? `(SKU ${p.codigo})` : ""}</option>)}</select>
+            <select value={existenteId} onChange={(e) => setExistenteId(e.target.value)} className={sel}><option value="" className="bg-background">Selecione o produto</option>{candidatos.map((p) => <option key={p.id} value={p.id} className="bg-background">{p.empresa_id !== empresa.id && p.empresa_nome ? `${p.empresa_nome} · ` : ""}{p.marca} · {p.nome} {p.codigo ? `(SKU ${p.codigo})` : ""}</option>)}</select>
             {linha && !ambiguo && <span className="text-xs text-muted-foreground">{ehMl ? "Confira se é a mesma variante (voltagem, cor, tamanho). O SKU só é gravado se o produto não tiver um." : `O COD ${linha.cod} será gravado nesse produto.`}</span>}
           </label>
         )}

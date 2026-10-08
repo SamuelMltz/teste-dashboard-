@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { lerDocumentoPdf } from "@/lib/pdf-import";
-import { casarLinhas, type Pendente } from "@/lib/casar-produtos";
+import { casarEntreEmpresas, casarLinhas, type Pendente } from "@/lib/casar-produtos";
 import { lerPendentes, salvarPendentes } from "@/lib/importar-documento";
 import { AdicionarProdutoModal, NovoProdutoModal, somarItem } from "./ProdutoModais";
 import { gerarPdf } from "@/lib/pdf-export";
@@ -16,7 +16,7 @@ import { paraInputData } from "@/lib/full-prazos";
 
 export type Tipo = "full" | "pedido";
 
-type Produto = { id: string; nome: string; codigo: string; cod: string; estoque: number; marca_id: string; marca: string; empresa_id: string };
+type Produto = { id: string; nome: string; codigo: string; cod: string; estoque: number; marca_id: string; marca: string; empresa_id: string; empresa_nome: string };
 type Item = { id: string; produto_id: string; quantidade: number; produto: Produto };
 type Doc = { id: string; numero: number; nome: string; status: string; frete_ml?: string | null; data_prevista?: string | null; ml_total_produtos?: number | null; ml_total_unidades?: number | null; created_at: string; empresa: { id: string; nome: string; endereco: string; cnpj: string }; itens: Item[] };
 type Marca = { id: string; nome: string; empresa_id: string };
@@ -42,19 +42,19 @@ const db = supabase as any;
 
 const codigo = (n: number) => `#${String(n).padStart(4, "0")}`;
 
-async function carregar(tipo: Tipo, id: string): Promise<{ doc: Doc; produtos: Produto[]; marcas: Marca[] }> {
+async function carregar(tipo: Tipo, id: string): Promise<{ doc: Doc; produtos: Produto[]; outros: Produto[]; marcas: Marca[] }> {
   const c = CFG[tipo];
   const [docRes, itensRes, produtosRes, marcasRes] = await Promise.all([
     db.from(c.tabela).select(tipo === "full" ? "id, numero, nome, status, created_at, frete_ml, data_prevista, ml_total_produtos, ml_total_unidades, empresas(id, nome, endereco, cnpj)" : "id, numero, nome, status, created_at, empresas(id, nome, endereco, cnpj)").eq("id", id).single(),
     db.from(c.itens).select("id, produto_id, quantidade").eq(c.fk, id).order("created_at"),
-    supabase.from("produtos").select("id, nome, codigo, cod, estoque, marca_id, marcas!inner(nome, empresa_id)").order("ordem"),
+    supabase.from("produtos").select("id, nome, codigo, cod, estoque, marca_id, marcas!inner(nome, empresa_id, empresas(nome))").order("ordem"),
     supabase.from("marcas").select("id, nome, empresa_id").order("ordem"),
   ]);
   const erro = docRes.error ?? itensRes.error ?? produtosRes.error ?? marcasRes.error;
   if (erro) throw erro;
   const produtos: Produto[] = (produtosRes.data ?? []).map((p) => {
     const m = Array.isArray(p.marcas) ? p.marcas[0] : p.marcas;
-    return { id: p.id, nome: p.nome, codigo: p.codigo, cod: p.cod, estoque: p.estoque, marca_id: p.marca_id, marca: m?.nome ?? "", empresa_id: m?.empresa_id ?? "" };
+    return { id: p.id, nome: p.nome, codigo: p.codigo, cod: p.cod, estoque: p.estoque, marca_id: p.marca_id, marca: m?.nome ?? "", empresa_id: m?.empresa_id ?? "", empresa_nome: (m?.empresas as { nome: string } | null)?.nome ?? "" };
   });
   const porId = new Map(produtos.map((p) => [p.id, p]));
   const empresa = Array.isArray(docRes.data.empresas) ? docRes.data.empresas[0] : docRes.data.empresas;
@@ -65,6 +65,8 @@ async function carregar(tipo: Tipo, id: string): Promise<{ doc: Doc; produtos: P
   return {
     doc: { ...docRes.data, empresa, itens },
     produtos: produtos.filter((p) => p.empresa_id === empresa.id),
+    // Só pedidos de compra aceitam produtos de outras empresas.
+    outros: tipo === "pedido" ? produtos.filter((p) => p.empresa_id !== empresa.id) : [],
     marcas: (marcasRes.data ?? []).filter((m) => m.empresa_id === empresa.id),
   };
 }
@@ -140,10 +142,11 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
           if (e) { toast.error(e.code === "23505" ? `O Frete #${ml.frete} já foi importado em outro Full desta empresa.` : e.message); return; }
         }
       }
-      const { casados, pendentes: novos } = casarLinhas(linhas, data.produtos);
+      const { casados, pendentes: novos } = tipo === "pedido" ? casarEntreEmpresas(linhas, data.produtos, data.outros) : casarLinhas(linhas, data.produtos);
+      const todos = [...data.produtos, ...data.outros];
       let adicionados = 0;
       for (const item of casados) {
-        const produto = data.produtos.find((p) => p.id === item.produtoId);
+        const produto = todos.find((p) => p.id === item.produtoId);
         if (produto && (await somarItem(tipo, id, produto, item.quantidade))) adicionados++;
       }
       await atualizar();
@@ -267,7 +270,7 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
             <div className="mt-6 overflow-x-auto rounded-md border border-border">
               <table className="w-full min-w-[560px] text-sm">
                 <thead className="bg-background/50 text-left text-xs font-semibold tracking-wide text-muted-foreground">
-                  <tr><th className="px-4 py-3">COD</th><th className="px-4 py-3">SKU</th><th className="px-4 py-3">PRODUTO</th><th className="px-4 py-3">QUANTIDADE</th>{tipo === "full" && <th className="px-4 py-3">ESTOQUE</th>}{editavel && <th className="w-10" />}</tr>
+                  <tr><th className="px-4 py-3">COD</th><th className="px-4 py-3">SKU</th><th className="px-4 py-3">PRODUTO</th><th className="px-4 py-3">QUANTIDADE</th>{tipo === "pedido" && <th className="px-4 py-3">EMPRESA DE DESTINO</th>}{tipo === "full" && <th className="px-4 py-3">ESTOQUE</th>}{editavel && <th className="w-10" />}</tr>
                 </thead>
                 <tbody>
                   {doc.itens.length === 0 ? <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Nenhum produto ainda.</td></tr> : doc.itens.map((i) => (
@@ -276,6 +279,7 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
                       <td className="px-4 py-3">{i.produto.codigo ? i.produto.codigo : <CampoProduto key={`sku-${i.produto.id}`} produtoId={i.produto.id} campo="codigo" placeholder="Informar SKU" onSalvo={atualizar} />}</td>
                       <td className="px-4 py-3">{i.produto.nome ? i.produto.nome : <CampoProduto key={`nome-${i.produto.id}`} produtoId={i.produto.id} campo="nome" placeholder="Informar nome" onSalvo={atualizar} />}<span className="block text-xs text-muted-foreground">{i.produto.marca}</span></td>
                       <td className={`px-4 py-3 font-semibold ${corTexto}`}>{i.quantidade}</td>
+                      {tipo === "pedido" && <td className="px-4 py-3">{i.produto.empresa_id === doc.empresa.id ? <span className="text-muted-foreground">{i.produto.empresa_nome}</span> : <span className="rounded-md border border-dashboard-amber/60 bg-dashboard-amber-soft px-2 py-1 text-xs font-semibold text-dashboard-amber">{i.produto.empresa_nome} · outra empresa</span>}</td>}
                       {tipo === "full" && <td className={`px-4 py-3 ${editavel && i.quantidade > i.produto.estoque ? "font-semibold text-dashboard-red" : "text-muted-foreground"}`}>{i.produto.estoque}{editavel && i.quantidade > i.produto.estoque ? " (insuficiente)" : ""}</td>}
                       {editavel && <td className="px-2"><Button variant="ghost" size="icon" onClick={() => removerItem(i.id)} aria-label={`Remover ${i.produto.nome}`}><Trash2 className="h-4 w-4" /></Button></td>}
                     </tr>
@@ -306,7 +310,7 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
           restantes={pendentes.length - 1}
           tipo={tipo}
           empresa={doc.empresa}
-          produtos={data.produtos}
+          produtos={atual.opcoes.length ? [...data.produtos, ...data.outros] : data.produtos}
           onFechar={() => setResolvendo(null)}
           onPronto={async (produto) => {
             const ok = await somarItem(tipo, id, produto, atual.quantidade);

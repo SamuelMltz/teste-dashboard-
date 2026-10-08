@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { lerDocumentoPdf, type LinhaPdf } from "./pdf-import";
 import type { CabecalhoMl } from "./pdf-ml";
-import { assinaturaLinhas, casarLinhas, type Pendente } from "./casar-produtos";
+import { assinaturaLinhas, casarEntreEmpresas, casarLinhas, type Pendente } from "./casar-produtos";
 import type { EmpresaAtual } from "./empresa-atual";
 
 export type TipoDoc = "full" | "pedido";
@@ -27,12 +27,14 @@ function lerImportacoes(): Record<string, string> {
   try { return JSON.parse(localStorage.getItem(chaveImportacoes) ?? "{}"); } catch { return {}; }
 }
 
-export async function carregarProdutosEmpresa(empresaId: string) {
-  const { data, error } = await supabase.from("produtos").select("id, nome, codigo, cod, estoque, marca_id, marcas!inner(nome, empresa_id)").eq("marcas.empresa_id", empresaId).order("ordem");
+export async function carregarProdutosEmpresa(empresaId: string | null) {
+  let q = supabase.from("produtos").select("id, nome, codigo, cod, estoque, marca_id, marcas!inner(nome, empresa_id)");
+  if (empresaId) q = q.eq("marcas.empresa_id", empresaId);
+  const { data, error } = await q.order("ordem");
   if (error) throw error;
   return (data ?? []).map((p) => {
     const m = Array.isArray(p.marcas) ? p.marcas[0] : p.marcas;
-    return { id: p.id, nome: p.nome, codigo: p.codigo, cod: p.cod, estoque: p.estoque, marca_id: p.marca_id, marca: m?.nome ?? "", empresa_id: empresaId };
+    return { id: p.id, nome: p.nome, codigo: p.codigo, cod: p.cod, estoque: p.estoque, marca_id: p.marca_id, marca: m?.nome ?? "", empresa_id: m?.empresa_id ?? "" };
   });
 }
 
@@ -60,9 +62,11 @@ export async function criarDocumentoPorPdf(tipo: TipoDoc, arquivo: File, empresa
     if (data && !confirm(`Este PDF já foi importado (#${String(data.numero).padStart(4, "0")}). Criar outra cópia mesmo assim?`)) return null;
   }
 
-  const produtos = await carregarProdutosEmpresa(empresa.id);
-  const { casados, pendentes } = casarLinhas(linhas, produtos);
-  const marcas = Array.from(new Set(casados.map((c) => produtos.find((p) => p.id === c.produtoId)?.marca).filter(Boolean)));
+  // Pedidos de compra: busca na empresa atual e depois nas outras (a entrada vai para a empresa dona do produto). Full: só a empresa atual.
+  const produtos = await carregarProdutosEmpresa(tipo === "pedido" ? null : empresa.id);
+  const locais = produtos.filter((p) => p.empresa_id === empresa.id);
+  const { casados, pendentes } = tipo === "pedido" ? casarEntreEmpresas(linhas, locais, produtos.filter((p) => p.empresa_id !== empresa.id)) : casarLinhas(linhas, locais);
+  const marcas = Array.from(new Set(casados.map((c) => produtos.find((p) => p.id === c.produtoId)).filter((p) => p?.empresa_id === empresa.id).map((p) => p!.marca)));
   const nome = ml?.frete ? `Frete #${ml.frete}` : marcas.length ? marcas.join(" + ") : arquivo.name.replace(/\.pdf$/i, "").slice(0, 120) || "Importado de PDF";
 
   const { data: userData } = await supabase.auth.getUser();
