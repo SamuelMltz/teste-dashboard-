@@ -18,6 +18,7 @@ import { Route as AuthenticatedContasRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticated/estoque'
 import { Route as AuthenticatedFullRouteImport } from './routes/_authenticated/full'
 import { Route as AuthenticatedGarantiaRouteImport } from './routes/_authenticated/garantia'
+import { Route as AuthenticatedGraficosRouteImport } from './routes/_authenticated/graficos'
 import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
 import { Route as AuthenticatedEmpresaSlugRouteImport } from './routes/_authenticated/empresa.$slug'
 import { Route as AuthenticatedFullIdRouteImport } from './routes/_authenticated/full_.$id'
@@ -70,6 +71,11 @@ const AuthenticatedGarantiaRoute = AuthenticatedGarantiaRouteImport.update({
   path: '/garantia',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedGraficosRoute = AuthenticatedGraficosRouteImport.update({
+  id: '/graficos',
+  path: '/graficos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPedidosRoute = AuthenticatedPedidosRouteImport.update({
   id: '/pedidos',
   path: '/pedidos',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/full': typeof AuthenticatedFullRoute
   '/garantia': typeof AuthenticatedGarantiaRoute
+  '/graficos': typeof AuthenticatedGraficosRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/empresa/$slug': typeof AuthenticatedEmpresaSlugRouteWithChildren
   '/full/$id': typeof AuthenticatedFullIdRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByTo {
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/full': typeof AuthenticatedFullRoute
   '/garantia': typeof AuthenticatedGarantiaRoute
+  '/graficos': typeof AuthenticatedGraficosRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/': typeof AuthenticatedIndexRoute
   '/full/$id': typeof AuthenticatedFullIdRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/_authenticated/estoque': typeof AuthenticatedEstoqueRoute
   '/_authenticated/full': typeof AuthenticatedFullRoute
   '/_authenticated/garantia': typeof AuthenticatedGarantiaRoute
+  '/_authenticated/graficos': typeof AuthenticatedGraficosRoute
   '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/empresa/$slug': typeof AuthenticatedEmpresaSlugRouteWithChildren
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/estoque'
     | '/full'
     | '/garantia'
+    | '/graficos'
     | '/pedidos'
     | '/empresa/$slug'
     | '/full/$id'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/estoque'
     | '/full'
     | '/garantia'
+    | '/graficos'
     | '/pedidos'
     | '/'
     | '/full/$id'
@@ -195,6 +206,7 @@ export interface FileRouteTypes {
     | '/_authenticated/estoque'
     | '/_authenticated/full'
     | '/_authenticated/garantia'
+    | '/_authenticated/graficos'
     | '/_authenticated/pedidos'
     | '/_authenticated/'
     | '/_authenticated/empresa/$slug'
@@ -274,6 +286,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGarantiaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/graficos': {
+      id: '/_authenticated/graficos'
+      path: '/graficos'
+      fullPath: '/graficos'
+      preLoaderRoute: typeof AuthenticatedGraficosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/pedidos': {
       id: '/_authenticated/pedidos'
       path: '/pedidos'
@@ -343,6 +362,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEstoqueRoute: typeof AuthenticatedEstoqueRoute
   AuthenticatedFullRoute: typeof AuthenticatedFullRoute
   AuthenticatedGarantiaRoute: typeof AuthenticatedGarantiaRoute
+  AuthenticatedGraficosRoute: typeof AuthenticatedGraficosRoute
   AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedEmpresaSlugRoute: typeof AuthenticatedEmpresaSlugRouteWithChildren
@@ -357,6 +377,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEstoqueRoute: AuthenticatedEstoqueRoute,
   AuthenticatedFullRoute: AuthenticatedFullRoute,
   AuthenticatedGarantiaRoute: AuthenticatedGarantiaRoute,
+  AuthenticatedGraficosRoute: AuthenticatedGraficosRoute,
   AuthenticatedPedidosRoute: AuthenticatedPedidosRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedEmpresaSlugRoute: AuthenticatedEmpresaSlugRouteWithChildren,
