@@ -1,0 +1,15 @@
+DROP POLICY IF EXISTS "Autenticados veem pedidos" ON public.pedidos;
+CREATE POLICY "Admin vê pedidos" ON public.pedidos FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'::app_role));
+DROP POLICY IF EXISTS "Autenticados veem itens de pedidos" ON public.pedido_itens;
+CREATE POLICY "Admin vê itens de pedidos" ON public.pedido_itens FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'::app_role));
+DROP POLICY IF EXISTS "Autenticados veem cargas Full" ON public.full_cargas;
+CREATE POLICY "Admin vê cargas Full" ON public.full_cargas FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'::app_role));
+DROP POLICY IF EXISTS "Autenticados veem itens Full" ON public.full_itens;
+CREATE POLICY "Admin vê itens Full" ON public.full_itens FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'::app_role));
+DROP POLICY IF EXISTS "Leitura pública de produtos" ON public.produtos;
+CREATE POLICY "Autenticados leem produtos" ON public.produtos FOR SELECT TO authenticated USING (auth.uid() IS NOT NULL);
+DROP POLICY IF EXISTS "Leitura pública de marcas" ON public.marcas;
+CREATE POLICY "Autenticados leem marcas" ON public.marcas FOR SELECT TO authenticated USING (auth.uid() IS NOT NULL);
+DROP POLICY IF EXISTS "Leitura pública de empresas" ON public.empresas;
+CREATE POLICY "Autenticados leem empresas" ON public.empresas FOR SELECT TO authenticated USING (auth.uid() IS NOT NULL);
+REVOKE SELECT ON public.produtos, public.marcas, public.empresas FROM anon;
