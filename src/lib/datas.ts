@@ -35,7 +35,7 @@ export function brParaYmd(texto: string, hoje = hojeSP()): string | null {
   return `${y}-${pad(mes)}-${pad(d)}`;
 }
 
-/** Data de calendário → instante à meia-noite de São Paulo (para colunas com hora). */
+/** Data de calendário → fim do dia em São Paulo (prazo vale até o fim do dia). */
 export function ymdParaInstanteSP(ymd: string) {
-  return `${ymd}T00:00:00-03:00`;
+  return `${ymd}T23:59:59-03:00`;
 }
