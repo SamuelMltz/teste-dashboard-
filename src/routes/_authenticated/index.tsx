@@ -293,7 +293,7 @@ function Painel() {
                       <div className={`flex h-14 w-14 items-center justify-center rounded-md section-icon`}>
                         <Icon className="h-8 w-8" aria-hidden="true" />
                       </div>
-                      <h2 className="mt-4 font-display text-2xl font-semibold text-foreground break-words">{titulo}</h2>
+                      <h2 className="mt-4 max-w-full font-display text-2xl font-semibold text-foreground">{titulo === "Garantia/Devolução" ? <>Garantia/<wbr />Devolução</> : titulo}</h2>
                       <p className="mt-1 max-w-56 text-sm leading-6 text-muted-foreground">{desc}</p>
                       <span className={`mt-auto flex h-10 w-10 items-center justify-center rounded-full transition-transform group-hover:translate-x-1 bg-section-icon text-foreground`}>
                         <ArrowRight className="h-5 w-5" aria-hidden="true" />

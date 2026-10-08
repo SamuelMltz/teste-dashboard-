@@ -179,7 +179,6 @@ function EmpresaEditor({ empresa, onChange }: { empresa: Empresa; onChange: () =
           onDragOver={(event) => event.preventDefault()}
           onDrop={() => moverMarca(m.id)}
           className={marcaArrastada === m.id ? "opacity-50" : undefined}
-          style={{ ["--empresa-accent" as string]: empresa.accent }}
         >
           <MarcaEditor
             marca={m}
