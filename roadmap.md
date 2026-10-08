@@ -1,5 +1,9 @@
 # Roadmap
 
+- [x] Ajustar os títulos de Garantias/Devoluções e o acesso inicial.
+- [x] Centralizar cores por seção, incluindo subpáginas e janelas compartilhadas, sem mudar regras ou dados.
+- [x] Conferir títulos, cores e navegação no navegador.
+
 - [x] Adicionar código personalizado aos produtos na interface e nas listagens.
 - [x] Permitir reordenar marcas por arrastar e salvar a ordem.
 - [x] Permitir reordenar produtos por arrastar e salvar a ordem.

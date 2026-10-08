@@ -92,17 +92,17 @@ function FullPage() {
       <div className="relative mx-auto max-w-7xl px-5 py-7 sm:px-8 sm:py-9 lg:px-12 lg:py-10">
         <Button variant="ghost" asChild className="group -ml-3 gap-2 text-muted-foreground hover:text-foreground"><Link to="/"><ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />Voltar ao início</Link></Button>
         <header className="mt-7 flex items-center gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-dashboard-amber-icon text-foreground shadow-dashboard-amber"><Truck className="h-9 w-9" /></div>
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md section-icon text-foreground"><Truck className="h-9 w-9" /></div>
           <div><h1 className="font-display text-4xl font-bold text-foreground sm:text-5xl">Full</h1><p className="mt-1 text-muted-foreground">Planeje as cargas antes de confirmar o envio.</p></div>
         </header>
-        <div className="mt-5 h-1 w-16 rounded-full bg-dashboard-amber" />
+        <div className="mt-5 h-1 w-16 rounded-full bg-section" />
 
         <section className="mt-8 border-y border-border py-6" aria-labelledby="nova-carga">
           <h2 id="nova-carga" className="font-display text-xl font-semibold text-foreground">Novo planejamento</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(160px,0.4fr)_minmax(0,1fr)_auto_auto] sm:items-center">
             <p className="text-sm text-muted-foreground">{empresaAtual?.nome}</p>
             <Input value={nome} onChange={(event) => setNome(event.target.value)} placeholder="Nome do Full (opcional)" maxLength={120} />
-            <Button onClick={criarCarga} disabled={criando || !empresaId} className="gerenciar-primary gap-2"><Plus className="h-4 w-4" />Criar Full</Button>
+            <Button onClick={criarCarga} disabled={criando || !empresaId} className="bg-section text-primary-foreground hover:bg-section/90 gap-2"><Plus className="h-4 w-4" />Criar Full</Button>
             {empresaAtual && <BotaoImportarPdf rotulo="Importar PDF" onArquivo={async (arquivo) => { const id = await criarDocumentoPorPdf("full", arquivo, empresaAtual); if (id) { await atualizar(); navigate({ to: "/full/$id", params: { id } }); } }} />}
           </div>
         </section>
@@ -123,9 +123,9 @@ function Lista({ titulo, vazio, cargas, carregando = false, editavel = false, on
         {carregando ? <p className="py-10 text-muted-foreground">Carregando…</p> : cargas.length === 0 ? <div className="rounded-md border border-dashed border-border p-10 text-center text-muted-foreground">{vazio}</div> : cargas.map((carga) => {
           const total = carga.itens.reduce((soma, item) => soma + item.quantidade, 0);
           const prazo = carga.data_prevista ? avaliarPrazoFull(carga.data_prevista) : null;
-          return <article key={carga.id} className={`flex items-center gap-3 rounded-md border p-3 ${editavel ? "border-dashboard-amber/45 bg-dashboard-amber-soft" : "border-dashboard-green/35 bg-dashboard-green-soft"}`}>
+          return <article key={carga.id} className={`flex items-center gap-3 rounded-md border p-3 ${editavel ? "border-section/45 bg-section-soft" : "border-dashboard-green/35 bg-dashboard-green-soft"}`}>
             <Link to="/full/$id" params={{ id: carga.id }} className="group grid min-w-0 flex-1 gap-3 rounded-md p-2 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
-              <span className={`flex h-11 w-11 items-center justify-center rounded-md ${editavel ? "bg-dashboard-amber-icon" : "bg-dashboard-green-icon"}`}>{editavel ? <Truck className="h-6 w-6" /> : <Check className="h-5 w-5" />}</span>
+              <span className={`flex h-11 w-11 items-center justify-center rounded-md ${editavel ? "bg-section-icon" : "bg-dashboard-green-icon"}`}>{editavel ? <Truck className="h-6 w-6" /> : <Check className="h-5 w-5" />}</span>
               <span className="min-w-0"><span className="block truncate font-display text-lg font-semibold text-foreground">{codigo(carga.numero)} · {carga.nome}</span><span className="block text-sm text-muted-foreground">{carga.status === "planejada" ? "Em preparação" : "Enviado"} · {carga.itens.length} {carga.itens.length === 1 ? "produto" : "produtos"} · {total} unidades</span></span>
               <span className="flex items-center gap-4 text-sm"><span className={prazo?.prazo === "normal" ? "text-muted-foreground" : prazo ? "text-dashboard-red" : "text-muted-foreground"}>{prazo ? <><CalendarDays className="mr-1 inline h-4 w-4" />{prazo.rotulo}</> : carga.confirmed_at ? `Enviado em ${new Date(carga.confirmed_at).toLocaleDateString("pt-BR")}` : "Sem data"}</span><FileText className="h-5 w-5 transition-transform group-hover:translate-x-1" /></span>
             </Link>

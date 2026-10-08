@@ -74,7 +74,7 @@ export function NovaMarcaModal({ empresa, aberto, onFechar }: { empresa: Empresa
 
   return (
     <Dialog open={aberto} onOpenChange={(o) => { if (!o && !salvando) fechar(); }}>
-      <DialogContent>
+      <DialogContent data-section="gerenciar">
         <DialogHeader>
           <DialogTitle>Nova marca</DialogTitle>
           <DialogDescription>A marca será cadastrada na empresa {empresa.nome}.</DialogDescription>
@@ -135,7 +135,7 @@ export function NovoProdutoModal({ empresa, aberto, onFechar, onNovaMarca }: { e
 
   return (
     <Dialog open={aberto} onOpenChange={(o) => { if (!o && !salvando) fechar(); }}>
-      <DialogContent>
+      <DialogContent data-section="gerenciar">
         <DialogHeader>
           <DialogTitle>Novo produto</DialogTitle>
           <DialogDescription>O produto será cadastrado na empresa {empresa.nome}.</DialogDescription>

@@ -54,58 +54,37 @@ const OPCOES = [
     titulo: "Estoque",
     desc: "Veja as marcas e produtos em estoque.",
     Icon: Boxes,
-    cor: "amber",
+    secao: "estoque",
   },
   {
     to: "/garantia",
-    titulo: "Garantia",
+    titulo: "Garantia/Devolução",
     desc: "Acompanhe as garantias dos produtos.",
     Icon: ShieldCheck,
-    cor: "blue",
+    secao: "garantia",
   },
   {
     to: "/admin",
     titulo: "Gerenciar",
     desc: "Cadastre e organize marcas e produtos.",
     Icon: ClipboardPlus,
-    cor: "green",
+    secao: "gerenciar",
   },
   {
     to: "/full",
     titulo: "Full",
     desc: "Planeje cargas e confirme a baixa no estoque.",
     Icon: Truck,
-    cor: "amber",
+    secao: "full",
   },
   {
     to: "/pedidos",
     titulo: "Pedidos",
     desc: "Monte pedidos e confirme a entrada no estoque.",
     Icon: PackagePlus,
-    cor: "green",
+    secao: "pedidos",
   },
 ] as const;
-
-const CORES = {
-  amber: {
-    card: "border-dashboard-amber/70 bg-dashboard-amber-soft",
-    icon: "bg-dashboard-amber-icon text-foreground shadow-dashboard-amber",
-    arrow: "bg-dashboard-amber-icon text-foreground",
-    wave: "bg-dashboard-amber-wave",
-  },
-  blue: {
-    card: "border-dashboard-blue/70 bg-dashboard-blue-soft",
-    icon: "bg-dashboard-blue-icon text-foreground shadow-dashboard-blue",
-    arrow: "bg-dashboard-blue-icon text-foreground",
-    wave: "bg-dashboard-blue-wave",
-  },
-  green: {
-    card: "border-dashboard-green/70 bg-dashboard-green-soft",
-    icon: "bg-dashboard-green-icon text-foreground shadow-dashboard-green",
-    arrow: "bg-dashboard-green-icon text-foreground",
-    wave: "bg-dashboard-green-wave",
-  },
-} as const;
 
 const LOGOS: Record<string, string> = { vivalle: vivalleLogo, luminartech: luminartechLogo, vitrine: vitrineLogo };
 
@@ -301,22 +280,22 @@ function Painel() {
             </section>
 
             <section aria-label="Áreas do sistema" className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-              {OPCOES.map(({ to, titulo, desc, Icon, cor }) => {
-                const cores = CORES[cor];
+              {OPCOES.map(({ to, titulo, desc, Icon, secao }) => {
                 return (
                   <Link
                     key={to}
+                    data-section={secao}
                     to={to}
-                    className={`group relative isolate flex min-h-60 overflow-hidden rounded-md border p-6 transition-transform duration-300 hover:-translate-y-1 ${cores.card}`}
+                    className={`group relative isolate flex min-h-60 overflow-hidden rounded-md border p-6 transition-transform duration-300 hover:-translate-y-1 border-section/70 bg-section-soft`}
                   >
-                    <div className={`absolute -bottom-16 -right-10 h-32 w-4/5 rotate-[-18deg] rounded-[50%] opacity-70 transition-transform duration-500 group-hover:scale-110 ${cores.wave}`} aria-hidden="true" />
+                    <div className={`absolute -bottom-16 -right-10 h-32 w-4/5 rotate-[-18deg] rounded-[50%] opacity-70 transition-transform duration-500 group-hover:scale-110 bg-section-wave`} aria-hidden="true" />
                     <div className="relative z-10 flex w-full flex-col items-start">
-                      <div className={`flex h-14 w-14 items-center justify-center rounded-md ${cores.icon}`}>
+                      <div className={`flex h-14 w-14 items-center justify-center rounded-md section-icon`}>
                         <Icon className="h-8 w-8" aria-hidden="true" />
                       </div>
-                      <h2 className="mt-4 font-display text-2xl font-semibold text-foreground">{titulo}</h2>
+                      <h2 className="mt-4 max-w-full font-display text-2xl font-semibold text-foreground">{titulo === "Garantia/Devolução" ? <>Garantia/<wbr />Devolução</> : titulo}</h2>
                       <p className="mt-1 max-w-56 text-sm leading-6 text-muted-foreground">{desc}</p>
-                      <span className={`mt-auto flex h-10 w-10 items-center justify-center rounded-full transition-transform group-hover:translate-x-1 ${cores.arrow}`}>
+                      <span className={`mt-auto flex h-10 w-10 items-center justify-center rounded-full transition-transform group-hover:translate-x-1 bg-section-icon text-foreground`}>
                         <ArrowRight className="h-5 w-5" aria-hidden="true" />
                       </span>
                     </div>
@@ -331,10 +310,10 @@ function Painel() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-15 justify-start gap-4 border-dashboard-amber/50 bg-dashboard-amber-soft px-4 hover:bg-dashboard-amber-soft"
+                  className="h-15 justify-start gap-4 border-dashboard-green/50 bg-dashboard-green-soft px-4 hover:bg-dashboard-green-soft"
                   onClick={() => setModal("produto")}
                 >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-md bg-dashboard-amber-icon text-foreground">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-md bg-dashboard-green-icon text-foreground">
                     <PackagePlus className="h-5 w-5" aria-hidden="true" />
                   </span>
                   Novo produto

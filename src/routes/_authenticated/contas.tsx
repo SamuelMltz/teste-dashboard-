@@ -46,7 +46,7 @@ function ContasPage() {
         <header className="mt-5">
           <h1 className="font-display text-4xl font-bold text-foreground sm:text-5xl">Contas</h1>
           <p className="mt-1 text-muted-foreground">Escolha quais contas também podem administrar o sistema.</p>
-          <div className="mt-4 h-1 w-12 rounded-full bg-dashboard-amber" aria-hidden="true" />
+          <div className="mt-4 h-1 w-12 rounded-full bg-section" aria-hidden="true" />
         </header>
         {liberado ? <ListaContas meuId={user.id} /> : (
           <form onSubmit={entrar} className="mt-10 max-w-sm space-y-3 rounded-md border border-border bg-background/30 p-6">

@@ -16,7 +16,7 @@ export function BotaoImportarPdf({ rotulo, onArquivo }: { rotulo: string; onArqu
         catch (err) { toast.error(err instanceof Error ? err.message : "Não foi possível importar o PDF."); }
         finally { setLendo(false); if (ref.current) ref.current.value = ""; }
       }} />
-      <Button type="button" variant="outline" disabled={lendo} onClick={() => ref.current?.click()} className="gap-2"><Upload className="h-4 w-4" />{lendo ? "Lendo PDF…" : rotulo}</Button>
+      <Button type="button" variant="outline" disabled={lendo} onClick={() => ref.current?.click()} className="gap-2 border-section/60 text-section"><Upload className="h-4 w-4" />{lendo ? "Lendo PDF…" : rotulo}</Button>
     </>
   );
 }

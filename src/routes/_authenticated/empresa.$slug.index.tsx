@@ -38,8 +38,7 @@ function EmpresaMarcas() {
 
         <header className="mt-6 flex items-center gap-4">
           <div
-            className="flex h-14 w-14 items-center justify-center rounded-2xl font-display text-2xl font-bold"
-            style={{ backgroundColor: `${empresa.accent}1a`, color: empresa.accent }}
+            className="flex h-14 w-14 items-center justify-center rounded-2xl bg-section-soft text-section font-display text-2xl font-bold"
           >
             {empresa.nome.charAt(0)}
           </div>
@@ -62,7 +61,7 @@ function EmpresaMarcas() {
                 key={marca.slug}
                 to="/empresa/$slug/marca/$marca"
                 params={{ slug: empresa.slug, marca: marca.slug }}
-                className="group rounded-2xl border border-border bg-card p-6 transition-all hover:-translate-y-1"
+                className="group rounded-2xl border border-section/45 bg-card p-6 transition-all hover:-translate-y-1"
               >
                 <div className="flex items-start justify-between">
                   <h2 className="font-display text-xl font-semibold text-foreground">{marca.nome}</h2>
