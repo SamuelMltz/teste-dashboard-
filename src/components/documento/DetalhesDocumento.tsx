@@ -17,7 +17,7 @@ import { paraInputData } from "@/lib/full-prazos";
 export type Tipo = "full" | "pedido";
 
 type Produto = { id: string; nome: string; codigo: string; cod: string; estoque: number; marca_id: string; marca: string; empresa_id: string; empresa_nome: string };
-type Item = { id: string; produto_id: string; quantidade: number; produto: Produto };
+type Item = { id: string; produto_id: string; quantidade: number; preparado?: boolean; produto: Produto };
 type Doc = { id: string; numero: number; nome: string; status: string; frete_ml?: string | null; data_prevista?: string | null; ml_total_produtos?: number | null; ml_total_unidades?: number | null; created_at: string; empresa: { id: string; nome: string; endereco: string; cnpj: string }; itens: Item[] };
 type Marca = { id: string; nome: string; empresa_id: string };
 
@@ -46,7 +46,7 @@ async function carregar(tipo: Tipo, id: string): Promise<{ doc: Doc; produtos: P
   const c = CFG[tipo];
   const [docRes, itensRes, produtosRes, marcasRes] = await Promise.all([
     db.from(c.tabela).select(tipo === "full" ? "id, numero, nome, status, created_at, frete_ml, data_prevista, ml_total_produtos, ml_total_unidades, empresas(id, nome, endereco, cnpj)" : "id, numero, nome, status, created_at, empresas(id, nome, endereco, cnpj)").eq("id", id).single(),
-    db.from(c.itens).select("id, produto_id, quantidade").eq(c.fk, id).order("created_at"),
+    db.from(c.itens).select(tipo === "full" ? "id, produto_id, quantidade, preparado" : "id, produto_id, quantidade").eq(c.fk, id).order("created_at"),
     supabase.from("produtos").select("id, nome, codigo, cod, estoque, marca_id, marcas!inner(nome, empresa_id, empresas(nome))").order("ordem"),
     supabase.from("marcas").select("id, nome, empresa_id").order("ordem"),
   ]);
@@ -58,7 +58,7 @@ async function carregar(tipo: Tipo, id: string): Promise<{ doc: Doc; produtos: P
   });
   const porId = new Map(produtos.map((p) => [p.id, p]));
   const empresa = Array.isArray(docRes.data.empresas) ? docRes.data.empresas[0] : docRes.data.empresas;
-  const itens: Item[] = (itensRes.data ?? []).flatMap((i: { id: string; produto_id: string; quantidade: number }) => {
+  const itens: Item[] = (itensRes.data ?? []).flatMap((i: { id: string; produto_id: string; quantidade: number; preparado?: boolean }) => {
     const produto = porId.get(i.produto_id);
     return produto ? [{ ...i, produto }] : [];
   });
@@ -117,6 +117,13 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
   async function removerItem(itemId: string) {
     const { error } = await db.from(c.itens).delete().eq("id", itemId);
     if (error) toast.error("Não foi possível remover o produto."); else await atualizar();
+  }
+
+  async function alternarPreparado(item: Item) {
+    const novo = !item.preparado;
+    queryClient.setQueryData(chave, (d: typeof data) => d && { ...d, doc: { ...d.doc, itens: d.doc.itens.map((x) => x.id === item.id ? { ...x, preparado: novo } : x) } });
+    const { error } = await supabase.from("full_itens").update({ preparado: novo }).eq("id", item.id);
+    if (error) { toast.error("Não foi possível salvar a marcação."); await atualizar(); }
   }
 
   async function salvarDataPrevista(valor: string) {
@@ -273,11 +280,12 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
             <div className="mt-6 overflow-x-auto rounded-md border border-border">
               <table className="w-full min-w-[560px] text-sm">
                 <thead className="bg-background/50 text-left text-xs font-semibold tracking-wide text-muted-foreground">
-                  <tr><th className="px-4 py-3">COD</th><th className="px-4 py-3">SKU</th><th className="px-4 py-3">PRODUTO</th><th className="px-4 py-3">QUANTIDADE</th>{tipo === "pedido" && <th className="px-4 py-3">EMPRESA DE DESTINO</th>}{tipo === "full" && <th className="px-4 py-3">ESTOQUE</th>}{editavel && <th className="w-10" />}</tr>
+                  <tr>{tipo === "full" && <th className="w-10 px-3" />}<th className="px-4 py-3">COD</th><th className="px-4 py-3">SKU</th><th className="px-4 py-3">PRODUTO</th><th className="px-4 py-3">QUANTIDADE</th>{tipo === "pedido" && <th className="px-4 py-3">EMPRESA DE DESTINO</th>}{tipo === "full" && <th className="px-4 py-3">ESTOQUE</th>}{editavel && <th className="w-10" />}</tr>
                 </thead>
                 <tbody>
-                  {doc.itens.length === 0 ? <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Nenhum produto ainda.</td></tr> : doc.itens.map((i) => (
-                    <tr key={i.id} className="border-t border-border text-foreground">
+                  {doc.itens.length === 0 ? <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum produto ainda.</td></tr> : doc.itens.map((i) => (
+                    <tr key={i.id} className={`border-t border-border text-foreground transition-colors ${tipo === "full" && i.preparado ? "bg-dashboard-green-soft shadow-[inset_3px_0_0_hsl(var(--dashboard-green,142_60%_45%))]" : ""}`}>
+                      {tipo === "full" && <td className="px-3"><button type="button" role="checkbox" aria-checked={!!i.preparado} aria-label={`Preparado: ${i.produto.nome}`} disabled={!editavel} onClick={() => void alternarPreparado(i)} className={`flex h-5 w-5 items-center justify-center rounded border transition-colors disabled:opacity-60 ${i.preparado ? "border-dashboard-green bg-dashboard-green text-background" : "border-muted-foreground/50 hover:border-dashboard-green"}`}>{i.preparado && <Check className="h-3.5 w-3.5" strokeWidth={3} />}</button></td>}
                       <td className="px-4 py-3">{i.produto.cod || "—"}</td>
                       <td className="px-4 py-3">{i.produto.codigo ? i.produto.codigo : <CampoProduto key={`sku-${i.produto.id}`} produtoId={i.produto.id} campo="codigo" placeholder="Informar SKU" onSalvo={atualizar} />}</td>
                       <td className="px-4 py-3">{i.produto.nome ? i.produto.nome : <CampoProduto key={`nome-${i.produto.id}`} produtoId={i.produto.id} campo="nome" placeholder="Informar nome" onSalvo={atualizar} />}<span className="block text-xs text-muted-foreground">{i.produto.marca}</span></td>
