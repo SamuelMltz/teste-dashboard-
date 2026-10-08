@@ -10,6 +10,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   AlertTriangle,
+  BarChart3,
   Bell,
   ArrowRight,
   ArrowLeftRight,
@@ -83,6 +84,13 @@ const OPCOES = [
     desc: "Monte pedidos e confirme a entrada no estoque.",
     Icon: PackagePlus,
     secao: "pedidos",
+  },
+  {
+    to: "/graficos",
+    titulo: "Gráficos",
+    desc: "Compare o estoque e acompanhe a reposição do Full.",
+    Icon: BarChart3,
+    secao: "graficos",
   },
 ] as const;
 
