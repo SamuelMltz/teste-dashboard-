@@ -36,7 +36,7 @@ export function CampoData({ valor, onSalvar, disabled, permitirVazio = false }: 
           <Button type="button" variant="outline" size="icon" disabled={disabled} aria-label="Abrir calendário"><CalendarIcon className="h-4 w-4" /></Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
-          <Calendar mode="single" selected={selecionada} defaultMonth={selecionada} className="pointer-events-auto p-3"
+          <Calendar mode="single" selected={selecionada} defaultMonth={selecionada ?? new Date()} className="pointer-events-auto p-3"
             onSelect={(d) => {
               if (!d) return;
               const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
