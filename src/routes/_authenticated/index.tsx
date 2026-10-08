@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { definirEmpresaAtual, useEmpresaAtual } from "@/lib/empresa-atual";
 import { AvatarEmpresa } from "@/components/AvatarEmpresa";
+import { NovaMarcaModal, NovoProdutoModal } from "@/components/CadastroRapido";
 import vivalleLogo from "@/assets/logos/vivalle-refined.png";
 import luminartechLogo from "@/assets/logos/luminartech-refined.png";
 import vitrineLogo from "@/assets/logos/vitrine-refined.png";
@@ -154,6 +155,7 @@ function Painel() {
   const alertas = listarAlertas(empresas.filter((e) => e.slug === empresaAtual.slug));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [modal, setModal] = useState<"produto" | "marca" | null>(null);
   const [menuRecolhido, setMenuRecolhido] = useState(false);
   const { data: fullsAgendados = [] } = useQuery({
     queryKey: ["full-prazos", empresaAtual.id],
@@ -330,7 +332,7 @@ function Painel() {
                   type="button"
                   variant="outline"
                   className="h-15 justify-start gap-4 border-dashboard-amber/50 bg-dashboard-amber-soft px-4 hover:bg-dashboard-amber-soft"
-                  aria-label="Novo produto (em breve)"
+                  onClick={() => setModal("produto")}
                 >
                   <span className="flex h-10 w-10 items-center justify-center rounded-md bg-dashboard-amber-icon text-foreground">
                     <PackagePlus className="h-5 w-5" aria-hidden="true" />
@@ -341,7 +343,7 @@ function Painel() {
                   type="button"
                   variant="outline"
                   className="h-15 justify-start gap-4 border-dashboard-green/50 bg-dashboard-green-soft px-4 hover:bg-dashboard-green-soft"
-                  aria-label="Nova marca (em breve)"
+                  onClick={() => setModal("marca")}
                 >
                   <span className="flex h-10 w-10 items-center justify-center rounded-md bg-dashboard-green-icon text-foreground">
                     <Tag className="h-5 w-5" aria-hidden="true" />
@@ -349,6 +351,8 @@ function Painel() {
                   Nova marca
                 </Button>
               </div>
+              <NovoProdutoModal empresa={empresaAtual} aberto={modal === "produto"} onFechar={() => setModal(null)} onNovaMarca={() => setModal("marca")} />
+              <NovaMarcaModal empresa={empresaAtual} aberto={modal === "marca"} onFechar={() => setModal(null)} />
             </section>
           </div>
         </main>
