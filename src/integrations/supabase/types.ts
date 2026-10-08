@@ -108,6 +108,7 @@ export type Database = {
           carga_id: string
           created_at: string
           id: string
+          preparado: boolean
           produto_id: string
           quantidade: number
         }
@@ -115,6 +116,7 @@ export type Database = {
           carga_id: string
           created_at?: string
           id?: string
+          preparado?: boolean
           produto_id: string
           quantidade: number
         }
@@ -122,6 +124,7 @@ export type Database = {
           carga_id?: string
           created_at?: string
           id?: string
+          preparado?: boolean
           produto_id?: string
           quantidade?: number
         }

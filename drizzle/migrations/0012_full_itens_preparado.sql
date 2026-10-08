@@ -1,0 +1,1 @@
+ALTER TABLE public.full_itens ADD COLUMN preparado boolean NOT NULL DEFAULT false;
