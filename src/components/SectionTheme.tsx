@@ -12,7 +12,7 @@ export function SectionScope({ section, children }: { section: Section; children
 /** Presentation only: portals retain the section of the screen that opened them. */
 export function SectionTheme({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const section: Section | undefined = pathname.startsWith("/pedidos") ? "pedidos"
+  const section: Section | undefined = pathname.startsWith("/pedidos") || pathname.startsWith("/lista-compras") ? "pedidos"
     : pathname.startsWith("/full") ? "full"
     : pathname.startsWith("/garantia") ? "garantia"
     : pathname.startsWith("/graficos") ? "graficos"

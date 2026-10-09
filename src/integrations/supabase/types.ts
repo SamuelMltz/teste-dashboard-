@@ -23,6 +23,8 @@ export type Database = {
           id: string
           nome: string
           ordem: number
+          reposicao_alvo_pct: number
+          reposicao_atencao_pct: number
           slug: string
         }
         Insert: {
@@ -33,6 +35,8 @@ export type Database = {
           id?: string
           nome: string
           ordem?: number
+          reposicao_alvo_pct?: number
+          reposicao_atencao_pct?: number
           slug: string
         }
         Update: {
@@ -43,6 +47,8 @@ export type Database = {
           id?: string
           nome?: string
           ordem?: number
+          reposicao_alvo_pct?: number
+          reposicao_atencao_pct?: number
           slug?: string
         }
         Relationships: []
@@ -145,6 +151,41 @@ export type Database = {
           },
         ]
       }
+      geracoes_lista_compras: {
+        Row: {
+          chave: string
+          created_at: string
+          created_by: string
+          empresa_id: string
+          lista_ref: string
+          resultado: Json
+        }
+        Insert: {
+          chave: string
+          created_at?: string
+          created_by?: string
+          empresa_id: string
+          lista_ref: string
+          resultado: Json
+        }
+        Update: {
+          chave?: string
+          created_at?: string
+          created_by?: string
+          empresa_id?: string
+          lista_ref?: string
+          resultado?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "geracoes_lista_compras_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marcas: {
         Row: {
           created_at: string
@@ -187,6 +228,7 @@ export type Database = {
           pedido_id: string
           produto_id: string
           quantidade: number
+          quantidade_recebida: number
         }
         Insert: {
           created_at?: string
@@ -194,6 +236,7 @@ export type Database = {
           pedido_id: string
           produto_id: string
           quantidade: number
+          quantidade_recebida?: number
         }
         Update: {
           created_at?: string
@@ -201,6 +244,7 @@ export type Database = {
           pedido_id?: string
           produto_id?: string
           quantidade?: number
+          quantidade_recebida?: number
         }
         Relationships: [
           {
@@ -228,8 +272,11 @@ export type Database = {
           endereco_entrega: string
           fornecedor: string
           id: string
+          lista_ref: string | null
           nome: string
           numero: number
+          origem: string
+          rascunho: boolean
           received_at: string | null
           received_by: string | null
           status: Database["public"]["Enums"]["pedido_status"]
@@ -242,8 +289,11 @@ export type Database = {
           endereco_entrega?: string
           fornecedor: string
           id?: string
+          lista_ref?: string | null
           nome: string
           numero?: never
+          origem?: string
+          rascunho?: boolean
           received_at?: string | null
           received_by?: string | null
           status?: Database["public"]["Enums"]["pedido_status"]
@@ -256,8 +306,11 @@ export type Database = {
           endereco_entrega?: string
           fornecedor?: string
           id?: string
+          lista_ref?: string | null
           nome?: string
           numero?: never
+          origem?: string
+          rascunho?: boolean
           received_at?: string | null
           received_by?: string | null
           status?: Database["public"]["Enums"]["pedido_status"]
@@ -339,6 +392,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cancelar_pedido: { Args: { _pedido_id: string }; Returns: undefined }
       confirmar_carga_full: { Args: { _carga_id: string }; Returns: Json }
       confirmar_recebimento_pedido: {
         Args: { _pedido_id: string }
@@ -347,6 +401,15 @@ export type Database = {
       definir_admin: {
         Args: { _admin: boolean; _user_id: string }
         Returns: undefined
+      }
+      gerar_pedidos_reposicao: {
+        Args: {
+          _chave: string
+          _empresa_id: string
+          _itens: Json
+          _lista_ref: string
+        }
+        Returns: Json
       }
       has_role: {
         Args: {
@@ -368,7 +431,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       full_status: "planejada" | "confirmada"
-      pedido_status: "planejado" | "recebido"
+      pedido_status: "planejado" | "recebido" | "cancelado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -498,7 +561,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       full_status: ["planejada", "confirmada"],
-      pedido_status: ["planejado", "recebido"],
+      pedido_status: ["planejado", "recebido", "cancelado"],
     },
   },
 } as const

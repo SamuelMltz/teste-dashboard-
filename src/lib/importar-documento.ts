@@ -4,6 +4,8 @@ import type { CabecalhoMl } from "./pdf-ml";
 import { assinaturaLinhas, casarEntreEmpresas, casarLinhas, type Pendente } from "./casar-produtos";
 import type { EmpresaAtual } from "./empresa-atual";
 import { hojeSP } from "./datas";
+import { interpretarPdfSistema } from "./lista-compras";
+import { lerTextoLinhas } from "./pdf-import";
 
 export type TipoDoc = "full" | "pedido";
 
@@ -44,6 +46,11 @@ export async function criarDocumentoPorPdf(tipo: TipoDoc, arquivo: File, empresa
   const t = T[tipo];
   let linhas: LinhaPdf[];
   let ml: CabecalhoMl | null = null;
+  if (tipo === "pedido") {
+    let sistema: ReturnType<typeof interpretarPdfSistema> = null;
+    try { sistema = interpretarPdfSistema(await lerTextoLinhas(arquivo)); } catch { /* segue a leitura comum */ }
+    if (sistema) return importarPdfSistema(sistema, empresa);
+  }
   try { ({ linhas, ml } = await lerDocumentoPdf(arquivo)); } catch { throw new Error("Não foi possível ler esse PDF. Verifique se ele não é uma imagem escaneada ou protegido por senha."); }
   if (!linhas.length) throw new Error("Nenhum produto com código e quantidade foi encontrado nesse PDF. Nada foi criado.");
 
@@ -91,4 +98,57 @@ export async function criarDocumentoPorPdf(tipo: TipoDoc, arquivo: File, empresa
   salvarPendentes(tipo, doc.id, pendentes);
   localStorage.setItem(chaveImportacoes, JSON.stringify({ ...lerImportacoes(), [assinatura]: doc.id }));
   return doc.id as string;
+}
+
+type PdfSistema = NonNullable<ReturnType<typeof interpretarPdfSistema>>;
+const cod4 = (n: number) => `#${String(n).padStart(4, "0")}`;
+
+/** PDFs emitidos pelo próprio sistema: lista de compras (um pedido por marca) ou pedido individual. Revisão antes de gravar; não mexe no estoque. */
+async function importarPdfSistema(pdf: PdfSistema, empresa: EmpresaAtual): Promise<string | null> {
+  if (pdf.pedidoId) {
+    const { data } = await db.from("pedidos").select("id, numero").eq("id", pdf.pedidoId).maybeSingle();
+    if (data) return confirm(`Este PDF corresponde ao Pedido ${cod4(data.numero)}, que já existe. Abrir o registro?`) ? (data.id as string) : null;
+  }
+  if (pdf.lista) {
+    const { data } = await db.from("pedidos").select("id, numero").eq("lista_ref", pdf.lista).neq("status", "cancelado").order("numero");
+    if (data?.length) return confirm(`A lista ${pdf.lista} já gerou ${data.length} pedido(s) (${data.map((d: { numero: number }) => cod4(d.numero)).join(", ")}). Abrir o primeiro?`) ? (data[0].id as string) : null;
+  }
+  if (!pdf.itens.length) throw new Error("Nenhum produto foi encontrado nesse PDF. Nada foi criado.");
+  const produtos = await carregarProdutosEmpresa(null);
+  const locais = produtos.filter((p) => p.empresa_id === empresa.id);
+  const outros = produtos.filter((p) => p.empresa_id !== empresa.id);
+  // Identificadores exatos: SKU na lista, COD no pedido; empresa selecionada primeiro, depois as demais.
+  const linhas: LinhaPdf[] = pdf.itens.map((i) => ({ cod: i.cod, nome: i.nome, quantidade: i.quantidade, ...(pdf.tipo === "lista" ? { sku: i.sku } : {}) }));
+  const grupos = new Map<string, { casados: { produtoId: string; quantidade: number }[]; pendentes: Pendente[] }>();
+  pdf.itens.forEach((item, k) => {
+    const r = casarEntreEmpresas([linhas[k]!], locais, outros);
+    const chave = pdf.tipo === "lista" ? (item.marca || "Sem marca") : (item.marca || "Pedido importado");
+    const g = grupos.get(chave) ?? { casados: [], pendentes: [] };
+    g.casados.push(...r.casados); g.pendentes.push(...r.pendentes);
+    grupos.set(chave, g);
+  });
+  const resumo = Array.from(grupos.entries()).map(([m, g]) => `• ${m}: ${g.casados.length} reconhecido(s), ${g.pendentes.length} para revisar`).join("\n");
+  const titulo = pdf.tipo === "lista" ? `Lista ${pdf.lista}: criar ${grupos.size} pedido(s) em rascunho, um por marca?` : "Criar um pedido em rascunho com este PDF?";
+  if (!confirm(`${titulo}\n\n${resumo}\n\nO estoque não será alterado.`)) return null;
+
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) throw new Error("Sua sessão expirou. Entre novamente.");
+  const { data: emp } = await supabase.from("empresas").select("endereco").eq("id", empresa.id).maybeSingle();
+  let primeiro: string | null = null;
+  for (const [marca, g] of grupos) {
+    const { data: doc, error } = await db.from("pedidos").insert({
+      nome: marca.slice(0, 120), fornecedor: empresa.nome, empresa_id: empresa.id, created_by: userData.user.id, data_pedido: hojeSP(),
+      endereco_entrega: emp?.endereco ?? "", ...(pdf.tipo === "lista" ? { origem: "lista_compras", rascunho: true, lista_ref: pdf.lista } : {}),
+    }).select("id").single();
+    if (error || !doc) throw new Error("Não foi possível criar o pedido.");
+    const somados = new Map<string, number>();
+    g.casados.forEach((c) => somados.set(c.produtoId, (somados.get(c.produtoId) ?? 0) + c.quantidade));
+    if (somados.size) {
+      const { error: e2 } = await db.from("pedido_itens").insert(Array.from(somados, ([produto_id, quantidade]) => ({ pedido_id: doc.id, produto_id, quantidade })));
+      if (e2) { await db.from("pedidos").delete().eq("id", doc.id); throw new Error(`Não foi possível adicionar os produtos: ${e2.message}`); }
+    }
+    salvarPendentes("pedido", doc.id, g.pendentes);
+    primeiro ??= doc.id as string;
+  }
+  return primeiro;
 }

@@ -19,6 +19,7 @@ import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedFullRouteImport } from './routes/_authenticated/full'
 import { Route as AuthenticatedGarantiaRouteImport } from './routes/_authenticated/garantia'
 import { Route as AuthenticatedGraficosRouteImport } from './routes/_authenticated/graficos'
+import { Route as AuthenticatedListaComprasRouteImport } from './routes/_authenticated/lista-compras'
 import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
 import { Route as AuthenticatedEmpresaSlugRouteImport } from './routes/_authenticated/empresa.$slug'
 import { Route as AuthenticatedFullIdRouteImport } from './routes/_authenticated/full_.$id'
@@ -76,6 +77,12 @@ const AuthenticatedGraficosRoute = AuthenticatedGraficosRouteImport.update({
   path: '/graficos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedListaComprasRoute =
+  AuthenticatedListaComprasRouteImport.update({
+    id: '/lista-compras',
+    path: '/lista-compras',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPedidosRoute = AuthenticatedPedidosRouteImport.update({
   id: '/pedidos',
   path: '/pedidos',
@@ -120,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/full': typeof AuthenticatedFullRoute
   '/garantia': typeof AuthenticatedGarantiaRoute
   '/graficos': typeof AuthenticatedGraficosRoute
+  '/lista-compras': typeof AuthenticatedListaComprasRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/empresa/$slug': typeof AuthenticatedEmpresaSlugRouteWithChildren
   '/full/$id': typeof AuthenticatedFullIdRoute
@@ -136,6 +144,7 @@ export interface FileRoutesByTo {
   '/full': typeof AuthenticatedFullRoute
   '/garantia': typeof AuthenticatedGarantiaRoute
   '/graficos': typeof AuthenticatedGraficosRoute
+  '/lista-compras': typeof AuthenticatedListaComprasRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/': typeof AuthenticatedIndexRoute
   '/full/$id': typeof AuthenticatedFullIdRoute
@@ -154,6 +163,7 @@ export interface FileRoutesById {
   '/_authenticated/full': typeof AuthenticatedFullRoute
   '/_authenticated/garantia': typeof AuthenticatedGarantiaRoute
   '/_authenticated/graficos': typeof AuthenticatedGraficosRoute
+  '/_authenticated/lista-compras': typeof AuthenticatedListaComprasRoute
   '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/empresa/$slug': typeof AuthenticatedEmpresaSlugRouteWithChildren
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
     | '/full'
     | '/garantia'
     | '/graficos'
+    | '/lista-compras'
     | '/pedidos'
     | '/empresa/$slug'
     | '/full/$id'
@@ -190,6 +201,7 @@ export interface FileRouteTypes {
     | '/full'
     | '/garantia'
     | '/graficos'
+    | '/lista-compras'
     | '/pedidos'
     | '/'
     | '/full/$id'
@@ -207,6 +219,7 @@ export interface FileRouteTypes {
     | '/_authenticated/full'
     | '/_authenticated/garantia'
     | '/_authenticated/graficos'
+    | '/_authenticated/lista-compras'
     | '/_authenticated/pedidos'
     | '/_authenticated/'
     | '/_authenticated/empresa/$slug'
@@ -293,6 +306,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGraficosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/lista-compras': {
+      id: '/_authenticated/lista-compras'
+      path: '/lista-compras'
+      fullPath: '/lista-compras'
+      preLoaderRoute: typeof AuthenticatedListaComprasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/pedidos': {
       id: '/_authenticated/pedidos'
       path: '/pedidos'
@@ -363,6 +383,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFullRoute: typeof AuthenticatedFullRoute
   AuthenticatedGarantiaRoute: typeof AuthenticatedGarantiaRoute
   AuthenticatedGraficosRoute: typeof AuthenticatedGraficosRoute
+  AuthenticatedListaComprasRoute: typeof AuthenticatedListaComprasRoute
   AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedEmpresaSlugRoute: typeof AuthenticatedEmpresaSlugRouteWithChildren
@@ -378,6 +399,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFullRoute: AuthenticatedFullRoute,
   AuthenticatedGarantiaRoute: AuthenticatedGarantiaRoute,
   AuthenticatedGraficosRoute: AuthenticatedGraficosRoute,
+  AuthenticatedListaComprasRoute: AuthenticatedListaComprasRoute,
   AuthenticatedPedidosRoute: AuthenticatedPedidosRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedEmpresaSlugRoute: AuthenticatedEmpresaSlugRouteWithChildren,

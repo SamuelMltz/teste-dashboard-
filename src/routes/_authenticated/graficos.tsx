@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { ArrowLeft, BarChart3, Building2, CalendarDays, FileText, Package, Search, ShoppingCart, Tag } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { ReposicaoFisica } from "@/components/ReposicaoFisica";
 import { listarEmpresas } from "@/lib/empresas.functions";
 import { useEmpresaAtual } from "@/lib/empresa-atual";
 import { classificarReposicao, sugerirReposicao, type SituacaoReposicao } from "@/lib/reposicao";
@@ -161,6 +162,8 @@ function Graficos() {
           </div>
           <p className="mt-2 text-right text-xs text-muted-foreground">Disponível após a integração com o Mercado Livre.</p>
         </section>
+
+        {!demo && slugAtivo && <ReposicaoFisica empresaSlug={slugAtivo} titulo="Reposição do estoque físico" />}
       </div>
     </div>
   );

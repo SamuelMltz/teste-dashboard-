@@ -25,3 +25,5 @@
 - [x] Simplificar as listagens de Pedidos e Full para cartões-resumo que abrem os detalhes.
 - [x] Permitir criar Pedidos e Fulls sem selecionar marca, usando a empresa atual.
 - [x] Adicionar data prevista ao Full e alertas de prazo no Dashboard.
+
+- [x] Lista de compras e reposição pelo estoque físico (cálculo, PDF, pedidos por marca, cobertura, Gráficos, importação dos PDFs do sistema).
