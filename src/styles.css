@@ -236,10 +236,10 @@
 
 @utility gerenciar-primary {
   color: var(--estoque-canvas);
-  background-color: var(--empresa-accent, var(--dashboard-amber));
+  background-color: var(--empresa-accent, var(--dashboard-green));
 
   &:hover {
-    background-color: color-mix(in oklab, var(--empresa-accent, var(--dashboard-amber)) 88%, var(--foreground));
+    background-color: color-mix(in oklab, var(--empresa-accent, var(--dashboard-green)) 88%, var(--foreground));
   }
 }
 
