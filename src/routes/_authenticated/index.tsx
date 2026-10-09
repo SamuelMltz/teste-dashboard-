@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/re
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { definirEmpresaAtual, useEmpresaAtual, type EmpresaAtual } from "@/lib/empresa-atual";
 import { AvatarEmpresa } from "@/components/AvatarEmpresa";
+import { SectionScope } from "@/components/SectionTheme";
 import { NovaMarcaModal, NovoProdutoModal } from "@/components/CadastroRapido";
 import vivalleLogo from "@/assets/logos/vivalle-refined.png";
 import luminartechLogo from "@/assets/logos/luminartech-refined.png";
@@ -288,7 +289,7 @@ function Painel({ empresaAtual }: { empresaAtual: EmpresaAtual }) {
               </div>
             </section>
 
-            <section data-section="gerenciar" aria-labelledby="acoes-rapidas" className="mt-5 border-t border-border pt-4">
+            <SectionScope section="gerenciar"><section data-section="gerenciar" aria-labelledby="acoes-rapidas" className="mt-5 border-t border-border pt-4">
               <h2 id="acoes-rapidas" className="font-display text-lg font-semibold text-foreground">Ações rápidas</h2>
               <div className="mt-3 grid max-w-2xl gap-3 sm:grid-cols-2">
                 <Button
@@ -316,7 +317,7 @@ function Painel({ empresaAtual }: { empresaAtual: EmpresaAtual }) {
               </div>
               <NovoProdutoModal empresa={empresaAtual} aberto={modal === "produto"} onFechar={() => setModal(null)} onNovaMarca={() => setModal("marca")} />
               <NovaMarcaModal empresa={empresaAtual} aberto={modal === "marca"} onFechar={() => setModal(null)} />
-            </section>
+            </section></SectionScope>
           </div>
         </main>
       </div>

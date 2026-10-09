@@ -5,6 +5,10 @@ export type Section = "estoque" | "garantia" | "gerenciar" | "full" | "pedidos" 
 const SectionContext = createContext<Section | undefined>(undefined);
 export const useSection = () => useContext(SectionContext);
 
+export function SectionScope({ section, children }: { section: Section; children: ReactNode }) {
+  return <SectionContext.Provider value={section}>{children}</SectionContext.Provider>;
+}
+
 /** Presentation only: portals retain the section of the screen that opened them. */
 export function SectionTheme({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
