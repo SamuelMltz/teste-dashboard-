@@ -347,10 +347,10 @@
 
 /* Section palettes are independent of functional error/warning/success colors. */
 [data-section="full"] {
-  --section-accent: var(--dashboard-amber);
-  --section-soft: var(--dashboard-amber-soft);
-  --section-icon: var(--dashboard-amber-icon);
-  --section-wave: var(--dashboard-amber-wave);
+  --section-accent: oklch(0.82 0.16 95);
+  --section-soft: oklch(0.20 0.025 95);
+  --section-icon: oklch(0.58 0.12 95);
+  --section-wave: oklch(0.45 0.09 95);
 }
 [data-section="pedidos"], [data-section="gerenciar"], [data-section="contas"] {
   --section-accent: var(--dashboard-green);

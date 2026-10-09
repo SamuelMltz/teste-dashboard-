@@ -115,7 +115,7 @@ function Painel({ empresaAtual }: { empresaAtual: EmpresaAtual }) {
   const empresaComDados = empresas.find((e) => e.slug === empresaAtual.slug);
   const quantidadeAlertas = carregando ? "…" : empresaComDados ? listarAlertas([empresaComDados]).length : "—";
   const { user } = Route.useRouteContext();
-  const nomeUsuario = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "Usuário";
+  const nomeUsuario = user.user_metadata?.["full_name"] || user.user_metadata?.["name"] || user.email?.split("@")[0] || "Usuário";
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [modal, setModal] = useState<"produto" | "marca" | null>(null);
@@ -272,14 +272,14 @@ function Painel({ empresaAtual }: { empresaAtual: EmpresaAtual }) {
                     key={to}
                     data-section={secao}
                     to={to}
-                    className={`group relative isolate flex min-h-64 overflow-hidden rounded-md border p-6 xl:min-h-68 xl:p-7 transition-transform duration-300 hover:-translate-y-1 border-section/70 bg-section-soft`}
+                    className="group relative isolate flex min-h-64 overflow-hidden rounded-md border border-section/70 bg-section-soft p-6 transition-transform duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-section motion-reduce:transition-none xl:min-h-68 xl:p-7"
                   >
                     <div className={`absolute -bottom-24 -right-16 h-48 w-48 rounded-full opacity-70 transition-transform duration-500 group-hover:scale-110 bg-section-wave`} aria-hidden="true" />
                     <div className="relative z-10 flex w-full flex-col items-start">
                       <div className={`flex h-14 w-14 items-center justify-center rounded-md section-icon`}>
                         <Icon className="h-8 w-8" aria-hidden="true" />
                       </div>
-                      <h2 className="mt-4 max-w-full font-display text-2xl font-semibold text-foreground">{titulo === "Garantia/Devolução" ? <>Garantia/<wbr />Devolução</> : titulo}</h2>
+                      <h2 className="mt-4 max-w-full font-display text-2xl font-semibold text-foreground">{titulo}</h2>
                       <p className="mt-1 max-w-56 text-sm leading-6 text-muted-foreground">{desc}</p>
                       <span className="mt-5 inline-flex h-10 items-center gap-5 rounded-md border border-section/70 bg-section-icon/40 px-4 text-sm font-medium text-foreground">Acessar<ArrowRight className="h-4 w-4 text-section transition-transform group-hover:translate-x-1" aria-hidden="true" /></span>
                     </div>
