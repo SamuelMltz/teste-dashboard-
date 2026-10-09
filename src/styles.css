@@ -346,7 +346,7 @@
 }
 
 /* Section palettes are independent of functional error/warning/success colors. */
-[data-section="estoque"], [data-section="full"] {
+[data-section="full"] {
   --section-accent: var(--dashboard-amber);
   --section-soft: var(--dashboard-amber-soft);
   --section-icon: var(--dashboard-amber-icon);
@@ -363,7 +363,7 @@
   --graficos-fisico: var(--dashboard-blue);
   --graficos-vendas: oklch(0.72 0.15 300);
 }
-[data-section="garantia"], [data-section="graficos"] {
+[data-section="estoque"], [data-section="garantia"], [data-section="graficos"] {
   --section-accent: var(--dashboard-blue);
   --section-soft: var(--dashboard-blue-soft);
   --section-icon: var(--dashboard-blue-icon);
