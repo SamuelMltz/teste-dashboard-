@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, FileText, PackagePlus, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, ClipboardList, FileText, PackagePlus, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { hojeSP } from "@/lib/datas";
 
@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { criarDocumentoPorPdf } from "@/lib/importar-documento";
 import { useEmpresaObrigatoria } from "@/lib/use-empresa-obrigatoria";
 
-type Pedido = { id: string; numero: number; nome: string; empresa_id: string; status: "planejado" | "recebido"; received_at: string | null; itens: { quantidade: number }[] };
+type Pedido = { id: string; numero: number; nome: string; empresa_id: string; status: "planejado" | "recebido" | "cancelado"; rascunho: boolean; origem: string; received_at: string | null; itens: { quantidade: number }[] };
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({ meta: [
@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/pedidos")({
 const codigo = (numero: number) => `#${String(numero).padStart(4, "0")}`;
 
 async function carregarPedidos(): Promise<Pedido[]> {
-  const { data, error } = await supabase.from("pedidos").select("id, numero, nome, empresa_id, status, received_at, pedido_itens(quantidade)").order("created_at", { ascending: false });
+  const { data, error } = await supabase.from("pedidos").select("id, numero, nome, empresa_id, status, rascunho, origem, received_at, pedido_itens(quantidade)").order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((pedido) => ({ ...pedido, itens: pedido.pedido_itens ?? [] }));
 }
@@ -44,7 +44,7 @@ function PedidosPage() {
   const [criando, setCriando] = useState(false);
   const atualizar = () => queryClient.invalidateQueries({ queryKey: ["pedidos"] });
   const planejados = data.filter((pedido) => pedido.empresa_id === empresaId && pedido.status === "planejado");
-  const recebidos = data.filter((pedido) => pedido.empresa_id === empresaId && pedido.status === "recebido");
+  const recebidos = data.filter((pedido) => pedido.empresa_id === empresaId && pedido.status !== "planejado");
 
   async function criarPedido() {
     if (!empresaAtual) return;
@@ -75,6 +75,8 @@ function PedidosPage() {
         <header className="mt-7 flex items-center gap-4"><div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md section-icon text-foreground"><PackagePlus className="h-9 w-9" /></div><div><h1 className="font-display text-4xl font-bold text-foreground sm:text-5xl">Pedidos</h1><p className="mt-1 text-muted-foreground">Monte as listas e confirme quando os produtos chegarem.</p></div></header>
         <div className="mt-5 h-1 w-16 rounded-full bg-section" />
 
+        <Button variant="outline" asChild className="mt-6 gap-2 border-section/60 text-section"><Link to="/lista-compras"><ClipboardList className="h-4 w-4" />Lista de compras e reposição</Link></Button>
+
         <section className="mt-8 border-y border-border py-6" aria-labelledby="novo-pedido">
           <h2 id="novo-pedido" className="font-display text-xl font-semibold text-foreground">Novo pedido</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(160px,0.4fr)_minmax(0,1fr)_auto_auto] sm:items-center">
@@ -86,7 +88,7 @@ function PedidosPage() {
         </section>
 
         <Lista titulo="Pedidos em aberto" vazio="Nenhum pedido em aberto." pedidos={planejados} carregando={isLoading} editavel onExcluir={excluir} />
-        <Lista titulo="Histórico de recebimentos" vazio="Nenhum pedido foi recebido ainda." pedidos={recebidos} />
+        <Lista titulo="Histórico de recebimentos e cancelamentos" vazio="Nenhum pedido foi recebido ainda." pedidos={recebidos} />
       </div>
     </div>
   );
@@ -100,7 +102,7 @@ function Lista({ titulo, vazio, pedidos, carregando = false, editavel = false, o
       return <article key={pedido.id} className={`flex items-center gap-3 rounded-md border p-3 ${editavel ? "border-section/45 bg-section-soft" : "border-dashboard-green/35 bg-dashboard-green-soft"}`}>
         <Link to="/pedidos/$id" params={{ id: pedido.id }} className="group grid min-w-0 flex-1 gap-3 rounded-md p-2 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
           <span className={`flex h-11 w-11 items-center justify-center rounded-md ${editavel ? "bg-section-icon" : "bg-dashboard-green-icon"}`}>{editavel ? <PackagePlus className="h-6 w-6" /> : <Check className="h-5 w-5" />}</span>
-          <span className="min-w-0"><span className="block truncate font-display text-lg font-semibold text-foreground">{codigo(pedido.numero)} · {pedido.nome}</span><span className="block text-sm text-muted-foreground">{pedido.status === "planejado" ? "Em preparação" : "Recebido"} · {pedido.itens.length} {pedido.itens.length === 1 ? "produto" : "produtos"} · {total} unidades</span></span>
+          <span className="min-w-0"><span className="block truncate font-display text-lg font-semibold text-foreground">{codigo(pedido.numero)} · {pedido.nome}</span><span className="block text-sm text-muted-foreground">{pedido.status === "planejado" ? (pedido.rascunho ? "Rascunho" : "Confirmado") : pedido.status === "cancelado" ? "Cancelado" : "Recebido"}{pedido.origem === "lista_compras" ? " · Gerado pela lista de compras" : ""} · {pedido.itens.length} {pedido.itens.length === 1 ? "produto" : "produtos"} · {total} unidades</span></span>
           <span className="flex items-center gap-3 text-sm text-muted-foreground">{pedido.received_at ? `Recebido em ${new Date(pedido.received_at).toLocaleDateString("pt-BR")}` : "Abrir detalhes"}<FileText className="h-5 w-5 text-foreground transition-transform group-hover:translate-x-1" /></span>
         </Link>
         {editavel && onExcluir && <Button variant="ghost" size="icon" onClick={() => onExcluir(pedido.id, pedido.numero)} aria-label={`Excluir ${codigo(pedido.numero)}`} className="shrink-0 text-dashboard-red hover:text-dashboard-red"><Trash2 className="h-5 w-5" /></Button>}

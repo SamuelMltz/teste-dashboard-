@@ -19,7 +19,7 @@ export type Tipo = "full" | "pedido";
 
 type Produto = { id: string; nome: string; codigo: string; cod: string; estoque: number; marca_id: string; marca: string; empresa_id: string; empresa_nome: string };
 type Item = { id: string; produto_id: string; quantidade: number; preparado?: boolean; produto: Produto };
-type Doc = { id: string; numero: number; nome: string; status: string; frete_ml?: string | null; data_prevista?: string | null; data_pedido?: string; endereco_entrega?: string; ml_total_produtos?: number | null; ml_total_unidades?: number | null; created_at: string; empresa: { id: string; nome: string; endereco: string; cnpj: string }; itens: Item[] };
+type Doc = { id: string; numero: number; nome: string; status: string; frete_ml?: string | null; data_prevista?: string | null; data_pedido?: string; endereco_entrega?: string; rascunho?: boolean; origem?: string; lista_ref?: string | null; ml_total_produtos?: number | null; ml_total_unidades?: number | null; created_at: string; empresa: { id: string; nome: string; endereco: string; cnpj: string }; itens: Item[] };
 type Marca = { id: string; nome: string; empresa_id: string };
 
 const CFG = {
@@ -46,7 +46,7 @@ const codigo = (n: number) => `#${String(n).padStart(4, "0")}`;
 async function carregar(tipo: Tipo, id: string): Promise<{ doc: Doc; produtos: Produto[]; outros: Produto[]; marcas: Marca[] }> {
   const c = CFG[tipo];
   const [docRes, itensRes, produtosRes, marcasRes] = await Promise.all([
-    db.from(c.tabela).select(tipo === "full" ? "id, numero, nome, status, created_at, frete_ml, data_prevista, ml_total_produtos, ml_total_unidades, empresas(id, nome, endereco, cnpj)" : "id, numero, nome, status, created_at, data_pedido, endereco_entrega, empresas(id, nome, endereco, cnpj)").eq("id", id).single(),
+    db.from(c.tabela).select(tipo === "full" ? "id, numero, nome, status, created_at, frete_ml, data_prevista, ml_total_produtos, ml_total_unidades, empresas(id, nome, endereco, cnpj)" : "id, numero, nome, status, created_at, data_pedido, endereco_entrega, rascunho, origem, lista_ref, empresas(id, nome, endereco, cnpj)").eq("id", id).single(),
     db.from(c.itens).select(tipo === "full" ? "id, produto_id, quantidade, preparado" : "id, produto_id, quantidade").eq(c.fk, id).order("created_at"),
     supabase.from("produtos").select("id, nome, codigo, cod, estoque, marca_id, marcas!inner(nome, empresa_id, empresas(nome))").order("ordem"),
     supabase.from("marcas").select("id, nome, empresa_id").order("ordem"),
@@ -110,6 +110,18 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
   const atualizar = () => queryClient.invalidateQueries({ queryKey: chave });
   const doc = data?.doc;
   const editavel = doc?.status === c.planejado;
+
+  async function confirmarRascunho() {
+    const { error } = await db.from("pedidos").update({ rascunho: false }).eq("id", id);
+    if (error) { toast.error("Não foi possível confirmar o pedido."); return; }
+    await atualizar(); toast.success("Pedido confirmado (não altera o estoque)");
+  }
+  async function cancelarPedido() {
+    if (!confirm("Cancelar este pedido? Ele deixa de contar como compra pendente. O estoque não muda.")) return;
+    const { error } = await db.rpc("cancelar_pedido", { _pedido_id: id });
+    if (error) { toast.error(error.message); return; }
+    await atualizar(); toast.success("Pedido cancelado");
+  }
   const corTexto = "text-section";
   const corBorda = "border-section/70";
   const corIcone = "section-icon";
@@ -193,6 +205,7 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
       marcas: Array.from(new Set(doc.itens.map((i) => i.produto.marca))),
       itens: doc.itens.map((i) => ({ cod: i.produto.cod, nome: i.produto.nome, quantidade: i.quantidade })),
       arquivo: `${c.prefixo.toLowerCase()}-${String(doc.numero).padStart(4, "0")}.pdf`,
+      referencia: tipo === "pedido" ? `PED-${doc.id}` : undefined,
     });
   }
 
@@ -268,10 +281,19 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
               <div className="md:text-right">
                 <p className={`text-xs font-semibold tracking-wide ${corTexto}`}>{c.rotuloNumero}</p>
                 <p className="font-display text-2xl font-semibold text-foreground">{c.prefixo} {codigo(doc.numero)}</p>
+                {tipo === "pedido" && (doc.status === "cancelado" || doc.rascunho || doc.origem === "lista_compras") && (
+                  <p className="mt-1 flex flex-wrap gap-2 text-xs md:justify-end">
+                    {doc.status === "cancelado" && <span className="rounded-full border border-dashboard-red/60 px-2 py-0.5 text-dashboard-red">Cancelado</span>}
+                    {doc.rascunho && doc.status === "planejado" && <span className="rounded-full border border-section/60 px-2 py-0.5 text-section">Rascunho</span>}
+                    {doc.origem === "lista_compras" && <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">Gerado pela lista de compras{doc.lista_ref ? ` · ${doc.lista_ref}` : ""}</span>}
+                  </p>
+                )}
                 <div className="mt-4 flex flex-wrap gap-2 md:justify-end">
                   <input ref={fileRef} type="file" accept="application/pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void importar(f); }} />
                   <Button variant="outline" className="gap-2 border-section/60 text-section" disabled={!editavel || ocupado} onClick={() => fileRef.current?.click()}><Upload className="h-4 w-4" />Importar PDF</Button>
                   <Button variant="outline" className="gap-2 border-section/60 text-section" onClick={baixar}><Download className="h-4 w-4" />Baixar PDF</Button>
+                  {tipo === "pedido" && editavel && doc.rascunho && <Button variant="outline" className="gap-2 border-section/60 text-section" onClick={confirmarRascunho}><Check className="h-4 w-4" />Confirmar pedido</Button>}
+                  {tipo === "pedido" && editavel && <Button variant="ghost" className="text-dashboard-red hover:text-dashboard-red" onClick={cancelarPedido}>Cancelar pedido</Button>}
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">{c.ajuda}</p>
               </div>

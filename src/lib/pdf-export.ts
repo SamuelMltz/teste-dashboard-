@@ -10,6 +10,7 @@ export type DadosPdf = {
   marcas: string[];
   itens: { cod: string; nome: string; quantidade: number }[];
   arquivo: string;
+  referencia?: string | undefined;
 };
 
 export async function gerarPdf(d: DadosPdf) {
@@ -41,6 +42,7 @@ export async function gerarPdf(d: DadosPdf) {
   doc.setTextColor(110, 115, 125).setFontSize(9).text(d.rotuloNumero, W - 15, 47 + o, { align: "right" });
   doc.setTextColor(20, 30, 50).setFont("helvetica", "bold").setFontSize(14).text(d.numero, W - 15, 54 + o, { align: "right" });
 
+  if (d.referencia) doc.setFont("helvetica", "normal").setFontSize(8).setTextColor(110, 115, 125).text(`Ref. ${d.referencia}`, W - 15, 60 + o, { align: "right" });
   doc.setDrawColor(...azul).setLineWidth(0.6).line(15, 76 + o, W - 15, 76 + o);
 
   autoTable(doc, {
@@ -59,6 +61,49 @@ export async function gerarPdf(d: DadosPdf) {
     doc.setPage(p);
     doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(...azul);
     doc.text(`Página ${p} de ${total}`, W / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
+  }
+  doc.save(d.arquivo);
+}
+
+export type DadosPdfLista = {
+  referencia: string;
+  empresa: { nome: string; cnpj: string };
+  data: string;
+  grupos: { marca: string; itens: { sku: string; cod: string; nome: string; quantidade: number }[] }[];
+  arquivo: string;
+};
+
+/** Lista de compras agrupada por marca. Não cria pedidos nem altera estoque. */
+export async function gerarPdfLista(d: DadosPdfLista) {
+  const { jsPDF } = await import("jspdf");
+  const autoTable = (await import("jspdf-autotable")).default;
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const azul: [number, number, number] = [31, 58, 95];
+  const W = doc.internal.pageSize.getWidth();
+  doc.setTextColor(...azul).setFont("helvetica", "bold").setFontSize(20).text("LISTA DE COMPRAS", 15, 22);
+  doc.setTextColor(20, 30, 50).setFontSize(13).text(d.empresa.nome, 15, 31);
+  doc.setFont("helvetica", "normal").setFontSize(10);
+  doc.text(`CNPJ: ${d.empresa.cnpj || "—"}`, 15, 37);
+  doc.text(`Data: ${d.data}`, 15, 43);
+  doc.setFont("helvetica", "bold").setFontSize(11).text(d.referencia, W - 15, 31, { align: "right" });
+  doc.setDrawColor(...azul).setLineWidth(0.6).line(15, 48, W - 15, 48);
+  const body: (string | { content: string; colSpan: number; styles: object })[][] = [];
+  for (const g of d.grupos) {
+    body.push([{ content: `Marca: ${g.marca}`, colSpan: 4, styles: { fontStyle: "bold", fillColor: [240, 242, 246] } }]);
+    for (const i of g.itens) body.push([i.sku || "—", i.cod || "—", i.nome, String(i.quantidade)]);
+  }
+  autoTable(doc, {
+    startY: 53, head: [["SKU", "COD", "PRODUTO", "QUANTIDADE"]], body, theme: "grid",
+    headStyles: { fillColor: [230, 232, 236], textColor: [20, 30, 50], fontStyle: "bold" },
+    styles: { fontSize: 10, cellPadding: 3, lineColor: [170, 175, 185] },
+    columnStyles: { 0: { cellWidth: 28 }, 1: { cellWidth: 28 }, 3: { cellWidth: 30, halign: "right" } },
+    margin: { left: 15, right: 15 },
+  });
+  const total = doc.getNumberOfPages();
+  for (let p = 1; p <= total; p++) {
+    doc.setPage(p);
+    doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(...azul);
+    doc.text(`${d.referencia} · Página ${p} de ${total}`, W / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
   }
   doc.save(d.arquivo);
 }

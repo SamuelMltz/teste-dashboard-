@@ -94,3 +94,8 @@ export async function lerDocumentoPdf(arquivo: File): Promise<LeituraPdf> {
 export async function lerPdf(arquivo: File): Promise<LinhaPdf[]> {
   return interpretarLinhas(agruparLinhas(await lerItensPdf(arquivo)));
 }
+
+/** Linhas de texto do PDF (agrupadas por altura), para documentos emitidos pelo sistema. */
+export async function lerTextoLinhas(arquivo: File): Promise<string[]> {
+  return agruparLinhas(await lerItensPdf(arquivo));
+}
