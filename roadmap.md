@@ -1,5 +1,9 @@
 # Roadmap
 
+- [x] Reorganizar a home e a lateral conforme a referência, preservando acessos e cadastros.
+- [x] Aplicar Estoque azul e conferir temas de páginas, detalhes e janelas.
+- [x] Validar navegação, lateral recolhida e telas de computador/celular, sem modificar registros.
+
 - [x] Ajustar os títulos de Garantias/Devoluções e o acesso inicial.
 - [x] Centralizar cores por seção, incluindo subpáginas e janelas compartilhadas, sem mudar regras ou dados.
 - [x] Conferir títulos, cores e navegação no navegador.

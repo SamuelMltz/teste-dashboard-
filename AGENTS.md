@@ -13,12 +13,12 @@
 
 - Dados vêm do banco (tabelas empresas → marcas → produtos, leitura pública); lidos via server functions em `src/lib/empresas.functions.ts`.
 - Company accents remain stored in the database; section decoration uses the centralized CSS section tokens instead, so changing a company does not change a section's visual identity.
-- SectionTheme maps authenticated paths to section identities; portaled controls inherit that identity through React context to keep dialogs and calendars consistent without changing business logic.
+- SectionTheme maps authenticated paths to section identities; SectionScope overrides mixed-section areas, and portaled controls inherit that identity through React context without changing business logic.
 - Estrutura: empresa → marcas ordenáveis → produtos ordenáveis (código, estoque atual e mínimo); alertas incluem níveis até 20% acima do mínimo.
 - Tema escuro global via `class="dark"` no `<html>` em `__root.tsx`.
 - Todo o painel fica sob `_authenticated` (login obrigatório, `/auth` é a única rota pública). Cadastro em `/admin`, escrita pelo cliente do navegador protegida por RLS `has_role(auth.uid(),'admin')`; primeiro usuário vira admin via trigger e admins promovem/removem outros pelas funções `listar_usuarios_admin`/`definir_admin` (checam admin no banco).
 - As logos estáticas das empresas são associadas pelo `slug` na tela de Estoque, para permanecerem independentes dos dados do banco.
-- A tela inicial usa uma estrutura própria de painel com barra superior e menu lateral; os atalhos novos permanecem sem ação até terem seus fluxos definidos.
+- The home keeps operational cards separate from grouped sidebar navigation; mobile navigation stays available through a header trigger, while desktop collapse preserves accessible icons.
 - O sistema Full mantém várias cargas por empresa sem exigir marca na criação; itens de marcas diferentes são incluídos só nos Detalhes, a confirmação desconta o estoque atomicamente e `data_prevista` alimenta alertas críticos nas últimas 72h.
 - O sistema Pedidos mantém várias compras por empresa sem exigir marca na criação; itens de marcas diferentes são incluídos só nos Detalhes e o recebimento soma ao estoque atomicamente pelo banco.
 - Full e Pedidos têm telas de detalhe (`full_.$id`, `pedidos_.$id`) compartilhando `DetalhesDocumento`; importar PDF é leitura de texto no navegador (`src/lib/pdf-import.ts`, casa pelo COD) e baixar PDF é gerado no cliente (`src/lib/pdf-export.ts`) — sem custo de IA.

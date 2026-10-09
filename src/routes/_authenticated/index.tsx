@@ -1,7 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { definirEmpresaAtual, useEmpresaAtual } from "@/lib/empresa-atual";
+import { definirEmpresaAtual, useEmpresaAtual, type EmpresaAtual } from "@/lib/empresa-atual";
 import { AvatarEmpresa } from "@/components/AvatarEmpresa";
+import { SectionScope } from "@/components/SectionTheme";
 import { NovaMarcaModal, NovoProdutoModal } from "@/components/CadastroRapido";
 import vivalleLogo from "@/assets/logos/vivalle-refined.png";
 import luminartechLogo from "@/assets/logos/luminartech-refined.png";
@@ -25,7 +26,8 @@ import {
   ShieldCheck,
   Tag,
   Truck,
-  UserRound,
+  Menu,
+  X,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -50,55 +52,26 @@ export const Route = createFileRoute("/_authenticated/")({
 });
 
 const OPCOES = [
-  {
-    to: "/estoque",
-    titulo: "Estoque",
-    desc: "Veja as marcas e produtos em estoque.",
-    Icon: Boxes,
-    secao: "estoque",
-  },
-  {
-    to: "/garantia",
-    titulo: "Garantia/Devolução",
-    desc: "Acompanhe as garantias dos produtos.",
-    Icon: ShieldCheck,
-    secao: "garantia",
-  },
-  {
-    to: "/admin",
-    titulo: "Gerenciar",
-    desc: "Cadastre e organize marcas e produtos.",
-    Icon: ClipboardPlus,
-    secao: "gerenciar",
-  },
-  {
-    to: "/full",
-    titulo: "Full",
-    desc: "Planeje cargas e confirme a baixa no estoque.",
-    Icon: Truck,
-    secao: "full",
-  },
-  {
-    to: "/pedidos",
-    titulo: "Pedidos",
-    desc: "Monte pedidos e confirme a entrada no estoque.",
-    Icon: PackagePlus,
-    secao: "pedidos",
-  },
-  {
-    to: "/graficos",
-    titulo: "Gráficos",
-    desc: "Compare o estoque e acompanhe a reposição do Full.",
-    Icon: BarChart3,
-    secao: "graficos",
-  },
+  { to: "/estoque", titulo: "Estoque", desc: "Consulte marcas e produtos em estoque.", Icon: Boxes, secao: "estoque" },
+  { to: "/pedidos", titulo: "Pedidos", desc: "Acompanhe compras e confirme recebimentos.", Icon: PackagePlus, secao: "pedidos" },
+  { to: "/full", titulo: "Full", desc: "Prepare produtos e organize os envios.", Icon: Truck, secao: "full" },
+] as const;
+
+const GRUPOS_MENU = [
+  { titulo: "Acompanhamento", itens: [
+    { to: "/graficos", titulo: "Gráficos", Icon: BarChart3, secao: "graficos" },
+    { to: "/garantia", titulo: "Garantia/Devolução", Icon: ShieldCheck, secao: "garantia" },
+  ] },
+  { titulo: "Cadastros", itens: [
+    { to: "/admin", titulo: "Gerenciar", Icon: ClipboardPlus, secao: "gerenciar" },
+  ] },
 ] as const;
 
 const LOGOS: Record<string, string> = { vivalle: vivalleLogo, luminartech: luminartechLogo, vitrine: vitrineLogo };
 
 function Inicio() {
   const atual = useEmpresaAtual();
-  return atual ? <Painel /> : <EscolherEmpresa />;
+  return atual ? <Painel empresaAtual={atual} /> : <EscolherEmpresa />;
 }
 
 function EscolherEmpresa() {
@@ -136,14 +109,18 @@ function EscolherEmpresa() {
   );
 }
 
-function Painel() {
-  const empresaAtual = useEmpresaAtual()!;
+function Painel({ empresaAtual }: { empresaAtual: EmpresaAtual }) {
   const empresas = Route.useLoaderData();
-  const alertas = listarAlertas(empresas.filter((e) => e.slug === empresaAtual.slug));
+  const carregando = useRouterState({ select: (state) => state.status === "pending" });
+  const empresaComDados = empresas.find((e) => e.slug === empresaAtual.slug);
+  const quantidadeAlertas = carregando ? "…" : empresaComDados ? listarAlertas([empresaComDados]).length : "—";
+  const { user } = Route.useRouteContext();
+  const nomeUsuario = user.user_metadata?.["full_name"] || user.user_metadata?.["name"] || user.email?.split("@")[0] || "Usuário";
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [modal, setModal] = useState<"produto" | "marca" | null>(null);
   const [menuRecolhido, setMenuRecolhido] = useState(false);
+  const [menuMobile, setMenuMobile] = useState(false);
   const { data: fullsAgendados = [] } = useQuery({
     queryKey: ["full-prazos", empresaAtual.id],
     queryFn: async () => {
@@ -164,12 +141,13 @@ function Painel() {
 
   return (
     <div className="min-h-screen overflow-hidden bg-background">
-      <header className="flex h-17 items-center justify-between border-b border-border bg-dashboard-header px-5 sm:px-8">
-        <div className="flex items-center gap-4">
+      <header className="flex h-17 items-center justify-between gap-2 border-b border-border bg-dashboard-header px-3 sm:px-8">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+          <Button variant="ghost" size="icon" className="shrink-0 md:hidden" onClick={() => setMenuMobile((aberto) => !aberto)} aria-label={menuMobile ? "Fechar menu" : "Abrir menu"} aria-expanded={menuMobile} aria-controls="menu-inicial">{menuMobile ? <X /> : <Menu />}</Button>
           <AvatarEmpresa key={empresaAtual.slug} slug={empresaAtual.slug} nome={empresaAtual.nome} />
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => { queryClient.clear(); definirEmpresaAtual(null); }}><ArrowLeftRight className="h-4 w-4" />Trocar empresa</Button>
+          <Button variant="outline" size="sm" className="shrink-0 gap-2 px-2 sm:px-3" aria-label="Trocar empresa" title="Trocar empresa" onClick={() => { queryClient.clear(); definirEmpresaAtual(null); }}><ArrowLeftRight className="h-4 w-4" /><span className="hidden sm:inline">Trocar empresa</span></Button>
         </div>
-        <div className="flex items-center gap-1 sm:gap-3">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-3">
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className={`relative ${temPrazoCritico ? "text-dashboard-red hover:text-dashboard-red" : "text-muted-foreground hover:text-foreground"}`} aria-label={`${fullsAgendados.length} Fulls agendados`}>
@@ -187,29 +165,25 @@ function Painel() {
               </div>
             </PopoverContent>
           </Popover>
-          <Button variant="ghost" onClick={sair} className="gap-3 text-muted-foreground hover:text-foreground">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-dashboard-avatar text-foreground">
-            <UserRound className="h-5 w-5" aria-hidden="true" />
-          </span>
-          <span>Sair</span>
-          <LogOut className="hidden h-4 w-4 sm:block" aria-hidden="true" />
+          <span className="hidden max-w-32 truncate text-sm text-muted-foreground lg:block">{nomeUsuario}</span>
+          <Button variant="ghost" onClick={sair} className="gap-2 px-2 text-muted-foreground hover:text-foreground">
+            <span>Sair</span><LogOut className="h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
       </header>
 
       <div
-        className={`grid min-h-[calc(100vh-4.25rem)] transition-[grid-template-columns] duration-300 ease-out ${
+        className={`grid min-h-[calc(100vh-4.25rem)] transition-[grid-template-columns] duration-300 ease-out motion-reduce:transition-none ${
           menuRecolhido
             ? "md:grid-cols-[68px_minmax(0,1fr)]"
-            : "md:grid-cols-[220px_minmax(0,1fr)]"
+            : "md:grid-cols-[240px_minmax(0,1fr)]"
         }`}
       >
-        <aside
-          className={`hidden overflow-hidden border-r border-border bg-dashboard-sidebar py-4 transition-[padding] duration-300 md:flex md:flex-col ${
-            menuRecolhido ? "px-2" : "px-4"
-          }`}
+        {menuMobile && <div className="fixed inset-x-0 bottom-0 top-17 z-20 bg-background/80 md:hidden" onClick={() => setMenuMobile(false)} aria-hidden="true" />}
+        <aside id="menu-inicial" aria-label="Menu principal"
+          className={`fixed bottom-0 left-0 top-17 z-30 w-64 overflow-y-auto border-r border-border bg-dashboard-sidebar py-4 md:static md:flex md:w-auto md:flex-col ${menuMobile ? "flex flex-col" : "hidden"} ${menuRecolhido ? "md:px-2 px-4" : "px-4"}`}
         >
-          <div className={`mb-3 flex ${menuRecolhido ? "justify-center" : "justify-end"}`}>
+          <div className={`mb-3 hidden md:flex ${menuRecolhido ? "justify-center" : "justify-end"}`}>
             <Button
               type="button"
               variant="ghost"
@@ -227,27 +201,29 @@ function Painel() {
             </Button>
           </div>
 
-          <div
-            title={menuRecolhido ? "Início" : undefined}
-            className={`flex h-14 items-center rounded-md border-l-4 border-dashboard-amber bg-dashboard-nav-active text-foreground ${
-              menuRecolhido ? "justify-center px-2" : "gap-4 px-4"
-            }`}
-          >
-            <Home className="h-6 w-6" aria-hidden="true" />
-            <span className={menuRecolhido ? "sr-only" : "font-medium"}>Início</span>
-          </div>
+          <Button asChild variant="ghost" className={`h-13 w-full justify-start border-l-4 border-dashboard-amber bg-dashboard-nav-active text-foreground ${menuRecolhido ? "md:justify-center md:px-0" : "gap-4 px-4"}`}>
+            <Link to="/" aria-current="page" title="Início" onClick={() => setMenuMobile(false)}><Home className="h-5 w-5" /><span className={menuRecolhido ? "md:sr-only" : ""}>Início</span></Link>
+          </Button>
+          <nav className="pb-8" aria-label="Seções">
+            {GRUPOS_MENU.map((grupo) => <div key={grupo.titulo} className="mt-7">
+              <p className={`mb-2 px-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground ${menuRecolhido ? "md:sr-only" : ""}`}>{grupo.titulo}</p>
+              {grupo.itens.map(({ to, titulo, Icon, secao }) => <Button key={to} asChild variant="ghost" data-section={secao} className={`h-12 w-full justify-start gap-3 px-3 text-muted-foreground hover:text-foreground ${menuRecolhido ? "md:justify-center md:px-0" : ""}`}>
+                <Link to={to} title={titulo} onClick={() => setMenuMobile(false)}><Icon className="h-5 w-5 text-section" /><span className={menuRecolhido ? "md:sr-only" : ""}>{titulo}</span></Link>
+              </Button>)}
+            </div>)}
+          </nav>
           <div className="mt-auto border-t border-border pt-4">
             <Button
               asChild
               variant="ghost"
               title={menuRecolhido ? "Contas" : undefined}
               className={`h-12 w-full text-muted-foreground hover:text-foreground ${
-                menuRecolhido ? "justify-center px-0" : "justify-start gap-4"
+                menuRecolhido ? "justify-start gap-4 md:justify-center md:px-0" : "justify-start gap-4"
               }`}
             >
               <Link to="/contas">
                 <Users className="h-5 w-5" aria-hidden="true" />
-                <span className={menuRecolhido ? "sr-only" : undefined}>Contas</span>
+                <span className={menuRecolhido ? "md:sr-only" : undefined}>Contas</span>
               </Link>
             </Button>
             <Button
@@ -255,64 +231,65 @@ function Painel() {
               variant="ghost"
               title={menuRecolhido ? "Configurações" : undefined}
               className={`h-12 w-full text-muted-foreground hover:text-foreground ${
-                menuRecolhido ? "justify-center px-0" : "justify-start gap-4"
+                menuRecolhido ? "justify-start gap-4 md:justify-center md:px-0" : "justify-start gap-4"
               }`}
               aria-label="Configurações (em breve)"
             >
               <Settings className="h-5 w-5" aria-hidden="true" />
-              <span className={menuRecolhido ? "sr-only" : undefined}>Configurações</span>
+              <span className={menuRecolhido ? "md:sr-only" : undefined}>Configurações</span>
             </Button>
           </div>
         </aside>
 
-        <main className="relative px-5 py-9 sm:px-8 lg:px-11 lg:py-11">
+        <main className="relative min-w-0 px-5 py-7 sm:px-8 lg:px-9 lg:py-8">
           <div className="pointer-events-none absolute inset-0 bg-dashboard-glow" aria-hidden="true" />
           <div className="relative mx-auto max-w-6xl">
             <div>
-              <h1 className="font-display text-5xl font-bold text-foreground sm:text-6xl">Dashboard</h1>
+              <h1 className="font-display text-4xl font-bold text-foreground sm:text-5xl">Dashboard</h1>
               <p className="mt-1 text-base text-muted-foreground sm:text-lg">Visão geral do seu sistema</p>
               <div className="mt-3 h-1 w-16 rounded-full bg-dashboard-amber" />
             </div>
 
-            <section aria-label="Resumo" className="mt-5 max-w-sm">
+            <section aria-label="Resumo" className="mt-5 max-w-md">
               <Link to="/alertas-estoque" className="group flex min-h-24 items-center gap-5 rounded-md border border-dashboard-red/60 bg-dashboard-red-soft px-5 py-4 transition-[transform,border-color] duration-300 hover:-translate-y-0.5 hover:border-dashboard-red">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-dashboard-red-icon text-foreground shadow-dashboard-red">
                   <AlertTriangle className="h-8 w-8" aria-hidden="true" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-foreground">Produtos com<br />estoque baixo</p>
-                  <p className="mt-1 text-xl font-semibold text-foreground">{alertas.length}</p>
+                  <p className="text-sm text-foreground">Produtos com estoque baixo</p>
+                  <p className="mt-1 text-xl font-semibold text-foreground">{quantidadeAlertas}</p>
                 </div>
                 <ArrowRight className="h-5 w-5 text-dashboard-red transition-transform group-hover:translate-x-1" aria-hidden="true" />
               </Link>
             </section>
 
-            <section aria-label="Áreas do sistema" className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <section aria-labelledby="operacao-diaria" className="mt-6">
+              <h2 id="operacao-diaria" className="mb-3 font-display text-xl font-semibold text-foreground">Operação diária</h2>
+              <div className="grid gap-5 lg:grid-cols-3">
               {OPCOES.map(({ to, titulo, desc, Icon, secao }) => {
                 return (
                   <Link
                     key={to}
                     data-section={secao}
                     to={to}
-                    className={`group relative isolate flex min-h-60 overflow-hidden rounded-md border p-6 transition-transform duration-300 hover:-translate-y-1 border-section/70 bg-section-soft`}
+                    className="group relative isolate flex min-h-64 overflow-hidden rounded-md border border-section/70 bg-section-soft p-6 transition-transform duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-section motion-reduce:transition-none xl:min-h-68 xl:p-7"
                   >
-                    <div className={`absolute -bottom-16 -right-10 h-32 w-4/5 rotate-[-18deg] rounded-[50%] opacity-70 transition-transform duration-500 group-hover:scale-110 bg-section-wave`} aria-hidden="true" />
+                    <div className={`absolute -bottom-24 -right-16 h-48 w-48 rounded-full opacity-70 transition-transform duration-500 group-hover:scale-110 bg-section-wave`} aria-hidden="true" />
                     <div className="relative z-10 flex w-full flex-col items-start">
                       <div className={`flex h-14 w-14 items-center justify-center rounded-md section-icon`}>
                         <Icon className="h-8 w-8" aria-hidden="true" />
                       </div>
-                      <h2 className="mt-4 max-w-full font-display text-2xl font-semibold text-foreground">{titulo === "Garantia/Devolução" ? <>Garantia/<wbr />Devolução</> : titulo}</h2>
+                      <h2 className="mt-4 max-w-full font-display text-2xl font-semibold text-foreground">{titulo}</h2>
                       <p className="mt-1 max-w-56 text-sm leading-6 text-muted-foreground">{desc}</p>
-                      <span className={`mt-auto flex h-10 w-10 items-center justify-center rounded-full transition-transform group-hover:translate-x-1 bg-section-icon text-foreground`}>
-                        <ArrowRight className="h-5 w-5" aria-hidden="true" />
-                      </span>
+                      <span className="mt-5 inline-flex h-10 items-center gap-5 rounded-md border border-section/70 bg-section-icon/40 px-4 text-sm font-medium text-foreground">Acessar<ArrowRight className="h-4 w-4 text-section transition-transform group-hover:translate-x-1" aria-hidden="true" /></span>
                     </div>
                   </Link>
                 );
               })}
+              </div>
             </section>
 
-            <section aria-labelledby="acoes-rapidas" className="mt-5 border-t border-border pt-4">
+            <SectionScope section="gerenciar"><section data-section="gerenciar" aria-labelledby="acoes-rapidas" className="mt-5 border-t border-border pt-4">
               <h2 id="acoes-rapidas" className="font-display text-lg font-semibold text-foreground">Ações rápidas</h2>
               <div className="mt-3 grid max-w-2xl gap-3 sm:grid-cols-2">
                 <Button
@@ -340,7 +317,7 @@ function Painel() {
               </div>
               <NovoProdutoModal empresa={empresaAtual} aberto={modal === "produto"} onFechar={() => setModal(null)} onNovaMarca={() => setModal("marca")} />
               <NovaMarcaModal empresa={empresaAtual} aberto={modal === "marca"} onFechar={() => setModal(null)} />
-            </section>
+            </section></SectionScope>
           </div>
         </main>
       </div>
