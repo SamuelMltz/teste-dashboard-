@@ -28,3 +28,4 @@
 
 - [x] Lista de compras e reposição pelo estoque físico (cálculo, PDF, pedidos por marca, cobertura, Gráficos, importação dos PDFs do sistema).
 - [x] Alternar entre gráficos de barras e pizza na tela Gráficos, mantendo filtros, tabela e modo demonstração.
+- [x] Agrupar a pizza por marca com Estoque físico, Estoque Full e Ambos; validar cálculos, legenda, informação ao passar o mouse e estado vazio.
