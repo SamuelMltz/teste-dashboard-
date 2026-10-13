@@ -176,8 +176,7 @@ function NovaDevolucao({ aberto, onFechar, empresas, empresaInicial, onSalvo }: 
     if (!ymd) return setErro("Data inválida. Use DD/MM ou DD/MM/AAAA.");
     if (!origem) return setErro("Escolha a origem.");
     setErro(""); setSalvando(true);
-    const { data: u } = await supabase.auth.getUser();
-    const { error } = await supabase.from("devolucoes").insert({ empresa_id: emp, produto_id: produtoId, quantidade: qtd, data_devolucao: ymd, origem, referencia: referencia.trim() || null, observacao: obs.trim(), created_by: u.user?.id });
+    const { error } = await supabase.from("devolucoes").insert({ empresa_id: emp, produto_id: produtoId, quantidade: qtd, data_devolucao: ymd, origem, referencia: referencia.trim() || null, observacao: obs.trim() });
     setSalvando(false);
     if (error) return setErro(erroMsg(error, "Não foi possível registrar a devolução."));
     toast.success("Devolução registrada"); onSalvo(); fechar();
