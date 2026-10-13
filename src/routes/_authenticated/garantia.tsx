@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowLeft, PackageOpen, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Devolucoes } from "@/components/Devolucoes";
 
 export const Route = createFileRoute("/_authenticated/garantia")({
   head: () => ({
@@ -33,7 +34,7 @@ function Garantia() {
           <Button variant="ghost" role="tab" id="aba-devolucoes" aria-controls="painel-garantia" aria-selected={aba === "devolucoes"} onClick={() => setAba("devolucoes")} className="section-tab h-12 rounded-none px-3">Devoluções</Button>
           <Button variant="ghost" role="tab" id="aba-garantias" aria-controls="painel-garantia" aria-selected={aba === "garantias"} onClick={() => setAba("garantias")} className="section-tab h-12 rounded-none px-3">Garantias</Button>
         </div>
-        <div role="tabpanel" id="painel-garantia" aria-labelledby={`aba-${aba}`} className="py-8"><p className="text-muted-foreground">Em breve.</p></div>
+        <div role="tabpanel" id="painel-garantia" aria-labelledby={`aba-${aba}`} className="py-8">{aba === "devolucoes" ? <Devolucoes /> : <p className="text-muted-foreground">Em breve.</p>}</div>
       </div>
     </div>
   );

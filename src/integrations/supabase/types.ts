@@ -14,6 +14,110 @@ export type Database = {
   }
   public: {
     Tables: {
+      devolucao_movimentos: {
+        Row: {
+          acao: string
+          created_at: string
+          created_by: string | null
+          detalhe: string
+          devolucao_id: string
+          id: string
+        }
+        Insert: {
+          acao: string
+          created_at?: string
+          created_by?: string | null
+          detalhe?: string
+          devolucao_id: string
+          id?: string
+        }
+        Update: {
+          acao?: string
+          created_at?: string
+          created_by?: string | null
+          detalhe?: string
+          devolucao_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devolucao_movimentos_devolucao_id_fkey"
+            columns: ["devolucao_id"]
+            isOneToOne: false
+            referencedRelation: "devolucoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      devolucoes: {
+        Row: {
+          condicao: Database["public"]["Enums"]["devolucao_condicao"]
+          created_at: string
+          created_by: string
+          data_devolucao: string
+          empresa_id: string
+          estoque_lancado_at: string | null
+          estoque_lancado_by: string | null
+          id: string
+          numero: number
+          observacao: string
+          origem: string
+          produto_id: string
+          quantidade: number
+          referencia: string | null
+          status: Database["public"]["Enums"]["devolucao_status"]
+        }
+        Insert: {
+          condicao?: Database["public"]["Enums"]["devolucao_condicao"]
+          created_at?: string
+          created_by?: string
+          data_devolucao?: string
+          empresa_id: string
+          estoque_lancado_at?: string | null
+          estoque_lancado_by?: string | null
+          id?: string
+          numero?: never
+          observacao?: string
+          origem?: string
+          produto_id: string
+          quantidade: number
+          referencia?: string | null
+          status?: Database["public"]["Enums"]["devolucao_status"]
+        }
+        Update: {
+          condicao?: Database["public"]["Enums"]["devolucao_condicao"]
+          created_at?: string
+          created_by?: string
+          data_devolucao?: string
+          empresa_id?: string
+          estoque_lancado_at?: string | null
+          estoque_lancado_by?: string | null
+          id?: string
+          numero?: never
+          observacao?: string
+          origem?: string
+          produto_id?: string
+          quantidade?: number
+          referencia?: string | null
+          status?: Database["public"]["Enums"]["devolucao_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devolucoes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devolucoes_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       empresas: {
         Row: {
           accent: string
@@ -398,6 +502,10 @@ export type Database = {
         Args: { _pedido_id: string }
         Returns: Json
       }
+      confirmar_retorno_devolucao: {
+        Args: { _devolucao_id: string }
+        Returns: Json
+      }
       definir_admin: {
         Args: { _admin: boolean; _user_id: string }
         Returns: undefined
@@ -430,6 +538,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      devolucao_condicao: "em_analise" | "apto" | "avariado"
+      devolucao_status: "pendente" | "em_analise" | "aprovada" | "finalizada"
       full_status: "planejada" | "confirmada"
       pedido_status: "planejado" | "recebido" | "cancelado"
     }
@@ -560,6 +670,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      devolucao_condicao: ["em_analise", "apto", "avariado"],
+      devolucao_status: ["pendente", "em_analise", "aprovada", "finalizada"],
       full_status: ["planejada", "confirmada"],
       pedido_status: ["planejado", "recebido", "cancelado"],
     },
