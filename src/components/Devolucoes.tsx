@@ -21,7 +21,7 @@ type Devolucao = {
 type ProdutoOpcao = { id: string; nome: string; codigo: string; estoque: number };
 
 const corStatus: Record<DevolucaoStatus, string> = { pendente: "text-muted-foreground", em_analise: "text-section", aprovada: "text-section", finalizada: "text-muted-foreground" };
-const corCondicao: Record<DevolucaoCondicao, string> = { apto: "text-success", avariado: "text-destructive", em_analise: "text-warning" };
+const corCondicao: Record<DevolucaoCondicao, string> = { apto: "text-dashboard-green", avariado: "text-destructive", em_analise: "text-dashboard-amber" };
 
 const erroMsg = (e: { message?: string; code?: string } | null, padrao: string) =>
   e?.code === "23505" ? "Já existe devolução com essa referência para este produto." : e?.message && !e.message.includes("violates") ? e.message : padrao;
@@ -86,7 +86,7 @@ export function Devolucoes() {
           </select></label>
         <label className="grid gap-1 text-xs text-muted-foreground">De<Input className="w-32" placeholder="DD/MM" value={de} onChange={(e) => setDe(e.target.value)} /></label>
         <label className="grid gap-1 text-xs text-muted-foreground">Até<Input className="w-32" placeholder="DD/MM" value={ate} onChange={(e) => setAte(e.target.value)} /></label>
-        <Button onClick={() => setNovo(true)} className="ml-auto gap-2 bg-section text-section-foreground hover:bg-section/90"><Plus className="h-4 w-4" />Nova devolução</Button>
+        <Button onClick={() => setNovo(true)} className="ml-auto gap-2 bg-section text-background hover:bg-section/90"><Plus className="h-4 w-4" />Nova devolução</Button>
       </div>
 
       {error ? <p className="text-destructive">Não foi possível carregar as devoluções. Apenas administradores têm acesso.</p>
@@ -124,7 +124,7 @@ export function Devolucoes() {
                       </td>
                       <td className="p-3">
                         <div className="flex justify-end gap-1">
-                          {podeLancarEstoque(d) && <Button size="sm" onClick={() => setLancar(d)} className="gap-1 bg-section text-section-foreground hover:bg-section/90"><PackageCheck className="h-4 w-4" />Lançar no estoque</Button>}
+                          {podeLancarEstoque(d) && <Button size="sm" onClick={() => setLancar(d)} className="gap-1 bg-section text-background hover:bg-section/90"><PackageCheck className="h-4 w-4" />Lançar no estoque</Button>}
                           <Button size="icon" variant="ghost" aria-label="Histórico" onClick={() => setHistorico(d)}><History className="h-4 w-4" /></Button>
                           {!lancada && <Button size="icon" variant="ghost" aria-label="Excluir" onClick={() => excluir(d)}><Trash2 className="h-4 w-4" /></Button>}
                         </div>
@@ -144,7 +144,7 @@ export function Devolucoes() {
         <DialogContent>
           <DialogHeader><DialogTitle>Lançar no estoque físico?</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">Serão somadas <b className="text-foreground">{lancar?.quantidade} un.</b> de <b className="text-foreground">{lancar?.produtos?.nome}</b> ao estoque físico da {lancar && nomeEmpresa(lancar.empresa_id)}. A devolução será finalizada e não poderá ser lançada novamente.</p>
-          <DialogFooter><Button variant="outline" onClick={() => setLancar(null)}>Cancelar</Button><Button disabled={ocupado} onClick={confirmarLancamento} className="bg-section text-section-foreground hover:bg-section/90">{ocupado ? "Lançando…" : "Confirmar"}</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setLancar(null)}>Cancelar</Button><Button disabled={ocupado} onClick={confirmarLancamento} className="bg-section text-background hover:bg-section/90">{ocupado ? "Lançando…" : "Confirmar"}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -206,7 +206,7 @@ function NovaDevolucao({ aberto, onFechar, empresas, empresaInicial, onSalvo }: 
           <label className="grid gap-1 text-sm">Observação (opcional)<Input value={obs} onChange={(e) => setObs(e.target.value)} /></label>
           {erro && <p className="text-sm text-destructive">{erro}</p>}
         </div>
-        <DialogFooter><Button variant="outline" onClick={fechar}>Cancelar</Button><Button disabled={salvando} onClick={salvar} className="bg-section text-section-foreground hover:bg-section/90">{salvando ? "Salvando…" : "Salvar"}</Button></DialogFooter>
+        <DialogFooter><Button variant="outline" onClick={fechar}>Cancelar</Button><Button disabled={salvando} onClick={salvar} className="bg-section text-background hover:bg-section/90">{salvando ? "Salvando…" : "Salvar"}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );
