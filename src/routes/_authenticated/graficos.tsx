@@ -116,7 +116,7 @@ function Graficos() {
 
         <div className="mt-5 flex flex-wrap items-center gap-2" role="group" aria-label="Formato do gráfico">
           {TIPOS.map(([v, r, I]) => (
-            <Button key={v} variant="outline" size="sm" onClick={() => setTipo(v)} aria-pressed={tipo === v} className={tipo === v ? "border-section bg-section-soft text-section" : ""}><I className="h-4 w-4" />{r}</Button>
+            <Button key={v} variant="outline" size="sm" onClick={() => setTipo(v)} aria-pressed={tipo === v} className={tipo === v ? "border-section bg-section/20 font-semibold text-section" : ""}><I className="h-4 w-4" />{r}</Button>
           ))}
         </div>
 
@@ -141,7 +141,7 @@ function Graficos() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div><h2 className="font-display text-2xl font-semibold text-foreground">Produtos para reposição</h2><p className="text-section">Itens com estoque Full abaixo ou próximo das vendas do período.</p></div>
             <div className="flex gap-2">{FILTROS.map(([v, r]) => (
-              <Button key={v} variant="outline" size="sm" onClick={() => setFiltro(v)} aria-pressed={filtro === v} className={filtro === v ? "border-section bg-section-soft text-section" : ""}>{r}</Button>
+              <Button key={v} variant="outline" size="sm" onClick={() => setFiltro(v)} aria-pressed={filtro === v} className={filtro === v ? "border-section bg-section/20 font-semibold text-section" : ""}>{r}</Button>
             ))}</div>
           </div>
           <div className="mt-4 overflow-x-auto rounded-md border border-border">
