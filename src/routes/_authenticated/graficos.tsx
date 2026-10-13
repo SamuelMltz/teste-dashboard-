@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowLeft, BarChart3, Building2, CalendarDays, FileText, Package, Search, ShoppingCart, Tag } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { ArrowLeft, BarChart3, Building2, CalendarDays, FileText, Package, PieChart as PizzaIcon, Search, ShoppingCart, Tag } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ReposicaoFisica } from "@/components/ReposicaoFisica";
 import { listarEmpresas } from "@/lib/empresas.functions";
 import { useEmpresaAtual } from "@/lib/empresa-atual";
+import { prepararFatias } from "@/lib/graficos";
 import { classificarReposicao, sugerirReposicao, type SituacaoReposicao } from "@/lib/reposicao";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,10 @@ const DEMO: Linha[] = [
 const COR = { full: "var(--graficos-full)", fisico: "var(--graficos-fisico)", vendas: "var(--graficos-vendas)" };
 const FILTROS = [["todos", "Todos"], ["abaixo", "Abaixo"], ["proximo", "Próximos"]] as const;
 
+/** Formato de exibição dos painéis: barras (padrão) ou pizza. */
+const TIPOS = [["barras", "Barras", BarChart3], ["pizza", "Pizza", PizzaIcon]] as const;
+type TipoGrafico = (typeof TIPOS)[number][0];
+
 function Graficos() {
   const empresas = Route.useLoaderData();
   const global = useEmpresaAtual();
@@ -51,6 +56,7 @@ function Graficos() {
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<(typeof FILTROS)[number][0]>("todos");
   const [demo, setDemo] = useState(false);
+  const [tipo, setTipo] = useState<TipoGrafico>("barras");
 
   const linhasReais: Linha[] = useMemo(() => (empresa?.marcas ?? []).flatMap((m) =>
     m.produtos.map((p) => ({ sku: p.codigo, cod: p.cod, nome: p.nome, marca: m.slug, fisico: p.estoque, full: null, vendas: null }))), [empresa]);
