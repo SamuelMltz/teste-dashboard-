@@ -128,8 +128,17 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
   const corLinha = "bg-section";
 
   async function removerItem(itemId: string) {
+    const item = doc?.itens.find((i) => i.id === itemId);
     const { error } = await db.from(c.itens).delete().eq("id", itemId);
-    if (error) toast.error("Não foi possível remover o produto."); else await atualizar();
+    if (error) { toast.error("Não foi possível remover o produto."); return; }
+    // Remover um produto do Full importado tira ele do envio: a conferência passa a esperar o total sem ele.
+    if (tipo === "full" && item && (doc?.ml_total_produtos != null || doc?.ml_total_unidades != null)) {
+      await db.from("full_cargas").update({
+        ml_total_produtos: doc.ml_total_produtos != null ? Math.max(0, doc.ml_total_produtos - 1) : null,
+        ml_total_unidades: doc.ml_total_unidades != null ? Math.max(0, doc.ml_total_unidades - item.quantidade) : null,
+      }).eq("id", id);
+    }
+    await atualizar();
   }
 
   async function alternarPreparado(item: Item) {
