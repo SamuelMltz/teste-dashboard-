@@ -5,7 +5,7 @@ import { Bar, BarChart, CartesianGrid, Cell, LabelList, Pie, PieChart, Responsiv
 import { ReposicaoFisica } from "@/components/ReposicaoFisica";
 import { listarEmpresas } from "@/lib/empresas.functions";
 import { useEmpresaAtual } from "@/lib/empresa-atual";
-import { prepararFatias } from "@/lib/graficos";
+import { prepararFatias, type EstoquePizza } from "@/lib/graficos";
 import { classificarReposicao, sugerirReposicao, type SituacaoReposicao } from "@/lib/reposicao";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/graficos")({
   component: Graficos,
 });
 
-type Linha = { sku: string; cod: string; nome: string; marca: string; fisico: number; full: number | null; vendas: number | null };
+type Linha = { sku: string; cod: string; nome: string; marca: string; marcaNome?: string; fisico: number; full: number | null; vendas: number | null };
 
 /** Somente para o modo demonstração — nunca misturado com os registros reais. */
 const DEMO: Linha[] = [
@@ -57,9 +57,10 @@ function Graficos() {
   const [filtro, setFiltro] = useState<(typeof FILTROS)[number][0]>("todos");
   const [demo, setDemo] = useState(false);
   const [tipo, setTipo] = useState<TipoGrafico>("barras");
+  const [estoquePizza, setEstoquePizza] = useState<EstoquePizza>("fisico");
 
   const linhasReais: Linha[] = useMemo(() => (empresa?.marcas ?? []).flatMap((m) =>
-    m.produtos.map((p) => ({ sku: p.codigo, cod: p.cod, nome: p.nome, marca: m.slug, fisico: p.estoque, full: null, vendas: null }))), [empresa]);
+    m.produtos.map((p) => ({ sku: p.codigo, cod: p.cod, nome: p.nome, marca: m.slug, marcaNome: m.nome, fisico: p.estoque, full: null, vendas: null }))), [empresa]);
 
   const termo = busca.trim().toLowerCase();
   const base = (demo ? DEMO : linhasReais).filter((l) =>
@@ -120,22 +121,29 @@ function Graficos() {
           ))}
         </div>
 
-        <div className="mt-4 grid gap-5 lg:grid-cols-[3fr_2fr]">
-          <Painel titulo="Estoque Full × estoque físico" sub={tipo === "pizza" ? "Distribuição do estoque Full por produto" : "Compare as quantidades por produto"} legenda={tipo === "pizza" ? [["Full", COR.full]] : [["Full", COR.full], ["Físico", COR.fisico]]}>
-            {comFull.length === 0 ? <Vazio texto="Aguardando dados de estoque do Full" /> : tipo === "pizza" ? (
-              <GraficoPizza dados={comFull} chave="full" cor={COR.full} nome="Full" />
-            ) : (
+        {tipo === "pizza" ? (
+          <div className="mt-4">
+            <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="Estoque do gráfico de pizza">
+              {([["fisico", "Estoque físico"], ["full", "Estoque Full"], ["ambos", "Ambos"]] as const).map(([v, r]) => (
+                <Button key={v} variant="outline" size="sm" onClick={() => setEstoquePizza(v)} aria-pressed={estoquePizza === v} className={estoquePizza === v ? "border-section bg-section/20 font-semibold text-section" : ""}>{r}</Button>
+              ))}
+            </div>
+            <Painel titulo="Estoque por marca" sub={estoquePizza === "fisico" ? "Estoque físico" : estoquePizza === "full" ? "Estoque Full" : "Estoque físico + Full"} legenda={[]}>
+              <GraficoPizza dados={base} estoque={estoquePizza} cor={estoquePizza === "full" ? COR.full : COR.fisico} />
+            </Painel>
+          </div>
+        ) : <div className="mt-4 grid gap-5 lg:grid-cols-[3fr_2fr]">
+          <Painel titulo="Estoque Full × estoque físico" sub="Compare as quantidades por produto" legenda={[["Full", COR.full], ["Físico", COR.fisico]]}>
+            {comFull.length === 0 ? <Vazio texto="Aguardando dados de estoque do Full" /> : (
               <Grafico dados={comFull} series={[["full", COR.full, "Full"], ["fisico", COR.fisico, "Físico"]]} />
             )}
           </Painel>
-          <Painel titulo="Vendas × estoque Full" sub={tipo === "pizza" ? "Distribuição das vendas por produto" : "Referência para cobertura de 30 dias"} legenda={tipo === "pizza" ? [["Vendas em 30 dias", COR.vendas]] : [["Vendas em 30 dias", COR.vendas], ["Full disponível", COR.full]]}>
-            {comVendas.length === 0 ? <Vazio texto="Aguardando dados de vendas" /> : tipo === "pizza" ? (
-              <GraficoPizza dados={comVendas} chave="vendas" cor={COR.vendas} nome="Vendas" />
-            ) : (
+          <Painel titulo="Vendas × estoque Full" sub="Referência para cobertura de 30 dias" legenda={[["Vendas em 30 dias", COR.vendas], ["Full disponível", COR.full]]}>
+            {comVendas.length === 0 ? <Vazio texto="Aguardando dados de vendas" /> : (
               <Grafico dados={comVendas} series={[["vendas", COR.vendas, "Vendas"], ["full", COR.full, "Full"]]} />
             )}
           </Painel>
-        </div>
+        </div>}
 
         <section className="estoque-card mt-5 rounded-md border border-border p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -232,9 +240,9 @@ function opacidadeFatia(i: number, total: number) {
   return total <= 1 ? 1 : 1 - (i * 0.6) / (total - 1);
 }
 
-function GraficoPizza({ dados, chave, cor, nome }: { dados: Linha[]; chave: keyof Linha; cor: string; nome: string }) {
-  const { fatias, total } = prepararFatias(dados, chave);
-  if (fatias.length === 0) return <Vazio texto={`Sem valores de ${nome.toLowerCase()}`} />;
+function GraficoPizza({ dados, estoque, cor }: { dados: Linha[]; estoque: EstoquePizza; cor: string }) {
+  const { fatias, total } = prepararFatias(dados, estoque);
+  if (fatias.length === 0) return <Vazio texto="Sem dados de estoque para os filtros selecionados" />;
   return (
     <div className="flex h-full items-center gap-4">
       <div className="relative h-full min-w-0 flex-1">
@@ -243,20 +251,24 @@ function GraficoPizza({ dados, chave, cor, nome }: { dados: Linha[]; chave: keyo
             <Pie data={fatias} dataKey="valor" nameKey="nome" innerRadius="55%" outerRadius="85%" paddingAngle={2} stroke="var(--background)" strokeWidth={2} isAnimationActive={false}>
               {fatias.map((f, i) => <Cell key={`${f.nome}-${i}`} fill={cor} fillOpacity={opacidadeFatia(i, fatias.length)} />)}
             </Pie>
-            <Tooltip contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", color: "var(--foreground)" }} />
+            <Tooltip content={({ active, payload }) => {
+              const fatia = payload?.[0]?.payload;
+              if (!active || !fatia) return null;
+              return <div className="rounded-md border border-border bg-popover p-3 text-sm text-popover-foreground"><p className="font-semibold">{fatia.nome}</p><p>{fatia.valor.toLocaleString("pt-BR")} unidades · {fatia.percentual.toLocaleString("pt-BR")}%</p></div>;
+            }} />
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           <span className="font-display text-2xl font-semibold text-foreground">{total}</span>
-          <span className="text-xs uppercase tracking-wide text-muted-foreground">{nome}</span>
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">Unidades</span>
         </div>
       </div>
-      <ul className="max-h-full w-44 shrink-0 space-y-1 overflow-y-auto pr-1 text-xs">
+      <ul className="max-h-full w-36 shrink-0 space-y-1 overflow-y-auto pr-1 text-xs sm:w-64">
         {fatias.map((f, i) => (
           <li key={`legenda-${f.nome}-${i}`} className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: cor, opacity: opacidadeFatia(i, fatias.length) }} />
-            <span className="truncate text-foreground">{f.nome}</span>
-            <span className="ml-auto shrink-0 tabular-nums text-muted-foreground">{f.valor} · {f.percentual}%</span>
+            <span className="truncate text-foreground" title={f.nome}>{f.nome}</span>
+            <span className="ml-auto shrink-0 tabular-nums text-muted-foreground">{f.valor.toLocaleString("pt-BR")} · {f.percentual.toLocaleString("pt-BR")}%</span>
           </li>
         ))}
       </ul>
