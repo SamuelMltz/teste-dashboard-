@@ -27,3 +27,4 @@
 - [x] Adicionar data prevista ao Full e alertas de prazo no Dashboard.
 
 - [x] Lista de compras e reposição pelo estoque físico (cálculo, PDF, pedidos por marca, cobertura, Gráficos, importação dos PDFs do sistema).
+- [x] Alternar entre gráficos de barras e pizza na tela Gráficos, mantendo filtros, tabela e modo demonstração.
