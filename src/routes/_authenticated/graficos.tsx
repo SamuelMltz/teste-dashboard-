@@ -226,3 +226,40 @@ function Grafico({ dados, series }: { dados: Linha[]; series: [keyof Linha, stri
     </ResponsiveContainer>
   );
 }
+
+/** Fatias vão ficando mais claras conforme a posição, sempre na cor da série. */
+function opacidadeFatia(i: number, total: number) {
+  return total <= 1 ? 1 : 1 - (i * 0.6) / (total - 1);
+}
+
+function GraficoPizza({ dados, chave, cor, nome }: { dados: Linha[]; chave: keyof Linha; cor: string; nome: string }) {
+  const { fatias, total } = prepararFatias(dados, chave);
+  if (fatias.length === 0) return <Vazio texto={`Sem valores de ${nome.toLowerCase()}`} />;
+  return (
+    <div className="flex h-full items-center gap-4">
+      <div className="relative h-full min-w-0 flex-1">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie data={fatias} dataKey="valor" nameKey="nome" innerRadius="55%" outerRadius="85%" paddingAngle={2} stroke="var(--background)" strokeWidth={2} isAnimationActive={false}>
+              {fatias.map((f, i) => <Cell key={`${f.nome}-${i}`} fill={cor} fillOpacity={opacidadeFatia(i, fatias.length)} />)}
+            </Pie>
+            <Tooltip contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", color: "var(--foreground)" }} />
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+          <span className="font-display text-2xl font-semibold text-foreground">{total}</span>
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">{nome}</span>
+        </div>
+      </div>
+      <ul className="max-h-full w-44 shrink-0 space-y-1 overflow-y-auto pr-1 text-xs">
+        {fatias.map((f, i) => (
+          <li key={`legenda-${f.nome}-${i}`} className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: cor, opacity: opacidadeFatia(i, fatias.length) }} />
+            <span className="truncate text-foreground">{f.nome}</span>
+            <span className="ml-auto shrink-0 tabular-nums text-muted-foreground">{f.valor} · {f.percentual}%</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
