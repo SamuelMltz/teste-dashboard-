@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowLeft, BarChart3, Building2, CalendarDays, FileText, Package, Search, ShoppingCart, Tag } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { ArrowLeft, BarChart3, Building2, CalendarDays, FileText, Package, PieChart as PizzaIcon, Search, ShoppingCart, Tag } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ReposicaoFisica } from "@/components/ReposicaoFisica";
 import { listarEmpresas } from "@/lib/empresas.functions";
 import { useEmpresaAtual } from "@/lib/empresa-atual";
+import { prepararFatias } from "@/lib/graficos";
 import { classificarReposicao, sugerirReposicao, type SituacaoReposicao } from "@/lib/reposicao";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,10 @@ const DEMO: Linha[] = [
 const COR = { full: "var(--graficos-full)", fisico: "var(--graficos-fisico)", vendas: "var(--graficos-vendas)" };
 const FILTROS = [["todos", "Todos"], ["abaixo", "Abaixo"], ["proximo", "Próximos"]] as const;
 
+/** Formato de exibição dos painéis: barras (padrão) ou pizza. */
+const TIPOS = [["barras", "Barras", BarChart3], ["pizza", "Pizza", PizzaIcon]] as const;
+type TipoGrafico = (typeof TIPOS)[number][0];
+
 function Graficos() {
   const empresas = Route.useLoaderData();
   const global = useEmpresaAtual();
@@ -51,6 +56,7 @@ function Graficos() {
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<(typeof FILTROS)[number][0]>("todos");
   const [demo, setDemo] = useState(false);
+  const [tipo, setTipo] = useState<TipoGrafico>("barras");
 
   const linhasReais: Linha[] = useMemo(() => (empresa?.marcas ?? []).flatMap((m) =>
     m.produtos.map((p) => ({ sku: p.codigo, cod: p.cod, nome: p.nome, marca: m.slug, fisico: p.estoque, full: null, vendas: null }))), [empresa]);
@@ -108,14 +114,24 @@ function Graficos() {
           <div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-section" /><Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por produto, COD ou SKU" className="h-11 pl-10" /></div>
         </div>
 
-        <div className="mt-5 grid gap-5 lg:grid-cols-[3fr_2fr]">
-          <Painel titulo="Estoque Full × estoque físico" sub="Compare as quantidades por produto" legenda={[["Full", COR.full], ["Físico", COR.fisico]]}>
-            {comFull.length === 0 ? <Vazio texto="Aguardando dados de estoque do Full" /> : (
+        <div className="mt-5 flex flex-wrap items-center gap-2" role="group" aria-label="Formato do gráfico">
+          {TIPOS.map(([v, r, I]) => (
+            <Button key={v} variant="outline" size="sm" onClick={() => setTipo(v)} aria-pressed={tipo === v} className={tipo === v ? "border-section bg-section/20 font-semibold text-section" : ""}><I className="h-4 w-4" />{r}</Button>
+          ))}
+        </div>
+
+        <div className="mt-4 grid gap-5 lg:grid-cols-[3fr_2fr]">
+          <Painel titulo="Estoque Full × estoque físico" sub={tipo === "pizza" ? "Distribuição do estoque Full por produto" : "Compare as quantidades por produto"} legenda={tipo === "pizza" ? [["Full", COR.full]] : [["Full", COR.full], ["Físico", COR.fisico]]}>
+            {comFull.length === 0 ? <Vazio texto="Aguardando dados de estoque do Full" /> : tipo === "pizza" ? (
+              <GraficoPizza dados={comFull} chave="full" cor={COR.full} nome="Full" />
+            ) : (
               <Grafico dados={comFull} series={[["full", COR.full, "Full"], ["fisico", COR.fisico, "Físico"]]} />
             )}
           </Painel>
-          <Painel titulo="Vendas × estoque Full" sub="Referência para cobertura de 30 dias" legenda={[["Vendas em 30 dias", COR.vendas], ["Full disponível", COR.full]]}>
-            {comVendas.length === 0 ? <Vazio texto="Aguardando dados de vendas" /> : (
+          <Painel titulo="Vendas × estoque Full" sub={tipo === "pizza" ? "Distribuição das vendas por produto" : "Referência para cobertura de 30 dias"} legenda={tipo === "pizza" ? [["Vendas em 30 dias", COR.vendas]] : [["Vendas em 30 dias", COR.vendas], ["Full disponível", COR.full]]}>
+            {comVendas.length === 0 ? <Vazio texto="Aguardando dados de vendas" /> : tipo === "pizza" ? (
+              <GraficoPizza dados={comVendas} chave="vendas" cor={COR.vendas} nome="Vendas" />
+            ) : (
               <Grafico dados={comVendas} series={[["vendas", COR.vendas, "Vendas"], ["full", COR.full, "Full"]]} />
             )}
           </Painel>
@@ -125,7 +141,7 @@ function Graficos() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div><h2 className="font-display text-2xl font-semibold text-foreground">Produtos para reposição</h2><p className="text-section">Itens com estoque Full abaixo ou próximo das vendas do período.</p></div>
             <div className="flex gap-2">{FILTROS.map(([v, r]) => (
-              <Button key={v} variant="outline" size="sm" onClick={() => setFiltro(v)} aria-pressed={filtro === v} className={filtro === v ? "border-section bg-section-soft text-section" : ""}>{r}</Button>
+              <Button key={v} variant="outline" size="sm" onClick={() => setFiltro(v)} aria-pressed={filtro === v} className={filtro === v ? "border-section bg-section/20 font-semibold text-section" : ""}>{r}</Button>
             ))}</div>
           </div>
           <div className="mt-4 overflow-x-auto rounded-md border border-border">
@@ -208,5 +224,42 @@ function Grafico({ dados, series }: { dados: Linha[]; series: [keyof Linha, stri
         ))}
       </BarChart>
     </ResponsiveContainer>
+  );
+}
+
+/** Fatias vão ficando mais claras conforme a posição, sempre na cor da série. */
+function opacidadeFatia(i: number, total: number) {
+  return total <= 1 ? 1 : 1 - (i * 0.6) / (total - 1);
+}
+
+function GraficoPizza({ dados, chave, cor, nome }: { dados: Linha[]; chave: keyof Linha; cor: string; nome: string }) {
+  const { fatias, total } = prepararFatias(dados, chave);
+  if (fatias.length === 0) return <Vazio texto={`Sem valores de ${nome.toLowerCase()}`} />;
+  return (
+    <div className="flex h-full items-center gap-4">
+      <div className="relative h-full min-w-0 flex-1">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie data={fatias} dataKey="valor" nameKey="nome" innerRadius="55%" outerRadius="85%" paddingAngle={2} stroke="var(--background)" strokeWidth={2} isAnimationActive={false}>
+              {fatias.map((f, i) => <Cell key={`${f.nome}-${i}`} fill={cor} fillOpacity={opacidadeFatia(i, fatias.length)} />)}
+            </Pie>
+            <Tooltip contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", color: "var(--foreground)" }} />
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+          <span className="font-display text-2xl font-semibold text-foreground">{total}</span>
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">{nome}</span>
+        </div>
+      </div>
+      <ul className="max-h-full w-44 shrink-0 space-y-1 overflow-y-auto pr-1 text-xs">
+        {fatias.map((f, i) => (
+          <li key={`legenda-${f.nome}-${i}`} className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: cor, opacity: opacidadeFatia(i, fatias.length) }} />
+            <span className="truncate text-foreground">{f.nome}</span>
+            <span className="ml-auto shrink-0 tabular-nums text-muted-foreground">{f.valor} · {f.percentual}%</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
