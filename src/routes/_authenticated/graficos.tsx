@@ -114,14 +114,24 @@ function Graficos() {
           <div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-section" /><Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por produto, COD ou SKU" className="h-11 pl-10" /></div>
         </div>
 
-        <div className="mt-5 grid gap-5 lg:grid-cols-[3fr_2fr]">
-          <Painel titulo="Estoque Full × estoque físico" sub="Compare as quantidades por produto" legenda={[["Full", COR.full], ["Físico", COR.fisico]]}>
-            {comFull.length === 0 ? <Vazio texto="Aguardando dados de estoque do Full" /> : (
+        <div className="mt-5 flex flex-wrap items-center gap-2" role="group" aria-label="Formato do gráfico">
+          {TIPOS.map(([v, r, I]) => (
+            <Button key={v} variant="outline" size="sm" onClick={() => setTipo(v)} aria-pressed={tipo === v} className={tipo === v ? "border-section bg-section-soft text-section" : ""}><I className="h-4 w-4" />{r}</Button>
+          ))}
+        </div>
+
+        <div className="mt-4 grid gap-5 lg:grid-cols-[3fr_2fr]">
+          <Painel titulo="Estoque Full × estoque físico" sub={tipo === "pizza" ? "Distribuição do estoque Full por produto" : "Compare as quantidades por produto"} legenda={tipo === "pizza" ? [["Full", COR.full]] : [["Full", COR.full], ["Físico", COR.fisico]]}>
+            {comFull.length === 0 ? <Vazio texto="Aguardando dados de estoque do Full" /> : tipo === "pizza" ? (
+              <GraficoPizza dados={comFull} chave="full" cor={COR.full} nome="Full" />
+            ) : (
               <Grafico dados={comFull} series={[["full", COR.full, "Full"], ["fisico", COR.fisico, "Físico"]]} />
             )}
           </Painel>
-          <Painel titulo="Vendas × estoque Full" sub="Referência para cobertura de 30 dias" legenda={[["Vendas em 30 dias", COR.vendas], ["Full disponível", COR.full]]}>
-            {comVendas.length === 0 ? <Vazio texto="Aguardando dados de vendas" /> : (
+          <Painel titulo="Vendas × estoque Full" sub={tipo === "pizza" ? "Distribuição das vendas por produto" : "Referência para cobertura de 30 dias"} legenda={tipo === "pizza" ? [["Vendas em 30 dias", COR.vendas]] : [["Vendas em 30 dias", COR.vendas], ["Full disponível", COR.full]]}>
+            {comVendas.length === 0 ? <Vazio texto="Aguardando dados de vendas" /> : tipo === "pizza" ? (
+              <GraficoPizza dados={comVendas} chave="vendas" cor={COR.vendas} nome="Vendas" />
+            ) : (
               <Grafico dados={comVendas} series={[["vendas", COR.vendas, "Vendas"], ["full", COR.full, "Full"]]} />
             )}
           </Painel>
