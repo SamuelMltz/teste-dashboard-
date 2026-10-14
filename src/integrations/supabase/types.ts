@@ -325,6 +325,88 @@ export type Database = {
           },
         ]
       }
+      ml_contas: {
+        Row: {
+          access_token: string | null
+          conectado_em: string | null
+          empresa_id: string
+          expires_at: string | null
+          ml_user_id: number | null
+          oauth_state: string | null
+          refresh_token: string | null
+          sincronizado_em: string | null
+          ultimo_erro: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          conectado_em?: string | null
+          empresa_id: string
+          expires_at?: string | null
+          ml_user_id?: number | null
+          oauth_state?: string | null
+          refresh_token?: string | null
+          sincronizado_em?: string | null
+          ultimo_erro?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          conectado_em?: string | null
+          empresa_id?: string
+          expires_at?: string | null
+          ml_user_id?: number | null
+          oauth_state?: string | null
+          refresh_token?: string | null
+          sincronizado_em?: string | null
+          ultimo_erro?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ml_contas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: true
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ml_estoque_full: {
+        Row: {
+          atualizado_em: string
+          empresa_id: string
+          id: string
+          inventory_id: string
+          quantidade: number
+          sku: string
+          titulo: string
+        }
+        Insert: {
+          atualizado_em?: string
+          empresa_id: string
+          id?: string
+          inventory_id: string
+          quantidade?: number
+          sku: string
+          titulo?: string
+        }
+        Update: {
+          atualizado_em?: string
+          empresa_id?: string
+          id?: string
+          inventory_id?: string
+          quantidade?: number
+          sku?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ml_estoque_full_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pedido_itens: {
         Row: {
           created_at: string
