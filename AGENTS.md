@@ -30,3 +30,4 @@
 - A lista de compras (`src/lib/lista-compras.ts`, `ReposicaoFisica`) calcula pelo estoque físico, mínimo e saldo pendente de pedidos `planejado` (rascunhos inclusos, cancelados/recebidos não); a função `gerar_pedidos_reposicao` recalcula no banco com trava por empresa e chave idempotente para impedir duplicatas.
 - PDFs emitidos pelo sistema levam referência rastreável (`LC-…` na lista, `PED-<id>` no pedido); o importador reconhece essas referências antes da leitura comum e abre o registro existente em vez de duplicar.
 - Devoluções (aba em `/garantia`, `src/components/Devolucoes.tsx`) usam tabelas próprias com histórico gravado por trigger; só a função `confirmar_retorno_devolucao` soma ao estoque, exigindo condição apto + status aprovada, uma única vez.
+- Mercado Livre: OAuth Luminartech + botão Sincronizar estoque Full (em Gráficos); tokens só no servidor (ml_contas sem acesso do navegador).
