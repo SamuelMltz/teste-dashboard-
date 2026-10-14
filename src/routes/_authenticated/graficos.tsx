@@ -111,7 +111,7 @@ function Graficos() {
               <SelectTrigger className="h-12 w-64 gap-2" aria-label="Empresa visualizada"><Building2 className="h-5 w-5 text-section" /><SelectValue /></SelectTrigger>
               <SelectContent>{empresas.map((e) => <SelectItem key={e.slug} value={e.slug}>{e.nome}</SelectItem>)}</SelectContent>
             </Select>
-            {empresa && <SincronizarMl empresaId={empresa.id} />}
+            {empresa?.id && <SincronizarMl empresaId={empresa.id} />}
             <label className="flex items-center gap-2 text-sm text-muted-foreground"><Switch checked={demo} onCheckedChange={setDemo} />Modo demonstração</label>
           </div>
         </header>
