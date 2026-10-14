@@ -18,11 +18,13 @@ export const statusMl = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: c } = await (supabaseAdmin as any)
       .from("ml_contas")
-      .select("ml_user_id, conectado_em, sincronizado_em, ultimo_erro, refresh_token")
+      .select("ml_user_id, conectado_em, sincronizado_em, ultimo_erro, refresh_token, access_token, expires_at")
       .eq("empresa_id", data.empresaId)
       .maybeSingle();
+    const tokenAtivo = !!c?.access_token && !!c?.expires_at && new Date(c.expires_at).getTime() > Date.now() + 60_000;
     return {
-      conectado: !!c?.refresh_token,
+      conectado: !!c?.refresh_token || tokenAtivo,
+      expiraEm: c?.refresh_token ? null : (tokenAtivo ? c.expires_at : null),
       conectadoEm: c?.conectado_em ?? null,
       sincronizadoEm: c?.sincronizado_em ?? null,
       erro: c?.ultimo_erro ?? null,
@@ -49,8 +51,8 @@ export const urlConectarMl = createServerFn({ method: "POST" })
 
 async function tokenValido(admin: any, empresaId: string) {
   const { data: c } = await admin.from("ml_contas").select("*").eq("empresa_id", empresaId).maybeSingle();
-  if (!c?.refresh_token) throw new Error("Conta do Mercado Livre não conectada.");
-  if (c.access_token && c.expires_at && new Date(c.expires_at).getTime() > Date.now() + 60_000) return c;
+  if (c?.access_token && c.expires_at && new Date(c.expires_at).getTime() > Date.now() + 60_000) return c;
+  if (!c?.refresh_token) throw new Error("A conexão com o Mercado Livre expirou. Clique em \"Conectar Mercado Livre\" novamente.");
   const r = await fetch(`${API}/oauth/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
