@@ -38,6 +38,9 @@ export function SincronizarMl({ empresaId }: { empresaId: string }) {
       <p className="text-sm text-muted-foreground">
         Atualização: {data?.sincronizadoEm ? formatarDataHora(data.sincronizadoEm) : "Ainda não sincronizado"}
       </p>
+      {data?.expiraEm && (
+        <p className="text-xs text-muted-foreground">Conexão válida até {formatarDataHora(data.expiraEm)}</p>
+      )}
       {data?.conectado ? (
         <Button size="sm" variant="outline" onClick={onSync} disabled={ocupado} className="gap-2">
           <RefreshCw className={`h-4 w-4 ${ocupado ? "animate-spin" : ""}`} />Sincronizar estoque Full
