@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Empresa } from "./empresas";
 
-const SELECT = "slug, nome, accent, marcas(slug, nome, ordem, produtos(nome, codigo, cod, estoque, estoque_minimo, ordem))";
+const SELECT = "id, slug, nome, accent, marcas(slug, nome, ordem, produtos(nome, codigo, cod, estoque, estoque_minimo, ordem))";
 
 function ordenarEmpresa(empresa: Empresa): Empresa {
   return {
