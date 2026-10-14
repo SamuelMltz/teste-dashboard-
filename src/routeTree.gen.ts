@@ -25,6 +25,7 @@ import { Route as AuthenticatedEmpresaSlugRouteImport } from './routes/_authenti
 import { Route as AuthenticatedFullIdRouteImport } from './routes/_authenticated/full_.$id'
 import { Route as AuthenticatedPedidosIdRouteImport } from './routes/_authenticated/pedidos_.$id'
 import { Route as AuthenticatedEmpresaSlugIndexRouteImport } from './routes/_authenticated/empresa.$slug.index'
+import { Route as ApiPublicMlCallbackRouteImport } from './routes/api/public/ml/callback'
 import { Route as AuthenticatedEmpresaSlugMarcaMarcaRouteImport } from './routes/_authenticated/empresa.$slug.marca.$marca'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -110,6 +111,11 @@ const AuthenticatedEmpresaSlugIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedEmpresaSlugRoute,
   } as any)
+const ApiPublicMlCallbackRoute = ApiPublicMlCallbackRouteImport.update({
+  id: '/api/public/ml/callback',
+  path: '/api/public/ml/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedEmpresaSlugMarcaMarcaRoute =
   AuthenticatedEmpresaSlugMarcaMarcaRouteImport.update({
     id: '/marca/$marca',
@@ -132,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/empresa/$slug': typeof AuthenticatedEmpresaSlugRouteWithChildren
   '/full/$id': typeof AuthenticatedFullIdRoute
   '/pedidos/$id': typeof AuthenticatedPedidosIdRoute
+  '/api/public/ml/callback': typeof ApiPublicMlCallbackRoute
   '/empresa/$slug/': typeof AuthenticatedEmpresaSlugIndexRoute
   '/empresa/$slug/marca/$marca': typeof AuthenticatedEmpresaSlugMarcaMarcaRoute
 }
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/full/$id': typeof AuthenticatedFullIdRoute
   '/pedidos/$id': typeof AuthenticatedPedidosIdRoute
+  '/api/public/ml/callback': typeof ApiPublicMlCallbackRoute
   '/empresa/$slug': typeof AuthenticatedEmpresaSlugIndexRoute
   '/empresa/$slug/marca/$marca': typeof AuthenticatedEmpresaSlugMarcaMarcaRoute
 }
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/_authenticated/empresa/$slug': typeof AuthenticatedEmpresaSlugRouteWithChildren
   '/_authenticated/full_/$id': typeof AuthenticatedFullIdRoute
   '/_authenticated/pedidos_/$id': typeof AuthenticatedPedidosIdRoute
+  '/api/public/ml/callback': typeof ApiPublicMlCallbackRoute
   '/_authenticated/empresa/$slug/': typeof AuthenticatedEmpresaSlugIndexRoute
   '/_authenticated/empresa/$slug/marca/$marca': typeof AuthenticatedEmpresaSlugMarcaMarcaRoute
 }
@@ -189,6 +198,7 @@ export interface FileRouteTypes {
     | '/empresa/$slug'
     | '/full/$id'
     | '/pedidos/$id'
+    | '/api/public/ml/callback'
     | '/empresa/$slug/'
     | '/empresa/$slug/marca/$marca'
   fileRoutesByTo: FileRoutesByTo
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
     | '/'
     | '/full/$id'
     | '/pedidos/$id'
+    | '/api/public/ml/callback'
     | '/empresa/$slug'
     | '/empresa/$slug/marca/$marca'
   id:
@@ -225,6 +236,7 @@ export interface FileRouteTypes {
     | '/_authenticated/empresa/$slug'
     | '/_authenticated/full_/$id'
     | '/_authenticated/pedidos_/$id'
+    | '/api/public/ml/callback'
     | '/_authenticated/empresa/$slug/'
     | '/_authenticated/empresa/$slug/marca/$marca'
   fileRoutesById: FileRoutesById
@@ -232,6 +244,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicMlCallbackRoute: typeof ApiPublicMlCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -348,6 +361,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEmpresaSlugIndexRouteImport
       parentRoute: typeof AuthenticatedEmpresaSlugRoute
     }
+    '/api/public/ml/callback': {
+      id: '/api/public/ml/callback'
+      path: '/api/public/ml/callback'
+      fullPath: '/api/public/ml/callback'
+      preLoaderRoute: typeof ApiPublicMlCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/empresa/$slug/marca/$marca': {
       id: '/_authenticated/empresa/$slug/marca/$marca'
       path: '/marca/$marca'
@@ -413,6 +433,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicMlCallbackRoute: ApiPublicMlCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
