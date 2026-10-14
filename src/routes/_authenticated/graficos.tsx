@@ -3,6 +3,9 @@ import { useMemo, useState } from "react";
 import { ArrowLeft, BarChart3, Building2, CalendarDays, FileText, Package, PieChart as PizzaIcon, Search, ShoppingCart, Tag } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ReposicaoFisica } from "@/components/ReposicaoFisica";
+import { SincronizarMl } from "@/components/SincronizarMl";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { listarEmpresas } from "@/lib/empresas.functions";
 import { useEmpresaAtual } from "@/lib/empresa-atual";
 import { prepararFatias, type EstoquePizza } from "@/lib/graficos";
@@ -59,8 +62,18 @@ function Graficos() {
   const [tipo, setTipo] = useState<TipoGrafico>("barras");
   const [estoquePizza, setEstoquePizza] = useState<EstoquePizza>("fisico");
 
+  const { data: fullMl } = useQuery({
+    queryKey: ["ml-estoque", empresa?.id],
+    enabled: !!empresa?.id,
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("ml_estoque_full").select("sku, quantidade").eq("empresa_id", empresa!.id);
+      const m = new Map<string, number>();
+      for (const r of data ?? []) { const k = String(r.sku).trim().toUpperCase(); if (k) m.set(k, (m.get(k) ?? 0) + r.quantidade); }
+      return m;
+    },
+  });
   const linhasReais: Linha[] = useMemo(() => (empresa?.marcas ?? []).flatMap((m) =>
-    m.produtos.map((p) => ({ sku: p.codigo, cod: p.cod, nome: p.nome, marca: m.slug, marcaNome: m.nome, fisico: p.estoque, full: null, vendas: null }))), [empresa]);
+    m.produtos.map((p) => ({ sku: p.codigo, cod: p.cod, nome: p.nome, marca: m.slug, marcaNome: m.nome, fisico: p.estoque, full: fullMl?.size ? (fullMl.get(p.codigo.trim().toUpperCase()) ?? 0) : null, vendas: null }))), [empresa, fullMl]);
 
   const termo = busca.trim().toLowerCase();
   const base = (demo ? DEMO : linhasReais).filter((l) =>
@@ -98,7 +111,7 @@ function Graficos() {
               <SelectTrigger className="h-12 w-64 gap-2" aria-label="Empresa visualizada"><Building2 className="h-5 w-5 text-section" /><SelectValue /></SelectTrigger>
               <SelectContent>{empresas.map((e) => <SelectItem key={e.slug} value={e.slug}>{e.nome}</SelectItem>)}</SelectContent>
             </Select>
-            <p className="text-sm text-muted-foreground">Atualização: Ainda não sincronizado</p>
+            {empresa && <SincronizarMl empresaId={empresa.id} />}
             <label className="flex items-center gap-2 text-sm text-muted-foreground"><Switch checked={demo} onCheckedChange={setDemo} />Modo demonstração</label>
           </div>
         </header>
