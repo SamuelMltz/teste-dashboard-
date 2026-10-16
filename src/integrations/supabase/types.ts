@@ -407,6 +407,41 @@ export type Database = {
           },
         ]
       }
+      ml_vendas: {
+        Row: {
+          atualizado_em: string
+          empresa_id: string
+          id: string
+          sku: string
+          unidades: number
+          unidades_full: number
+        }
+        Insert: {
+          atualizado_em?: string
+          empresa_id: string
+          id?: string
+          sku: string
+          unidades?: number
+          unidades_full?: number
+        }
+        Update: {
+          atualizado_em?: string
+          empresa_id?: string
+          id?: string
+          sku?: string
+          unidades?: number
+          unidades_full?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ml_vendas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pedido_itens: {
         Row: {
           created_at: string
