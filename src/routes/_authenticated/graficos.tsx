@@ -7,7 +7,8 @@ import { SincronizarMl } from "@/components/SincronizarMl";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { listarEmpresas } from "@/lib/empresas.functions";
-import { useEmpresaAtual } from "@/lib/empresa-atual";
+import { useEmpresaObrigatoria } from "@/lib/use-empresa-obrigatoria";
+import { BarraEmpresa } from "@/components/BarraEmpresa";
 import { prepararFatias, type EstoquePizza } from "@/lib/graficos";
 import { classificarReposicao, sugerirReposicao, type SituacaoReposicao } from "@/lib/reposicao";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -33,12 +34,6 @@ export const Route = createFileRoute("/_authenticated/graficos")({
 
 type Linha = { sku: string; cod: string; nome: string; marca: string; marcaNome?: string; fisico: number; full: number | null; vendas: number | null };
 
-/** Somente para o modo demonstração — nunca misturado com os registros reais. */
-const DEMO: Linha[] = [
-  { sku: "G024", cod: "", nome: "Fita LED 12V", marca: "Demonstração", fisico: 50, full: 30, vendas: 100 },
-  { sku: "G007", cod: "", nome: "Fonte 12V", marca: "Demonstração", fisico: 80, full: 40, vendas: 90 },
-  { sku: "G027", cod: "", nome: "Fita LED IP65", marca: "Demonstração", fisico: 15, full: 20, vendas: 60 },
-];
 
 const COR = { full: "var(--graficos-full)", fisico: "var(--graficos-fisico)", vendas: "var(--graficos-vendas)" };
 const FILTROS = [["todos", "Todos"], ["abaixo", "Abaixo"], ["proximo", "Próximos"]] as const;
@@ -187,7 +182,7 @@ function Graficos() {
             </table>
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs italic text-muted-foreground">{demo ? "Dados ilustrativos. " : ""}Estoque físico e estoque Full são acompanhados separadamente.</p>
+            <p className="text-xs italic text-muted-foreground">Estoque físico e estoque Full são acompanhados separadamente.</p>
             <TooltipProvider>
               <div className="flex gap-3">
                 {([["Gerar Full", FileText], ["Criar pedido", ShoppingCart]] as const).map(([r, I]) => (
@@ -199,7 +194,7 @@ function Graficos() {
           <p className="mt-2 text-right text-xs text-muted-foreground">Disponível após a integração com o Mercado Livre.</p>
         </section>
 
-        {!demo && slugAtivo && <ReposicaoFisica empresaSlug={slugAtivo} titulo="Reposição do estoque físico" />}
+        {slugAtivo && <ReposicaoFisica empresaSlug={slugAtivo} titulo="Reposição do estoque físico" />}
       </div>
     </div>
   );
