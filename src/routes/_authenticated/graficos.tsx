@@ -49,16 +49,12 @@ type TipoGrafico = (typeof TIPOS)[number][0];
 
 function Graficos() {
   const empresas = Route.useLoaderData();
-  const global = useEmpresaAtual();
-  // Estado local: não altera a empresa global do sistema.
-  const [slug, setSlug] = useState<string | null>(null);
-  const slugAtivo = slug ?? global?.slug ?? empresas[0]?.slug ?? "";
+  const global = useEmpresaObrigatoria();
+  const slugAtivo = global?.slug ?? "";
   const empresa = empresas.find((e) => e.slug === slugAtivo);
-  const [periodo, setPeriodo] = useState("30");
   const [marca, setMarca] = useState("todas");
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<(typeof FILTROS)[number][0]>("todos");
-  const [demo, setDemo] = useState(false);
   const [tipo, setTipo] = useState<TipoGrafico>("barras");
   const [estoquePizza, setEstoquePizza] = useState<EstoquePizza>("fisico");
 
@@ -72,19 +68,30 @@ function Graficos() {
       return m;
     },
   });
+  const { data: vendasMl } = useQuery({
+    queryKey: ["ml-estoque", empresa?.id, "vendas"],
+    enabled: !!empresa?.id,
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("ml_vendas").select("sku, unidades").eq("empresa_id", empresa!.id);
+      const m = new Map<string, number>();
+      for (const r of data ?? []) m.set(String(r.sku).trim().toUpperCase(), r.unidades);
+      return m;
+    },
+  });
   const linhasReais: Linha[] = useMemo(() => (empresa?.marcas ?? []).flatMap((m) =>
-    m.produtos.map((p) => ({ sku: p.codigo, cod: p.cod, nome: p.nome, marca: m.slug, marcaNome: m.nome, fisico: p.estoque, full: fullMl?.size ? (fullMl.get(p.codigo.trim().toUpperCase()) ?? 0) : null, vendas: null }))), [empresa, fullMl]);
+    m.produtos.map((p) => {
+      const k = p.codigo.trim().toUpperCase();
+      return { sku: p.codigo, cod: p.cod, nome: p.nome, marca: m.slug, marcaNome: m.nome, fisico: p.estoque, full: fullMl?.size ? (fullMl.get(k) ?? 0) : null, vendas: vendasMl?.size ? (vendasMl.get(k) ?? 0) : null };
+    })), [empresa, fullMl, vendasMl]);
 
   const termo = busca.trim().toLowerCase();
-  const base = (demo ? DEMO : linhasReais).filter((l) =>
-    (demo || marca === "todas" || l.marca === marca) &&
+  const base = linhasReais.filter((l) =>
+    (marca === "todas" || l.marca === marca) &&
     (!termo || [l.nome, l.sku, l.cod].some((v) => v.toLowerCase().includes(termo))));
   const linhas = base.map((l) => ({ ...l, situacao: classificarReposicao(l.full, l.vendas), sugestao: sugerirReposicao(l.full, l.fisico, l.vendas) }));
   const visiveis = filtro === "todos" ? linhas : linhas.filter((l) => l.situacao === filtro);
   const comFull = linhas.filter((l) => l.full !== null);
-  const comVendas = linhas.filter((l) => l.full !== null && l.vendas !== null);
-
-  function trocarEmpresa(s: string) { setSlug(s); setMarca("todas"); }
+  const comVendas = linhas.filter((l) => l.full !== null && l.vendas !== null && (l.vendas > 0 || (l.full ?? 0) > 0));
 
   return (
     <div className="relative min-h-screen bg-estoque-canvas px-5 py-8 sm:px-8 lg:px-10">
