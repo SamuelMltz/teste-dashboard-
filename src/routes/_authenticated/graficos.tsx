@@ -97,7 +97,10 @@ function Graficos() {
     <div className="relative min-h-screen bg-estoque-canvas px-5 py-8 sm:px-8 lg:px-10">
       <div className="pointer-events-none absolute inset-0 bg-gerenciar-atmosphere" aria-hidden="true" />
       <div className="relative mx-auto max-w-7xl">
-        <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Voltar ao início</Link>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Voltar ao início</Link>
+          <BarraEmpresa />
+        </div>
 
         <header className="mt-6 flex flex-col gap-5 border-b border-border pb-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-5">
@@ -106,29 +109,18 @@ function Graficos() {
               <div className="mt-2 h-1 w-16 rounded-full bg-section" />
             </div>
             <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="font-display text-5xl font-bold text-foreground">Gráficos</h1>
-                {demo && <span className="rounded-full border border-section px-4 py-1 text-xs font-semibold uppercase tracking-wide text-section">Dados fictícios — demonstração</span>}
-              </div>
+              <h1 className="font-display text-5xl font-bold text-foreground">Gráficos</h1>
               <p className="mt-1 text-lg text-muted-foreground">Compare o estoque e acompanhe a reposição do Full.</p>
             </div>
           </div>
           <div className="flex flex-col items-start gap-2 lg:items-end">
-            <Select value={slugAtivo} onValueChange={trocarEmpresa}>
-              <SelectTrigger className="h-12 w-64 gap-2" aria-label="Empresa visualizada"><Building2 className="h-5 w-5 text-section" /><SelectValue /></SelectTrigger>
-              <SelectContent>{empresas.map((e) => <SelectItem key={e.slug} value={e.slug}>{e.nome}</SelectItem>)}</SelectContent>
-            </Select>
             {empresa?.id && <SincronizarMl empresaId={empresa.id} />}
-            <label className="flex items-center gap-2 text-sm text-muted-foreground"><Switch checked={demo} onCheckedChange={setDemo} />Modo demonstração</label>
           </div>
         </header>
 
         <div className="mt-5 grid gap-3 md:grid-cols-[14rem_14rem_1fr]">
-          <Select value={periodo} onValueChange={setPeriodo}>
-            <SelectTrigger className="h-11 gap-2"><CalendarDays className="h-4 w-4 text-section" /><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="7">Últimos 7 dias</SelectItem><SelectItem value="30">Últimos 30 dias</SelectItem><SelectItem value="90">Últimos 90 dias</SelectItem></SelectContent>
-          </Select>
-          <Select value={marca} onValueChange={setMarca} disabled={demo}>
+          <div className="flex h-11 items-center gap-2 rounded-md border border-input px-3 text-sm text-foreground"><CalendarDays className="h-4 w-4 text-section" />Vendas: últimos 30 dias</div>
+          <Select value={marca} onValueChange={setMarca}>
             <SelectTrigger className="h-11 gap-2"><Tag className="h-4 w-4 text-section" /><SelectValue /></SelectTrigger>
             <SelectContent><SelectItem value="todas">Todas as marcas</SelectItem>{(empresa?.marcas ?? []).map((m) => <SelectItem key={m.slug} value={m.slug}>{m.nome}</SelectItem>)}</SelectContent>
           </Select>
