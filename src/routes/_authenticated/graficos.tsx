@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowLeft, BarChart3, Building2, CalendarDays, FileText, Package, PieChart as PizzaIcon, Search, ShoppingCart, Tag } from "lucide-react";
+import { ArrowLeft, BarChart3, CalendarDays, FileText, Package, PieChart as PizzaIcon, Search, ShoppingCart, Tag } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ReposicaoFisica } from "@/components/ReposicaoFisica";
 import { SincronizarMl } from "@/components/SincronizarMl";
@@ -14,7 +14,6 @@ import { classificarReposicao, sugerirReposicao, type SituacaoReposicao } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Tooltip as Dica, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/_authenticated/graficos")({

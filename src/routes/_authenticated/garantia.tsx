@@ -1,3 +1,4 @@
+import { BarraEmpresa } from "@/components/BarraEmpresa";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowLeft, PackageOpen, ShieldCheck } from "lucide-react";
@@ -25,7 +26,7 @@ function Garantia() {
   return (
     <div className="min-h-screen bg-estoque-canvas">
       <div className="mx-auto max-w-6xl px-5 py-7 sm:px-8 sm:py-9">
-        <Button variant="ghost" asChild className="-ml-3 gap-2 text-muted-foreground"><Link to="/"><ArrowLeft className="h-4 w-4" />Voltar ao início</Link></Button>
+        <div className="flex flex-wrap items-center justify-between gap-3"><Button variant="ghost" asChild className="-ml-3 gap-2 text-muted-foreground"><Link to="/"><ArrowLeft className="h-4 w-4" />Voltar ao início</Link></Button><BarraEmpresa /></div>
         <header className="mt-7 flex items-center gap-4">
           <div className="section-icon flex h-14 w-14 shrink-0 items-center justify-center rounded-md"><Icon className="h-7 w-7" /></div>
           <h1 className="font-display text-4xl font-bold text-foreground sm:text-5xl">{titulo}</h1>

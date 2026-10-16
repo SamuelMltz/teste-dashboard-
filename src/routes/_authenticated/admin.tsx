@@ -1,3 +1,4 @@
+import { BarraEmpresa } from "@/components/BarraEmpresa";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -103,7 +104,7 @@ function AdminPage() {
           <Button variant="ghost" asChild className="group -ml-3 gap-2 text-muted-foreground hover:text-foreground">
             <Link to="/"><ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" /> Voltar ao início</Link>
           </Button>
-          <Button variant="ghost" className="-mr-3 text-muted-foreground hover:text-foreground" onClick={sair}>Sair</Button>
+          <BarraEmpresa />
         </div>
         <header className="mt-5">
           <h1 className="font-display text-4xl font-bold text-foreground sm:text-5xl">Cadastro</h1>

@@ -1,3 +1,4 @@
+import { BarraEmpresa } from "@/components/BarraEmpresa";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 
@@ -31,10 +32,10 @@ function EmpresaMarcas() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-6 py-10">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+<div className="flex flex-wrap items-center justify-between gap-3">        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
           Voltar ao início
-        </Link>
+        </Link><BarraEmpresa /></div>
 
         <header className="mt-6 flex items-center gap-4">
           <div
