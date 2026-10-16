@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { hojeSP, ymdParaInstanteSP } from "@/lib/datas";
 import { useMemo, useState } from "react";
 import { ArrowLeft, BarChart3, CalendarDays, FileText, Package, PieChart as PizzaIcon, Search, ShoppingCart, Tag } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -86,6 +88,42 @@ function Graficos() {
   const visiveis = filtro === "todos" ? linhas : linhas.filter((l) => l.situacao === filtro);
   const comFull = linhas.filter((l) => l.full !== null);
   const comVendas = linhas.filter((l) => l.full !== null && l.vendas !== null && (l.vendas > 0 || (l.full ?? 0) > 0));
+  const navigate = useNavigate();
+  const [gerando, setGerando] = useState(false);
+
+  async function gerar(tipoDoc: "full" | "pedido") {
+    if (!empresa?.id || gerando) return;
+    const campo = tipoDoc === "full" ? "enviar" : "comprar";
+    const escolhidos = linhas.filter((l) => (l.sugestao?.[campo] ?? 0) > 0 && l.sku.trim());
+    if (!escolhidos.length) { toast.info(tipoDoc === "full" ? "Nenhum produto precisa ser enviado ao Full." : "Nenhum produto precisa ser comprado."); return; }
+    if (!confirm(`Criar ${tipoDoc === "full" ? "um Full" : "um rascunho de pedido"} com ${escolhidos.length} produto(s)? O estoque não muda agora.`)) return;
+    setGerando(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Sua sessão expirou.");
+      const { data: prods, error: ep } = await supabase.from("produtos").select("id, codigo, marcas!inner(empresa_id)").eq("marcas.empresa_id", empresa.id);
+      if (ep) throw ep;
+      const ids = new Map((prods ?? []).map((p) => [p.codigo.trim().toUpperCase(), p.id]));
+      const itens = escolhidos.map((l) => ({ produto_id: ids.get(l.sku.trim().toUpperCase()), quantidade: l.sugestao![campo] })).filter((i) => i.produto_id) as { produto_id: string; quantidade: number }[];
+      const hoje = hojeSP();
+      if (tipoDoc === "full") {
+        const { data: c, error } = await supabase.from("full_cargas").insert({ nome: "Full gerado pelos gráficos", empresa_id: empresa.id, created_by: u.user.id, data_prevista: ymdParaInstanteSP(hoje) }).select("id").single();
+        if (error) throw error;
+        const { error: ei } = await supabase.from("full_itens").insert(itens.map((i) => ({ ...i, carga_id: c.id })));
+        if (ei) throw ei;
+        navigate({ to: "/full/$id", params: { id: c.id } });
+      } else {
+        const { data: emp } = await supabase.from("empresas").select("endereco").eq("id", empresa.id).maybeSingle();
+        const { data: p, error } = await supabase.from("pedidos").insert({ nome: "Pedido gerado pelos gráficos", fornecedor: empresa.nome, empresa_id: empresa.id, created_by: u.user.id, data_pedido: hoje, endereco_entrega: emp?.endereco ?? "", rascunho: true }).select("id").single();
+        if (error) throw error;
+        const { error: ei } = await supabase.from("pedido_itens").insert(itens.map((i) => ({ ...i, pedido_id: p.id })));
+        if (ei) throw ei;
+        navigate({ to: "/pedidos/$id", params: { id: p.id } });
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível criar.");
+    } finally { setGerando(false); }
+  }
 
   return (
     <div className="relative min-h-screen bg-estoque-canvas px-5 py-8 sm:px-8 lg:px-10">
@@ -184,13 +222,11 @@ function Graficos() {
             <p className="text-xs italic text-muted-foreground">Estoque físico e estoque Full são acompanhados separadamente.</p>
             <TooltipProvider>
               <div className="flex gap-3">
-                {([["Gerar Full", FileText], ["Criar pedido", ShoppingCart]] as const).map(([r, I]) => (
-                  <Dica key={r}><TooltipTrigger asChild><span tabIndex={0}><Button disabled variant="outline" className="h-11 gap-2"><I className="h-4 w-4" />{r}</Button></span></TooltipTrigger><TooltipContent>Disponível após a integração com o Mercado Livre.</TooltipContent></Dica>
-                ))}
+                <Dica><TooltipTrigger asChild><span tabIndex={0}><Button disabled={gerando} onClick={() => gerar("full")} variant="outline" className="h-11 gap-2 border-section/60 text-section"><FileText className="h-4 w-4" />Gerar Full</Button></span></TooltipTrigger><TooltipContent>Cria um Full com as quantidades da coluna "A enviar".</TooltipContent></Dica>
+                <Dica><TooltipTrigger asChild><span tabIndex={0}><Button disabled={gerando} onClick={() => gerar("pedido")} variant="outline" className="h-11 gap-2 border-section/60 text-section"><ShoppingCart className="h-4 w-4" />Criar pedido</Button></span></TooltipTrigger><TooltipContent>Cria um rascunho de pedido com a coluna "A comprar".</TooltipContent></Dica>
               </div>
             </TooltipProvider>
           </div>
-          <p className="mt-2 text-right text-xs text-muted-foreground">Disponível após a integração com o Mercado Livre.</p>
         </section>
 
         {slugAtivo && <ReposicaoFisica empresaSlug={slugAtivo} titulo="Reposição do estoque físico" />}
