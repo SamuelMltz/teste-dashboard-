@@ -144,8 +144,39 @@ export const sincronizarFullMl = createServerFn({ method: "POST" })
         if (error) throw new Error(error.message);
       }
       await admin.from("ml_estoque_full").delete().eq("empresa_id", data.empresaId).lt("atualizado_em", agora);
+
+      // 4. Vendas pagas dos últimos 30 dias (unidades por SKU; cancelados ficam fora)
+      const desde = new Date(Date.now() - 30 * 86400_000).toISOString();
+      const vendas = new Map<string, { unidades: number; full: number }>();
+      const vistos = new Set<string>();
+      for (let offset = 0; offset < 10000; offset += 50) {
+        const j = await get(`/orders/search?seller=${c.ml_user_id}&order.status=paid&order.date_created.from=${encodeURIComponent(desde)}&sort=date_desc&limit=50&offset=${offset}`);
+        const res: any[] = j.results ?? [];
+        for (const o of res) {
+          if (vistos.has(String(o.id))) continue;
+          vistos.add(String(o.id));
+          const ehFull = o?.shipping?.logistic_type === "fulfillment" || (o.tags ?? []).includes("fulfillment");
+          for (const oi of o.order_items ?? []) {
+            const sku = String(oi?.item?.seller_sku || oi?.item?.seller_custom_field || "").trim().toUpperCase();
+            if (!sku) continue;
+            const v = vendas.get(sku) ?? { unidades: 0, full: 0 };
+            const q = Number(oi.quantity ?? 0);
+            v.unidades += q;
+            if (ehFull) v.full += q;
+            vendas.set(sku, v);
+          }
+        }
+        if (res.length < 50 || offset + 50 >= Number(j.paging?.total ?? 0)) break;
+      }
+      const linhasVendas = [...vendas].map(([sku, v]) => ({ empresa_id: data.empresaId, sku, unidades: v.unidades, unidades_full: v.full, atualizado_em: agora }));
+      if (linhasVendas.length) {
+        const { error } = await admin.from("ml_vendas").upsert(linhasVendas, { onConflict: "empresa_id,sku" });
+        if (error) throw new Error(error.message);
+      }
+      await admin.from("ml_vendas").delete().eq("empresa_id", data.empresaId).lt("atualizado_em", agora);
+
       await admin.from("ml_contas").update({ sincronizado_em: agora, ultimo_erro: null }).eq("empresa_id", data.empresaId);
-      return { ok: true, anuncios: ids.length, itens: linhas.length, unidades: linhas.reduce((s, l) => s + l.quantidade, 0) };
+      return { ok: true, anuncios: ids.length, itens: linhas.length, unidades: linhas.reduce((s, l) => s + l.quantidade, 0), vendas: linhasVendas.reduce((s, l) => s + l.unidades, 0) };
     } catch (e: any) {
       console.error("sync ML", e);
       await admin.from("ml_contas").update({ ultimo_erro: String(e?.message ?? e) }).eq("empresa_id", data.empresaId);

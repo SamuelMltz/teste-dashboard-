@@ -1,19 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowLeft, BarChart3, Building2, CalendarDays, FileText, Package, PieChart as PizzaIcon, Search, ShoppingCart, Tag } from "lucide-react";
+import { ArrowLeft, BarChart3, CalendarDays, FileText, Package, PieChart as PizzaIcon, Search, ShoppingCart, Tag } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ReposicaoFisica } from "@/components/ReposicaoFisica";
 import { SincronizarMl } from "@/components/SincronizarMl";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { listarEmpresas } from "@/lib/empresas.functions";
-import { useEmpresaAtual } from "@/lib/empresa-atual";
+import { useEmpresaObrigatoria } from "@/lib/use-empresa-obrigatoria";
+import { BarraEmpresa } from "@/components/BarraEmpresa";
 import { prepararFatias, type EstoquePizza } from "@/lib/graficos";
 import { classificarReposicao, sugerirReposicao, type SituacaoReposicao } from "@/lib/reposicao";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Tooltip as Dica, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/_authenticated/graficos")({
@@ -33,12 +33,6 @@ export const Route = createFileRoute("/_authenticated/graficos")({
 
 type Linha = { sku: string; cod: string; nome: string; marca: string; marcaNome?: string; fisico: number; full: number | null; vendas: number | null };
 
-/** Somente para o modo demonstração — nunca misturado com os registros reais. */
-const DEMO: Linha[] = [
-  { sku: "G024", cod: "", nome: "Fita LED 12V", marca: "Demonstração", fisico: 50, full: 30, vendas: 100 },
-  { sku: "G007", cod: "", nome: "Fonte 12V", marca: "Demonstração", fisico: 80, full: 40, vendas: 90 },
-  { sku: "G027", cod: "", nome: "Fita LED IP65", marca: "Demonstração", fisico: 15, full: 20, vendas: 60 },
-];
 
 const COR = { full: "var(--graficos-full)", fisico: "var(--graficos-fisico)", vendas: "var(--graficos-vendas)" };
 const FILTROS = [["todos", "Todos"], ["abaixo", "Abaixo"], ["proximo", "Próximos"]] as const;
@@ -49,16 +43,12 @@ type TipoGrafico = (typeof TIPOS)[number][0];
 
 function Graficos() {
   const empresas = Route.useLoaderData();
-  const global = useEmpresaAtual();
-  // Estado local: não altera a empresa global do sistema.
-  const [slug, setSlug] = useState<string | null>(null);
-  const slugAtivo = slug ?? global?.slug ?? empresas[0]?.slug ?? "";
+  const global = useEmpresaObrigatoria();
+  const slugAtivo = global?.slug ?? "";
   const empresa = empresas.find((e) => e.slug === slugAtivo);
-  const [periodo, setPeriodo] = useState("30");
   const [marca, setMarca] = useState("todas");
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<(typeof FILTROS)[number][0]>("todos");
-  const [demo, setDemo] = useState(false);
   const [tipo, setTipo] = useState<TipoGrafico>("barras");
   const [estoquePizza, setEstoquePizza] = useState<EstoquePizza>("fisico");
 
@@ -72,25 +62,39 @@ function Graficos() {
       return m;
     },
   });
+  const { data: vendasMl } = useQuery({
+    queryKey: ["ml-estoque", empresa?.id, "vendas"],
+    enabled: !!empresa?.id,
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("ml_vendas").select("sku, unidades").eq("empresa_id", empresa!.id);
+      const m = new Map<string, number>();
+      for (const r of data ?? []) m.set(String(r.sku).trim().toUpperCase(), r.unidades);
+      return m;
+    },
+  });
   const linhasReais: Linha[] = useMemo(() => (empresa?.marcas ?? []).flatMap((m) =>
-    m.produtos.map((p) => ({ sku: p.codigo, cod: p.cod, nome: p.nome, marca: m.slug, marcaNome: m.nome, fisico: p.estoque, full: fullMl?.size ? (fullMl.get(p.codigo.trim().toUpperCase()) ?? 0) : null, vendas: null }))), [empresa, fullMl]);
+    m.produtos.map((p) => {
+      const k = p.codigo.trim().toUpperCase();
+      return { sku: p.codigo, cod: p.cod, nome: p.nome, marca: m.slug, marcaNome: m.nome, fisico: p.estoque, full: fullMl?.size ? (fullMl.get(k) ?? 0) : null, vendas: vendasMl?.size ? (vendasMl.get(k) ?? 0) : null };
+    })), [empresa, fullMl, vendasMl]);
 
   const termo = busca.trim().toLowerCase();
-  const base = (demo ? DEMO : linhasReais).filter((l) =>
-    (demo || marca === "todas" || l.marca === marca) &&
+  const base = linhasReais.filter((l) =>
+    (marca === "todas" || l.marca === marca) &&
     (!termo || [l.nome, l.sku, l.cod].some((v) => v.toLowerCase().includes(termo))));
   const linhas = base.map((l) => ({ ...l, situacao: classificarReposicao(l.full, l.vendas), sugestao: sugerirReposicao(l.full, l.fisico, l.vendas) }));
   const visiveis = filtro === "todos" ? linhas : linhas.filter((l) => l.situacao === filtro);
   const comFull = linhas.filter((l) => l.full !== null);
-  const comVendas = linhas.filter((l) => l.full !== null && l.vendas !== null);
-
-  function trocarEmpresa(s: string) { setSlug(s); setMarca("todas"); }
+  const comVendas = linhas.filter((l) => l.full !== null && l.vendas !== null && (l.vendas > 0 || (l.full ?? 0) > 0));
 
   return (
     <div className="relative min-h-screen bg-estoque-canvas px-5 py-8 sm:px-8 lg:px-10">
       <div className="pointer-events-none absolute inset-0 bg-gerenciar-atmosphere" aria-hidden="true" />
       <div className="relative mx-auto max-w-7xl">
-        <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Voltar ao início</Link>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Voltar ao início</Link>
+          <BarraEmpresa />
+        </div>
 
         <header className="mt-6 flex flex-col gap-5 border-b border-border pb-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-5">
@@ -99,29 +103,18 @@ function Graficos() {
               <div className="mt-2 h-1 w-16 rounded-full bg-section" />
             </div>
             <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="font-display text-5xl font-bold text-foreground">Gráficos</h1>
-                {demo && <span className="rounded-full border border-section px-4 py-1 text-xs font-semibold uppercase tracking-wide text-section">Dados fictícios — demonstração</span>}
-              </div>
+              <h1 className="font-display text-5xl font-bold text-foreground">Gráficos</h1>
               <p className="mt-1 text-lg text-muted-foreground">Compare o estoque e acompanhe a reposição do Full.</p>
             </div>
           </div>
           <div className="flex flex-col items-start gap-2 lg:items-end">
-            <Select value={slugAtivo} onValueChange={trocarEmpresa}>
-              <SelectTrigger className="h-12 w-64 gap-2" aria-label="Empresa visualizada"><Building2 className="h-5 w-5 text-section" /><SelectValue /></SelectTrigger>
-              <SelectContent>{empresas.map((e) => <SelectItem key={e.slug} value={e.slug}>{e.nome}</SelectItem>)}</SelectContent>
-            </Select>
             {empresa?.id && <SincronizarMl empresaId={empresa.id} />}
-            <label className="flex items-center gap-2 text-sm text-muted-foreground"><Switch checked={demo} onCheckedChange={setDemo} />Modo demonstração</label>
           </div>
         </header>
 
         <div className="mt-5 grid gap-3 md:grid-cols-[14rem_14rem_1fr]">
-          <Select value={periodo} onValueChange={setPeriodo}>
-            <SelectTrigger className="h-11 gap-2"><CalendarDays className="h-4 w-4 text-section" /><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="7">Últimos 7 dias</SelectItem><SelectItem value="30">Últimos 30 dias</SelectItem><SelectItem value="90">Últimos 90 dias</SelectItem></SelectContent>
-          </Select>
-          <Select value={marca} onValueChange={setMarca} disabled={demo}>
+          <div className="flex h-11 items-center gap-2 rounded-md border border-input px-3 text-sm text-foreground"><CalendarDays className="h-4 w-4 text-section" />Vendas: últimos 30 dias</div>
+          <Select value={marca} onValueChange={setMarca}>
             <SelectTrigger className="h-11 gap-2"><Tag className="h-4 w-4 text-section" /><SelectValue /></SelectTrigger>
             <SelectContent><SelectItem value="todas">Todas as marcas</SelectItem>{(empresa?.marcas ?? []).map((m) => <SelectItem key={m.slug} value={m.slug}>{m.nome}</SelectItem>)}</SelectContent>
           </Select>
@@ -188,7 +181,7 @@ function Graficos() {
             </table>
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs italic text-muted-foreground">{demo ? "Dados ilustrativos. " : ""}Estoque físico e estoque Full são acompanhados separadamente.</p>
+            <p className="text-xs italic text-muted-foreground">Estoque físico e estoque Full são acompanhados separadamente.</p>
             <TooltipProvider>
               <div className="flex gap-3">
                 {([["Gerar Full", FileText], ["Criar pedido", ShoppingCart]] as const).map(([r, I]) => (
@@ -200,7 +193,7 @@ function Graficos() {
           <p className="mt-2 text-right text-xs text-muted-foreground">Disponível após a integração com o Mercado Livre.</p>
         </section>
 
-        {!demo && slugAtivo && <ReposicaoFisica empresaSlug={slugAtivo} titulo="Reposição do estoque físico" />}
+        {slugAtivo && <ReposicaoFisica empresaSlug={slugAtivo} titulo="Reposição do estoque físico" />}
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { BarraEmpresa } from "@/components/BarraEmpresa";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -71,7 +72,7 @@ function PedidosPage() {
     <div className="relative min-h-screen overflow-hidden bg-estoque-canvas">
       <div className="pointer-events-none absolute inset-0 bg-gerenciar-atmosphere" aria-hidden="true" />
       <div className="relative mx-auto max-w-7xl px-5 py-7 sm:px-8 sm:py-9 lg:px-12 lg:py-10">
-        <Button variant="ghost" asChild className="group -ml-3 gap-2 text-muted-foreground hover:text-foreground"><Link to="/"><ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />Voltar ao início</Link></Button>
+        <div className="flex flex-wrap items-center justify-between gap-3"><Button variant="ghost" asChild className="group -ml-3 gap-2 text-muted-foreground hover:text-foreground"><Link to="/"><ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />Voltar ao início</Link></Button><BarraEmpresa /></div>
         <header className="mt-7 flex items-center gap-4"><div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md section-icon text-foreground"><PackagePlus className="h-9 w-9" /></div><div><h1 className="font-display text-4xl font-bold text-foreground sm:text-5xl">Pedidos</h1><p className="mt-1 text-muted-foreground">Monte as listas e confirme quando os produtos chegarem.</p></div></header>
         <div className="mt-5 h-1 w-16 rounded-full bg-section" />
 
