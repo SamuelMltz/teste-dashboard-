@@ -227,6 +227,19 @@ function Painel({ empresaAtual }: { empresaAtual: EmpresaAtual }) {
               </Link>
             </Button>
             <Button
+              asChild
+              variant="ghost"
+              title={menuRecolhido ? "Registros" : undefined}
+              className={`h-12 w-full text-muted-foreground hover:text-foreground ${
+                menuRecolhido ? "justify-start gap-4 md:justify-center md:px-0" : "justify-start gap-4"
+              }`}
+            >
+              <Link to="/logs">
+                <History className="h-5 w-5" aria-hidden="true" />
+                <span className={menuRecolhido ? "md:sr-only" : undefined}>Registros</span>
+              </Link>
+            </Button>
+            <Button
               type="button"
               variant="ghost"
               title={menuRecolhido ? "Configurações" : undefined}
