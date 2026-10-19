@@ -29,7 +29,7 @@ import {
   Menu,
   X,
   Users,
-  History,
+  History as HistoryIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { listarEmpresas } from "@/lib/empresas.functions";
@@ -236,7 +236,7 @@ function Painel({ empresaAtual }: { empresaAtual: EmpresaAtual }) {
               }`}
             >
               <Link to="/logs">
-                <History className="h-5 w-5" aria-hidden="true" />
+                <HistoryIcon className="h-5 w-5" aria-hidden="true" />
                 <span className={menuRecolhido ? "md:sr-only" : undefined}>Registros</span>
               </Link>
             </Button>
