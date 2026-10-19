@@ -91,10 +91,17 @@ function Graficos() {
   const navigate = useNavigate();
   const [gerando, setGerando] = useState(false);
 
+  const [marcaPedido, setMarcaPedido] = useState("");
+
   async function gerar(tipoDoc: "full" | "pedido") {
     if (!empresa?.id || gerando) return;
+    if (tipoDoc === "pedido" && !marcaPedido) { toast.error("Escolha a marca do pedido."); return; }
     const campo = tipoDoc === "full" ? "enviar" : "comprar";
-    const escolhidos = linhas.filter((l) => (l.sugestao?.[campo] ?? 0) > 0 && l.sku.trim());
+    // Ignora filtros da tela: Full usa todas as marcas da empresa; pedido usa só a marca escolhida.
+    const escolhidos = linhasReais
+      .filter((l) => tipoDoc === "full" || l.marca === marcaPedido)
+      .map((l) => ({ ...l, sugestao: sugerirReposicao(l.full, l.fisico, l.vendas) }))
+      .filter((l) => (l.sugestao?.[campo] ?? 0) > 0 && l.sku.trim());
     if (!escolhidos.length) { toast.info(tipoDoc === "full" ? "Nenhum produto precisa ser enviado ao Full." : "Nenhum produto precisa ser comprado."); return; }
     if (!confirm(`Criar ${tipoDoc === "full" ? "um Full" : "um rascunho de pedido"} com ${escolhidos.length} produto(s)? O estoque não muda agora.`)) return;
     setGerando(true);
