@@ -29,6 +29,7 @@ import {
   Menu,
   X,
   Users,
+  History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { listarEmpresas } from "@/lib/empresas.functions";
