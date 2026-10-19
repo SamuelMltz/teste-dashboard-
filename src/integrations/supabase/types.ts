@@ -590,6 +590,33 @@ export type Database = {
           },
         ]
       }
+      sistema_logs: {
+        Row: {
+          acao: string
+          created_at: string
+          detalhe: string
+          empresa_id: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string
+          detalhe?: string
+          empresa_id?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string
+          detalhe?: string
+          empresa_id?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -642,6 +669,17 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      listar_logs: {
+        Args: never
+        Returns: {
+          acao: string
+          created_at: string
+          detalhe: string
+          email: string
+          empresa: string
+          id: string
+        }[]
       }
       listar_usuarios_admin: {
         Args: never
