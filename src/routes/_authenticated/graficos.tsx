@@ -121,7 +121,7 @@ function Graficos() {
         navigate({ to: "/full/$id", params: { id: c.id } });
       } else {
         const { data: emp } = await supabase.from("empresas").select("endereco").eq("id", empresa.id).maybeSingle();
-        const { data: p, error } = await supabase.from("pedidos").insert({ nome: "Pedido gerado pelos gráficos", fornecedor: empresa.nome, empresa_id: empresa.id, created_by: u.user.id, data_pedido: hoje, endereco_entrega: emp?.endereco ?? "", rascunho: true }).select("id").single();
+        const { data: p, error } = await supabase.from("pedidos").insert({ nome: (empresa.marcas.find((m) => m.slug === marcaPedido)?.nome ?? "Pedido gerado pelos gráficos").slice(0, 120), fornecedor: empresa.nome, empresa_id: empresa.id, created_by: u.user.id, data_pedido: hoje, endereco_entrega: emp?.endereco ?? "", rascunho: true }).select("id").single();
         if (error) throw error;
         const { error: ei } = await supabase.from("pedido_itens").insert(itens.map((i) => ({ ...i, pedido_id: p.id })));
         if (ei) throw ei;
@@ -228,8 +228,9 @@ function Graficos() {
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs italic text-muted-foreground">Estoque físico e estoque Full são acompanhados separadamente.</p>
             <TooltipProvider>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <Dica><TooltipTrigger asChild><span tabIndex={0}><Button disabled={gerando} onClick={() => gerar("full")} variant="outline" className="h-11 gap-2 border-section/60 text-section"><FileText className="h-4 w-4" />Gerar Full</Button></span></TooltipTrigger><TooltipContent>Cria um Full com as quantidades da coluna "A enviar".</TooltipContent></Dica>
+                <Select value={marcaPedido} onValueChange={setMarcaPedido}><SelectTrigger className="h-11 w-48"><SelectValue placeholder="Marca do pedido" /></SelectTrigger><SelectContent>{(empresa?.marcas ?? []).map((m) => <SelectItem key={m.slug} value={m.slug}>{m.nome}</SelectItem>)}</SelectContent></Select>
                 <Dica><TooltipTrigger asChild><span tabIndex={0}><Button disabled={gerando} onClick={() => gerar("pedido")} variant="outline" className="h-11 gap-2 border-section/60 text-section"><ShoppingCart className="h-4 w-4" />Criar pedido</Button></span></TooltipTrigger><TooltipContent>Cria um rascunho de pedido com a coluna "A comprar".</TooltipContent></Dica>
               </div>
             </TooltipProvider>
