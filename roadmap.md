@@ -31,9 +31,9 @@
 - [x] Agrupar a pizza por marca com Estoque físico, Estoque Full e Ambos; validar cálculos, legenda, informação ao passar o mouse e estado vazio.
 
 ## Ajustes pontuais (feitos aos poucos, com os créditos diários)
-- [ ] 1. Criar pedido: escolher marca (uma marca por pedido), ignorando filtros; quantidades editáveis.
-- [ ] 2. Gerar Full: todas as marcas da empresa, ignorando filtros; quantidades editáveis.
-- [ ] 3. Full confirmado não mostra mais contagem regressiva; mostra data de envio.
+- [x] 1. Criar pedido: escolher marca (uma marca por pedido), ignorando filtros; quantidades editáveis.
+- [x] 2. Gerar Full: todas as marcas da empresa, ignorando filtros; quantidades editáveis.
+- [x] 3. Full confirmado não mostra mais contagem regressiva; mostra data de envio.
 - [ ] 4. Priorizar vendas 30 dias sobre mínimo manual; separar "sem dados" de "zero vendas".
 - [ ] 5. Tela de comparação entre dois meses (com filtro de marca).
 - [ ] 6. Ranking: 3 mais vendidos / 3 menos vendidos (30 dias).
