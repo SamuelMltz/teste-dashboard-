@@ -107,7 +107,7 @@ export function DetalhesDocumento({ tipo, id }: { tipo: Tipo; id: string }) {
   useEffect(() => { setPendentesState(lerPendentes(tipo, id)); }, [tipo, id]);
   function setPendentes(lista: Pendente[]) { setPendentesState(lista); salvarPendentes(tipo, id, lista); }
 
-  const atualizar = () => queryClient.invalidateQueries({ queryKey: chave });
+  const atualizar = () => Promise.all([queryClient.invalidateQueries({ queryKey: chave }), queryClient.invalidateQueries({ queryKey: ["full-prazos"] })]);
   const doc = data?.doc;
   const editavel = doc?.status === c.planejado;
 
