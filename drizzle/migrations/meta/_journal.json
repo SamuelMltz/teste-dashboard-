@@ -134,6 +134,13 @@
       "when": 1792409312609,
       "tag": "0018_sistema_logs",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792522481165,
+      "tag": "0019_reposicao_prioriza_vendas",
+      "breakpoints": true
     }
   ]
 }
