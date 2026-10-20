@@ -29,3 +29,13 @@ export function prepararFatias<T extends { marca: string; marcaNome?: string; fi
 
   return { fatias, total };
 }
+
+/** Divide o estoque total (Full + físico) das linhas já filtradas; nunca divide por zero. */
+export function dividirEstoque(linhas: { fisico: number | null; full: number | null }[]) {
+  const q = (v: number | null) => (typeof v === "number" && Number.isFinite(v) && v > 0 ? v : 0);
+  const full = linhas.reduce((s, l) => s + q(l.full), 0);
+  const fisico = linhas.reduce((s, l) => s + q(l.fisico), 0);
+  const total = full + fisico;
+  const pct = (v: number) => (total > 0 ? Math.round((v / total) * 1000) / 10 : 0);
+  return { full, fisico, total, pctFull: pct(full), pctFisico: pct(fisico) };
+}

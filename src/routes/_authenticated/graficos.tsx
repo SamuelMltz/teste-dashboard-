@@ -174,14 +174,11 @@ function Graficos() {
 
         {tipo === "pizza" ? (
           <div className="mt-4">
-            <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="Estoque do gráfico de pizza">
-              {([["fisico", "Estoque físico"], ["full", "Estoque Full"], ["ambos", "Ambos"]] as const).map(([v, r]) => (
-                <Button key={v} variant="outline" size="sm" onClick={() => setEstoquePizza(v)} aria-pressed={estoquePizza === v} className={estoquePizza === v ? "border-section bg-section/20 font-semibold text-section" : ""}>{r}</Button>
-              ))}
-            </div>
-            <Painel titulo="Estoque por marca" sub={estoquePizza === "fisico" ? "Estoque físico" : estoquePizza === "full" ? "Estoque Full" : "Estoque físico + Full"} legenda={[]}>
-              <GraficoPizza dados={base} estoque={estoquePizza} cor={estoquePizza === "full" ? COR.full : COR.fisico} />
-            </Painel>
+            <section className="estoque-card rounded-md border border-border p-5">
+              <h2 className="font-display text-xl font-semibold text-foreground">Divisão do estoque</h2>
+              <p className="text-sm text-muted-foreground">Full × físico</p>
+              <RoscaEstoque dados={base} />
+            </section>
           </div>
         ) : <div className="mt-4 grid gap-5 lg:grid-cols-[3fr_2fr]">
           <Painel titulo="Estoque Full × estoque físico" sub="Compare as quantidades por produto" legenda={[["Full", COR.full], ["Físico", COR.fisico]]}>
@@ -285,12 +282,53 @@ function Grafico({ dados, series }: { dados: Linha[]; series: [keyof Linha, stri
   );
 }
 
+function RoscaEstoque({ dados }: { dados: Linha[] }) {
+  const d = dividirEstoque(dados);
+  const fmt = (n: number) => n.toLocaleString("pt-BR");
+  const itens = [
+    { nome: "Full", valor: d.full, percentual: d.pctFull, cor: "var(--dashboard-green)" },
+    { nome: "Físico", valor: d.fisico, percentual: d.pctFisico, cor: "var(--dashboard-blue)" },
+  ];
+  const fatias = d.total > 0 ? itens.filter((i) => i.valor > 0) : [{ nome: "Sem estoque", valor: 1, percentual: 0, cor: "var(--muted)" }];
+  return (
+    <div className="mt-4 flex flex-col items-center gap-6 sm:flex-row">
+      <div className="relative h-64 w-full sm:w-1/2">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie data={fatias} dataKey="valor" nameKey="nome" innerRadius="58%" outerRadius="88%" paddingAngle={fatias.length > 1 ? 2 : 0} stroke="var(--background)" strokeWidth={2} isAnimationActive={false}>
+              {fatias.map((f) => <Cell key={f.nome} fill={f.cor} />)}
+            </Pie>
+            {d.total > 0 && <Tooltip content={({ active, payload }) => {
+              const f = payload?.[0]?.payload;
+              if (!active || !f) return null;
+              return <div className="rounded-md border border-border bg-popover p-3 text-sm text-popover-foreground"><p className="font-semibold">Estoque {f.nome}</p><p>{fmt(f.valor)} unidades · {fmt(f.percentual)}%</p></div>;
+            }} />}
+          </PieChart>
+        </ResponsiveContainer>
+        {d.total === 0 && <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">Sem estoque</div>}
+      </div>
+      <div className="w-full space-y-3 sm:w-1/2">
+        {itens.map((i) => (
+          <div key={i.nome} className="flex items-center gap-3 text-foreground">
+            <span className="h-3 w-3 rounded-full" style={{ background: i.cor }} />
+            <span className="font-semibold">{i.nome}</span>
+            <span className="text-muted-foreground">— {fmt(i.percentual)}% · {fmt(i.valor)} unidades</span>
+          </div>
+        ))}
+        <div className="border-t border-border pt-3 font-display text-2xl font-semibold text-foreground">
+          Total — {d.total > 0 ? "100" : "0"}% · {fmt(d.total)} unidades
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** Fatias vão ficando mais claras conforme a posição, sempre na cor da série. */
 function opacidadeFatia(i: number, total: number) {
   return total <= 1 ? 1 : 1 - (i * 0.6) / (total - 1);
 }
 
-function GraficoPizza({ dados, estoque, cor }: { dados: Linha[]; estoque: EstoquePizza; cor: string }) {
+export function GraficoPizza({ dados, estoque, cor }: { dados: Linha[]; estoque: EstoquePizza; cor: string }) {
   const { fatias, total } = prepararFatias(dados, estoque);
   if (fatias.length === 0) return <Vazio texto="Sem dados de estoque para os filtros selecionados" />;
   return (
