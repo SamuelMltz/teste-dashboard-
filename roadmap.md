@@ -34,7 +34,7 @@
 - [x] 1. Criar pedido: escolher marca (uma marca por pedido), ignorando filtros; quantidades editáveis.
 - [x] 2. Gerar Full: todas as marcas da empresa, ignorando filtros; quantidades editáveis.
 - [x] 3. Full confirmado não mostra mais contagem regressiva; mostra data de envio.
-- [ ] 4. Priorizar vendas 30 dias sobre mínimo manual; separar "sem dados" de "zero vendas".
+- [x] 4. Priorizar vendas 30 dias sobre mínimo manual; separar "sem dados" de "zero vendas".
 - [ ] 5. Tela de comparação entre dois meses (com filtro de marca).
 - [ ] 6. Ranking: 3 mais vendidos / 3 menos vendidos (30 dias).
 - [ ] 7. Gráficos agrupados por marca, com opção de ver produtos de uma marca.

@@ -17,6 +17,9 @@ describe("lista de compras", () => {
   });
   it("alvo arredonda para cima", () => expect(calcularReposicao(0, 7, 0).alvo).toBe(10));
   it("mínimo zero fica sem sugestão", () => expect(calcularReposicao(0, 0, 0)).toMatchObject({ situacao: "sem-minimo", sugestao: 0 }));
+  it("vendas 30 dias têm prioridade sobre o mínimo", () => expect(calcularReposicao(8, 10, 0, undefined, 20)).toMatchObject({ alvo: 26, sugestao: 18 }));
+  it("zero vendas usa o mínimo manual", () => expect(calcularReposicao(8, 10, 0, undefined, 0)).toMatchObject({ alvo: 13, sugestao: 5 }));
+  it("sem dados de vendas usa o mínimo e diz isso", () => expect(calcularReposicao(8, 10, 0, undefined, null).justificativa).toContain("sem dados"));
   it("percentuais configuráveis", () => expect(calcularReposicao(10, 10, 0, { atencaoPct: 120, alvoPct: 200 }).sugestao).toBe(10));
   it("recebimento parcial conta só o saldo; recebidos e cancelados não contam", () => {
     expect(saldoPendente({ quantidade: 10, quantidade_recebida: 4 }, "planejado")).toBe(6);

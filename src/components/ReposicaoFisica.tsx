@@ -21,10 +21,14 @@ type Dados = { empresa: { id: string; slug: string; nome: string; cnpj: string; 
 async function carregar(slug: string): Promise<Dados> {
   const { data: e, error: e1 } = await db.from("empresas").select("id, slug, nome, cnpj, reposicao_atencao_pct, reposicao_alvo_pct").eq("slug", slug).single();
   if (e1) throw e1;
-  const [prodRes, itensRes] = await Promise.all([
+  const [prodRes, itensRes, vendasRes] = await Promise.all([
     supabase.from("produtos").select("id, nome, codigo, cod, estoque, estoque_minimo, ordem, marcas!inner(nome, ordem, empresa_id)").eq("marcas.empresa_id", e.id).order("ordem"),
     db.from("pedido_itens").select("produto_id, quantidade, quantidade_recebida, pedidos!inner(id, numero, status, rascunho)").eq("pedidos.status", "planejado"),
+    db.from("ml_vendas").select("sku, unidades").eq("empresa_id", e.id),
   ]);
+  const vendas = new Map<string, number>();
+  for (const v of vendasRes.data ?? []) { const k = String(v.sku).trim().toUpperCase(); vendas.set(k, (vendas.get(k) ?? 0) + v.unidades); }
+  const temVendas = vendas.size > 0;
   if (prodRes.error) throw prodRes.error;
   if (itensRes.error) throw itensRes.error;
   const cfg = { atencaoPct: e.reposicao_atencao_pct, alvoPct: e.reposicao_alvo_pct };
@@ -39,7 +43,7 @@ async function carregar(slug: string): Promise<Dados> {
     const m = Array.isArray(p.marcas) ? p.marcas[0] : p.marcas;
     const pedidos = abertos.get(p.id) ?? [];
     const pendente = pedidos.reduce((s, x) => s + x.pendente, 0);
-    return { id: p.id, sku: p.codigo, cod: p.cod, nome: p.nome, marca: m?.nome ?? "", marcaOrdem: m?.ordem ?? 0, fisico: p.estoque, minimo: p.estoque_minimo, pendente, pedidos, calc: calcularReposicao(p.estoque, p.estoque_minimo, pendente, cfg) };
+    return { id: p.id, sku: p.codigo, cod: p.cod, nome: p.nome, marca: m?.nome ?? "", marcaOrdem: m?.ordem ?? 0, fisico: p.estoque, minimo: p.estoque_minimo, pendente, pedidos, calc: calcularReposicao(p.estoque, p.estoque_minimo, pendente, cfg, temVendas ? (vendas.get(p.codigo.trim().toUpperCase()) ?? 0) : null) };
   }).sort((a, b) => a.marcaOrdem - b.marcaOrdem);
   return { empresa: { id: e.id, slug: e.slug, nome: e.nome, cnpj: e.cnpj, atencao: cfg.atencaoPct, alvo: cfg.alvoPct }, linhas };
 }

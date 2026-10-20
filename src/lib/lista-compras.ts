@@ -14,15 +14,25 @@ export type CalculoReposicao = {
   justificativa: string;
 };
 
-export function calcularReposicao(fisico: number, minimo: number, pendente: number, cfg: ConfigReposicao = CONFIG_PADRAO): CalculoReposicao {
+/** Origem da referência: vendas 30 dias têm prioridade; "zero vendas" e "sem dados" usam o mínimo manual. */
+export type OrigemReferencia = "vendas" | "zero-vendas" | "sem-dados";
+export function referenciaReposicao(minimoManual: number, vendas: number | null | undefined): { referencia: number; origem: OrigemReferencia } {
+  if (vendas === null || vendas === undefined) return { referencia: minimoManual, origem: "sem-dados" };
+  if (vendas <= 0) return { referencia: minimoManual, origem: "zero-vendas" };
+  return { referencia: vendas, origem: "vendas" };
+}
+
+export function calcularReposicao(fisico: number, minimoManual: number, pendente: number, cfg: ConfigReposicao = CONFIG_PADRAO, vendas?: number | null): CalculoReposicao {
+  const { referencia: minimo, origem } = referenciaReposicao(minimoManual, vendas);
+  const nomeRef = origem === "vendas" ? "vendas 30 dias" : origem === "zero-vendas" ? "mínimo (zero vendas)" : "mínimo (sem dados de vendas)";
   if (!minimo || minimo <= 0) return { situacao: "sem-minimo", alvo: null, necessidade: 0, sugestao: 0, cobertura: "sem-necessidade", justificativa: "Mínimo não definido" };
   const situacao: SituacaoFisica = fisico < minimo ? "abaixo" : fisico * 100 <= minimo * cfg.atencaoPct ? "proximo" : "ok";
   const alvo = Math.ceil((minimo * cfg.alvoPct) / 100);
-  if (situacao === "ok") return { situacao, alvo, necessidade: 0, sugestao: 0, cobertura: "sem-necessidade", justificativa: `Acima de ${cfg.atencaoPct}% do mínimo` };
+  if (situacao === "ok") return { situacao, alvo, necessidade: 0, sugestao: 0, cobertura: "sem-necessidade", justificativa: `Acima de ${cfg.atencaoPct}% de ${nomeRef}` };
   const necessidade = Math.max(0, alvo - fisico);
   const sugestao = Math.max(0, necessidade - Math.max(0, pendente));
   const cobertura: Cobertura = necessidade === 0 ? "sem-necessidade" : sugestao === 0 ? "coberto" : pendente > 0 ? "parcial" : "a-comprar";
-  return { situacao, alvo, necessidade, sugestao, cobertura, justificativa: `Alvo ${alvo} (${cfg.alvoPct}% de ${minimo}) − físico ${fisico} − em pedidos ${pendente} = ${sugestao}` };
+  return { situacao, alvo, necessidade, sugestao, cobertura, justificativa: `Alvo ${alvo} (${cfg.alvoPct}% de ${minimo}, ${nomeRef}) − físico ${fisico} − em pedidos ${pendente} = ${sugestao}` };
 }
 
 /** Saldo ainda não recebido de um item de pedido em aberto. */
