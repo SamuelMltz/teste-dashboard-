@@ -23,7 +23,7 @@ export function matizCobertura(dias: number): number {
   if (dias <= 14) return 0;
   if (dias >= 60) return 140;
   for (let i = 1; i < PONTOS.length; i++) {
-    const [d1, h1] = PONTOS[i - 1], [d2, h2] = PONTOS[i];
+    const [d1, h1] = PONTOS[i - 1]!, [d2, h2] = PONTOS[i]!;
     if (dias <= d2) return h1 + ((dias - d1) / (d2 - d1)) * (h2 - h1);
   }
   return 140;
