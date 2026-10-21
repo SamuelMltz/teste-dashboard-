@@ -6,6 +6,7 @@ import { ArrowLeft, BarChart3, CalendarDays, FileText, Package, PieChart as Pizz
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ReposicaoFisica } from "@/components/ReposicaoFisica";
 import { SincronizarMl } from "@/components/SincronizarMl";
+import { IndicadorCoberturaFull } from "@/components/IndicadorCoberturaFull";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { listarEmpresas } from "@/lib/empresas.functions";
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/graficos")({
   component: Graficos,
 });
 
-type Linha = { sku: string; cod: string; nome: string; marca: string; marcaNome?: string; fisico: number; full: number | null; vendas: number | null };
+type Linha = { sku: string; cod: string; nome: string; marca: string; marcaNome?: string; fisico: number; full: number | null; vendas: number | null; vendasFull: number | null };
 
 
 const COR = { full: "var(--graficos-full)", fisico: "var(--graficos-fisico)", vendas: "var(--graficos-vendas)" };
@@ -68,16 +69,18 @@ function Graficos() {
     queryKey: ["ml-estoque", empresa?.id, "vendas"],
     enabled: !!empresa?.id,
     queryFn: async () => {
-      const { data } = await (supabase as any).from("ml_vendas").select("sku, unidades").eq("empresa_id", empresa!.id);
+      const { data } = await (supabase as any).from("ml_vendas").select("sku, unidades, unidades_full").eq("empresa_id", empresa!.id);
       const m = new Map<string, number>();
-      for (const r of data ?? []) m.set(String(r.sku).trim().toUpperCase(), r.unidades);
-      return m;
+      const f = new Map<string, number>();
+      for (const r of data ?? []) { const k = String(r.sku).trim().toUpperCase(); m.set(k, r.unidades); f.set(k, r.unidades_full ?? 0); }
+      return Object.assign(m, { full: f });
     },
   });
   const linhasReais: Linha[] = useMemo(() => (empresa?.marcas ?? []).flatMap((m) =>
     m.produtos.map((p) => {
       const k = p.codigo.trim().toUpperCase();
-      return { sku: p.codigo, cod: p.cod, nome: p.nome, marca: m.slug, marcaNome: m.nome, fisico: p.estoque, full: fullMl?.size ? (fullMl.get(k) ?? 0) : null, vendas: vendasMl?.size ? (vendasMl.get(k) ?? 0) : null };
+      const temVendas = !!vendasMl?.size;
+      return { sku: p.codigo, cod: p.cod, nome: p.nome, marca: m.slug, marcaNome: m.nome, fisico: p.estoque, full: fullMl?.size ? (fullMl.get(k) ?? 0) : null, vendas: temVendas ? (vendasMl!.get(k) ?? 0) : null, vendasFull: temVendas ? (vendasMl!.full.get(k) ?? 0) : null };
     })), [empresa, fullMl, vendasMl]);
 
   const termo = busca.trim().toLowerCase();
@@ -203,18 +206,19 @@ function Graficos() {
           <div className="mt-4 overflow-x-auto rounded-md border border-border">
             <table className="w-full min-w-[760px] text-sm">
               <thead className="border-b border-border text-left text-xs uppercase text-muted-foreground">
-                <tr>{["SKU", "Produto", "Full", "Físico", "Vendas 30 dias", "A enviar", "A comprar"].map((h) => <th key={h} className="px-4 py-3 font-semibold">{h}</th>)}</tr>
+                <tr>{["SKU", "Produto", "Estoque físico", "Estoque Full", "Vendas em 30 dias", "Cobertura Full", "A enviar", "A comprar"].map((h) => <th key={h} className="px-4 py-3 font-semibold">{h}</th>)}</tr>
               </thead>
               <tbody>
                 {visiveis.length === 0 ? (
-                  <tr><td colSpan={7} className="py-10 text-center text-muted-foreground"><Package className="mx-auto mb-2 h-8 w-8 text-section" />{linhas.length === 0 ? "Nenhum produto encontrado." : "Os produtos aparecerão após a sincronização."}</td></tr>
+                  <tr><td colSpan={8} className="py-10 text-center text-muted-foreground"><Package className="mx-auto mb-2 h-8 w-8 text-section" />{linhas.length === 0 ? "Nenhum produto encontrado." : "Os produtos aparecerão após a sincronização."}</td></tr>
                 ) : visiveis.map((l) => (
                   <tr key={l.sku + l.nome} className="border-b border-border last:border-0">
                     <td className="px-4 py-3 text-foreground">{l.sku || "—"}</td>
                     <td className="px-4 py-3 text-foreground">{l.nome}</td>
-                    <td className="px-4 py-3"><CelulaFull valor={l.full} situacao={l.situacao} /></td>
                     <td className="px-4 py-3 text-foreground">{l.fisico}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{l.vendas === null || l.vendas <= 0 ? "Sem referência de vendas" : l.vendas}</td>
+                    <td className="px-4 py-3"><CelulaFull valor={l.full} situacao={l.situacao} /></td>
+                    <td className="px-4 py-3 text-muted-foreground">{l.vendas === null ? "Dados indisponíveis" : l.vendas <= 0 ? "Sem vendas nos últimos 30 dias" : l.vendas}</td>
+                    <td className="px-4 py-3"><IndicadorCoberturaFull full={l.full} vendasFull={l.vendasFull} /></td>
                     <td className="px-4 py-3 text-foreground">{l.sugestao?.enviar ?? "—"}</td>
                     <td className="px-4 py-3 text-foreground">{l.sugestao?.comprar ?? "—"}</td>
                   </tr>
