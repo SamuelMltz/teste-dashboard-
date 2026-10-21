@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { listarEmpresas } from "@/lib/empresas.functions";
 import { useEmpresaObrigatoria } from "@/lib/use-empresa-obrigatoria";
 import { BarraEmpresa } from "@/components/BarraEmpresa";
-import { prepararFatias, type EstoquePizza } from "@/lib/graficos";
+import { dividirEstoque, prepararFatias, type EstoquePizza } from "@/lib/graficos";
 import { classificarReposicao, sugerirReposicao, type SituacaoReposicao } from "@/lib/reposicao";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
