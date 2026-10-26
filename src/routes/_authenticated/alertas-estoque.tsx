@@ -39,7 +39,7 @@ function AlertasEstoque() {
             <div className="flex h-14 w-14 items-center justify-center rounded-md bg-dashboard-red-icon text-foreground shadow-dashboard-red">
               <AlertTriangle className="h-8 w-8" aria-hidden="true" />
             </div>
-            <div><h1 className="font-display text-3xl font-bold text-foreground sm:text-5xl">Alertas de estoque</h1><p className="mt-1 text-muted-foreground">Produtos próximos ou abaixo da quantidade mínima.</p></div>
+            <div><h1 className="font-display text-3xl font-bold text-foreground sm:text-5xl">Alertas de estoque</h1><p className="mt-1 text-muted-foreground">Produtos próximos ou abaixo da quantidade mínima. Toque em um produto para abrir a marca e ajustar o estoque.</p></div>
           </div>
           <div className="mt-5 h-1 w-14 rounded-full bg-dashboard-red" aria-hidden="true" />
         </header>

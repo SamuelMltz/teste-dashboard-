@@ -88,6 +88,7 @@ export function Devolucoes() {
         <label className="grid gap-1 text-xs text-muted-foreground">Até<Input className="w-32" placeholder="DD/MM" value={ate} onChange={(e) => setAte(e.target.value)} /></label>
         <Button onClick={() => setNovo(true)} className="ml-auto gap-2 bg-section text-background hover:bg-section/90"><Plus className="h-4 w-4" />Nova devolução</Button>
       </div>
+      <p className="text-xs text-muted-foreground">Só devoluções aprovadas e aptas para revenda podem voltar ao estoque.</p>
 
       {error ? <p className="text-destructive">Não foi possível carregar as devoluções. Apenas administradores têm acesso.</p>
         : isLoading ? <p className="text-muted-foreground">Carregando…</p>

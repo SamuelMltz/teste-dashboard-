@@ -158,6 +158,7 @@ function Graficos() {
           </div>
           <div className="flex flex-col items-start gap-2 lg:items-end">
             {empresa?.id && <SincronizarMl empresaId={empresa.id} />}
+            <p className="text-xs text-muted-foreground">Sincronize para atualizar o estoque Full e as vendas de 30 dias.</p>
           </div>
         </header>
 

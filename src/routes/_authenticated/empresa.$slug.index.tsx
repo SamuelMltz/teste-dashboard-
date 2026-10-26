@@ -47,7 +47,7 @@ function EmpresaMarcas() {
             <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
               {empresa.nome}
             </h1>
-            <p className="text-sm text-muted-foreground">Marcas que a empresa vende</p>
+            <p className="text-sm text-muted-foreground">Marcas que a empresa vende · toque em uma para ver os produtos</p>
           </div>
         </header>
 
