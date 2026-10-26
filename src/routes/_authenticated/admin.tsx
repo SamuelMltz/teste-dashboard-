@@ -382,7 +382,7 @@ function ProdutoLinha({ produto, onChange, onDragStart }: { produto: Produto; on
     const n = texto === "" ? null : Number(texto);
     if (n !== null && (Number.isNaN(n) || n < 0)) { toast.error("Valor inválido."); return; }
     if (n === atual) return;
-    const { error } = await supabase.from("produtos").update({ [campo]: n }).eq("id", produto.id);
+    const { error } = await supabase.from("produtos").update(campo === "preco_custo" ? { preco_custo: n } : { preco_venda: n }).eq("id", produto.id);
     if (error) { toast.error("Não foi possível salvar o valor."); return; }
     toast.success(campo === "preco_custo" ? "Valor de compra atualizado" : "Valor de venda atualizado");
     onChange();
