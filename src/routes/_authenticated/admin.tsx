@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type Produto = { id: string; nome: string; codigo: string; cod: string; estoque: number; estoque_minimo: number; ordem: number };
+type Produto = { id: string; nome: string; codigo: string; cod: string; estoque: number; estoque_minimo: number; ordem: number; preco_custo: number | null; preco_venda: number | null };
 type Marca = { id: string; nome: string; slug: string; ordem: number; produtos: Produto[] };
 type Empresa = { id: string; nome: string; accent: string; marcas: Marca[] };
 
@@ -60,7 +60,7 @@ function AdminPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("empresas")
-        .select("id, nome, accent, marcas(id, nome, slug, ordem, produtos(id, nome, codigo, cod, estoque, estoque_minimo, ordem))")
+        .select("id, nome, accent, marcas(id, nome, slug, ordem, produtos(id, nome, codigo, cod, estoque, estoque_minimo, ordem, preco_custo, preco_venda))")
         .order("ordem");
       if (error) throw error;
       return (data as Empresa[]).map((empresa) => ({
@@ -219,6 +219,8 @@ function MarcaEditor({
   const [nome, setNome] = useState("");
   const [estoque, setEstoque] = useState("");
   const [estoqueMinimo, setEstoqueMinimo] = useState("");
+  const [custo, setCusto] = useState("");
+  const [venda, setVenda] = useState("");
   const [produtoArrastado, setProdutoArrastado] = useState<string | null>(null);
 
   async function addProduto(e: React.FormEvent) {
@@ -231,6 +233,8 @@ function MarcaEditor({
       nome: nome.trim(),
       estoque: Number(estoque) || 0,
       estoque_minimo: Number(estoqueMinimo) || 0,
+      preco_custo: custo === "" ? null : Number(custo),
+      preco_venda: venda === "" ? null : Number(venda),
       ordem: marca.produtos.length,
     });
     if (error) { toast.error("Não foi possível criar o produto."); return; }
@@ -239,6 +243,8 @@ function MarcaEditor({
     setNome("");
     setEstoque("");
     setEstoqueMinimo("");
+    setCusto("");
+    setVenda("");
     onChange();
   }
 
@@ -300,12 +306,14 @@ function MarcaEditor({
               </div>
             ))}
           </div>
-          <form onSubmit={addProduto} className="grid grid-cols-2 gap-2 px-3 pb-4 pt-3 sm:grid-cols-[100px_100px_minmax(0,1fr)_95px_95px_44px] sm:px-5">
+          <form onSubmit={addProduto} className="grid grid-cols-2 gap-2 px-3 pb-4 pt-3 sm:grid-cols-[100px_100px_minmax(0,1fr)_95px_95px_95px_95px_44px] sm:px-5">
             <Input className="h-10" placeholder="SKU" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
             <Input className="h-10" placeholder="COD" title="Código do fornecedor" value={cod} onChange={(e) => setCod(e.target.value)} />
             <Input className="h-10" placeholder="Novo produto" value={nome} onChange={(e) => setNome(e.target.value)} />
             <Input className="h-10" type="number" min={0} placeholder="Estoque" value={estoque} onChange={(e) => setEstoque(e.target.value)} />
             <Input className="h-10" type="number" min={0} placeholder="Mínimo" aria-label="Estoque mínimo" value={estoqueMinimo} onChange={(e) => setEstoqueMinimo(e.target.value)} />
+            <Input className="h-10" type="number" min={0} step="0.01" placeholder="Custo R$" title="Valor de compra (opcional)" value={custo} onChange={(e) => setCusto(e.target.value)} />
+            <Input className="h-10" type="number" min={0} step="0.01" placeholder="Venda R$" title="Valor de venda (opcional)" value={venda} onChange={(e) => setVenda(e.target.value)} />
             <Button type="submit" size="icon" className="gerenciar-primary h-10 w-full"><Plus className="h-5 w-5" /></Button>
           </form>
         </>
@@ -319,6 +327,8 @@ function ProdutoLinha({ produto, onChange, onDragStart }: { produto: Produto; on
   const [cod, setCod] = useState(produto.cod);
   const [estoque, setEstoque] = useState(String(produto.estoque));
   const [estoqueMinimo, setEstoqueMinimo] = useState(String(produto.estoque_minimo));
+  const [custo, setCusto] = useState(produto.preco_custo === null ? "" : String(produto.preco_custo));
+  const [venda, setVenda] = useState(produto.preco_venda === null ? "" : String(produto.preco_venda));
   const [nome, setNome] = useState(produto.nome);
 
   async function salvarNome() {
@@ -368,6 +378,16 @@ function ProdutoLinha({ produto, onChange, onDragStart }: { produto: Produto; on
     onChange();
   }
 
+  async function salvarPreco(campo: "preco_custo" | "preco_venda", texto: string, atual: number | null) {
+    const n = texto === "" ? null : Number(texto);
+    if (n !== null && (Number.isNaN(n) || n < 0)) { toast.error("Valor inválido."); return; }
+    if (n === atual) return;
+    const { error } = await supabase.from("produtos").update({ [campo]: n }).eq("id", produto.id);
+    if (error) { toast.error("Não foi possível salvar o valor."); return; }
+    toast.success(campo === "preco_custo" ? "Valor de compra atualizado" : "Valor de venda atualizado");
+    onChange();
+  }
+
   async function apagar() {
     if (!confirm(`Apagar "${produto.nome}"?`)) return;
     const { error } = await supabase.from("produtos").delete().eq("id", produto.id);
@@ -376,7 +396,7 @@ function ProdutoLinha({ produto, onChange, onDragStart }: { produto: Produto; on
   }
 
   return (
-    <div className="grid grid-cols-[32px_minmax(0,1fr)_minmax(0,1fr)_44px] items-center gap-2 sm:grid-cols-[32px_100px_100px_minmax(0,1fr)_95px_95px_36px]">
+    <div className="grid grid-cols-[32px_minmax(0,1fr)_minmax(0,1fr)_44px] items-center gap-2 sm:grid-cols-[32px_100px_100px_minmax(0,1fr)_95px_95px_95px_95px_36px]">
       <Button variant="ghost" size="icon" draggable onDragStart={onDragStart} aria-label={`Arrastar produto ${produto.nome}`} title="Arrastar para reordenar" className="h-9 w-8 text-muted-foreground">
         <GripVertical className="h-4 w-4" />
       </Button>
@@ -427,6 +447,32 @@ function ProdutoLinha({ produto, onChange, onDragStart }: { produto: Produto; on
         onChange={(e) => setEstoqueMinimo(e.target.value)}
         onBlur={salvarMinimo}
         onKeyDown={(e) => e.key === "Enter" && salvarMinimo()}
+      />
+      <Input
+        className="col-start-2 h-9 min-w-0 text-right sm:col-start-auto"
+        aria-label={`Valor de compra de ${produto.nome}`}
+        title="Valor de compra (opcional)"
+        type="number"
+        min={0}
+        step="0.01"
+        placeholder="Custo"
+        value={custo}
+        onChange={(e) => setCusto(e.target.value)}
+        onBlur={() => salvarPreco("preco_custo", custo, produto.preco_custo)}
+        onKeyDown={(e) => e.key === "Enter" && salvarPreco("preco_custo", custo, produto.preco_custo)}
+      />
+      <Input
+        className="col-start-3 h-9 min-w-0 text-right sm:col-start-auto"
+        aria-label={`Valor de venda de ${produto.nome}`}
+        title="Valor de venda (opcional)"
+        type="number"
+        min={0}
+        step="0.01"
+        placeholder="Venda"
+        value={venda}
+        onChange={(e) => setVenda(e.target.value)}
+        onBlur={() => salvarPreco("preco_venda", venda, produto.preco_venda)}
+        onKeyDown={(e) => e.key === "Enter" && salvarPreco("preco_venda", venda, produto.preco_venda)}
       />
       <Button variant="ghost" size="icon" onClick={apagar} aria-label="Apagar produto" className="col-start-4 h-9 w-9 sm:col-start-auto"><Trash2 className="h-4 w-4" /></Button>
     </div>
