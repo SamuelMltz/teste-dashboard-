@@ -141,6 +141,13 @@
       "when": 1792522481165,
       "tag": "0019_reposicao_prioriza_vendas",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793025135490,
+      "tag": "0020_valores_produtos",
+      "breakpoints": true
     }
   ]
 }

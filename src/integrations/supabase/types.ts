@@ -557,6 +557,8 @@ export type Database = {
           marca_id: string
           nome: string
           ordem: number
+          preco_custo: number | null
+          preco_venda: number | null
         }
         Insert: {
           cod?: string
@@ -568,6 +570,8 @@ export type Database = {
           marca_id: string
           nome: string
           ordem?: number
+          preco_custo?: number | null
+          preco_venda?: number | null
         }
         Update: {
           cod?: string
@@ -579,6 +583,8 @@ export type Database = {
           marca_id?: string
           nome?: string
           ordem?: number
+          preco_custo?: number | null
+          preco_venda?: number | null
         }
         Relationships: [
           {
