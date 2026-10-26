@@ -7,6 +7,7 @@ import { Bar, BarChart, CartesianGrid, Cell, LabelList, Pie, PieChart, Responsiv
 import { ReposicaoFisica } from "@/components/ReposicaoFisica";
 import { SincronizarMl } from "@/components/SincronizarMl";
 import { IndicadorCoberturaFull } from "@/components/IndicadorCoberturaFull";
+import { RankingVendas } from "@/components/RankingVendas";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { listarEmpresas } from "@/lib/empresas.functions";
@@ -195,6 +196,8 @@ function Graficos() {
             )}
           </Painel>
         </div>}
+
+        <RankingVendas itens={base} />
 
         <section className="estoque-card mt-5 rounded-md border border-border p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
