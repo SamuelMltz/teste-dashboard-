@@ -100,6 +100,7 @@ function FullPage() {
 
         <section className="mt-8 border-y border-border py-6" aria-labelledby="nova-carga">
           <h2 id="nova-carga" className="font-display text-xl font-semibold text-foreground">Novo planejamento</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Crie um Full ou importe um PDF; o estoque só é descontado ao confirmar o envio.</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(160px,0.4fr)_minmax(0,1fr)_auto_auto] sm:items-center">
             <p className="text-sm text-muted-foreground">{empresaAtual?.nome}</p>
             <Input value={nome} onChange={(event) => setNome(event.target.value)} placeholder="Nome do Full (opcional)" maxLength={120} />

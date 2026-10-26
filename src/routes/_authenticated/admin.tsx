@@ -108,7 +108,7 @@ function AdminPage() {
         </div>
         <header className="mt-5">
           <h1 className="font-display text-4xl font-bold text-foreground sm:text-5xl">Cadastro</h1>
-          <p className="mt-1 text-base text-muted-foreground sm:text-lg">Gerencie as marcas e seus produtos em um só lugar.</p>
+          <p className="mt-1 text-base text-muted-foreground sm:text-lg">Gerencie as marcas e seus produtos em um só lugar. Arraste para reordenar; as mudanças salvam automaticamente.</p>
           <div className="mt-4 h-1 w-12 rounded-full bg-section" aria-hidden="true" />
         </header>
 

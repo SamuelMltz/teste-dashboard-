@@ -135,6 +135,7 @@ export function ReposicaoFisica({ empresaSlug, titulo = "Lista de compras" }: { 
       <div className="mt-4 flex flex-wrap gap-2">{ABAS.map(([v, r]) => (
         <Button key={v} variant="outline" size="sm" onClick={() => setAba(v)} aria-pressed={aba === v} className={aba === v ? "border-section bg-section-soft text-section" : ""}>{r} ({contagem(v)})</Button>
       ))}</div>
+      <p className="mt-2 text-xs text-muted-foreground">Marque os produtos e gere pedidos em rascunho; nada é enviado ao fornecedor.</p>
 
       <div className="mt-4 overflow-x-auto rounded-md border border-border">
         <table className="w-full min-w-[980px] text-sm">
