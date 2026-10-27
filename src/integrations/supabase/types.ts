@@ -596,6 +596,60 @@ export type Database = {
           },
         ]
       }
+      promocoes: {
+        Row: {
+          created_at: string
+          created_by: string
+          data_fim: string
+          data_inicio: string
+          desconto_pct: number
+          empresa_id: string
+          encerrada: boolean
+          id: string
+          nome: string
+          produto_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          data_fim: string
+          data_inicio?: string
+          desconto_pct: number
+          empresa_id: string
+          encerrada?: boolean
+          id?: string
+          nome?: string
+          produto_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          data_fim?: string
+          data_inicio?: string
+          desconto_pct?: number
+          empresa_id?: string
+          encerrada?: boolean
+          id?: string
+          nome?: string
+          produto_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promocoes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promocoes_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sistema_logs: {
         Row: {
           acao: string

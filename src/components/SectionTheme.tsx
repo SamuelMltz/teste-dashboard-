@@ -15,7 +15,7 @@ export function SectionTheme({ children }: { children: ReactNode }) {
   const section: Section | undefined = pathname.startsWith("/pedidos") || pathname.startsWith("/lista-compras") ? "pedidos"
     : pathname.startsWith("/full") ? "full"
     : pathname.startsWith("/garantia") ? "garantia"
-    : pathname.startsWith("/graficos") ? "graficos"
+    : pathname.startsWith("/graficos") || pathname.startsWith("/promocoes") ? "graficos"
     : pathname.startsWith("/admin") ? "gerenciar"
     : pathname.startsWith("/contas") ? "contas"
     : pathname.startsWith("/alertas-estoque") ? "alertas"

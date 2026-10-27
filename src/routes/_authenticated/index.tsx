@@ -61,6 +61,7 @@ const OPCOES = [
 const GRUPOS_MENU = [
   { titulo: "Acompanhamento", itens: [
     { to: "/graficos", titulo: "Gráficos", Icon: BarChart3, secao: "graficos" },
+    { to: "/promocoes", titulo: "Promoções", Icon: Tag, secao: "graficos" },
     { to: "/garantia", titulo: "Garantia/Devolução", Icon: ShieldCheck, secao: "garantia" },
   ] },
   { titulo: "Cadastros", itens: [
