@@ -148,6 +148,13 @@
       "when": 1793025135490,
       "tag": "0020_valores_produtos",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793112472499,
+      "tag": "0021_promocoes",
+      "breakpoints": true
     }
   ]
 }
