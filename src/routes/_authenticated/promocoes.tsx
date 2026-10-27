@@ -89,7 +89,7 @@ function Promocoes() {
 
   async function encerrar(id: string, encerrada: boolean) {
     const { error } = await supabase.from("promocoes").update({ encerrada }).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     qc.invalidateQueries({ queryKey: ["promocoes"] });
   }
 
@@ -192,15 +192,15 @@ function NovaPromocao({ empresaId, marcas, onFechar, onSalvo }: { empresaId: str
 
   async function salvar() {
     const di = brParaYmd(inicio), df = brParaYmd(fim);
-    if (!(desconto > 0 && desconto < 100)) return toast.error("Desconto deve ser entre 0 e 100%.");
-    if (!di || !df) return toast.error("Informe as datas no formato DD/MM.");
-    if (df < di) return toast.error("A data final deve ser depois do início.");
-    if (!alvo.length) return toast.error("Escolha ao menos um produto.");
+    if (!(desconto > 0 && desconto < 100)) { toast.error("Desconto deve ser entre 0 e 100%."); return; }
+    if (!di || !df) { toast.error("Informe as datas no formato DD/MM."); return; }
+    if (df < di) { toast.error("A data final deve ser depois do início."); return; }
+    if (!alvo.length) { toast.error("Escolha ao menos um produto."); return; }
     setSalvando(true);
     const { data: u } = await supabase.auth.getUser();
     const { error } = await supabase.from("promocoes").insert(alvo.map((p) => ({ empresa_id: empresaId, produto_id: p.id, nome: nome.trim(), desconto_pct: desconto, data_inicio: di, data_fim: df, created_by: u.user!.id })));
     setSalvando(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success(alvo.length === 1 ? "Promoção criada." : `${alvo.length} promoções criadas.`);
     onSalvo();
   }
