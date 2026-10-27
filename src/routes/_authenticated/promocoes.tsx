@@ -32,10 +32,10 @@ type Produto = { id: string; nome: string; codigo: string; preco_custo: number |
 type Promo = { id: string; nome: string; desconto_pct: number; data_inicio: string; data_fim: string; encerrada: boolean; produto_id: string; produtos: Produto | null };
 
 const brl = (v: number | null) => v == null ? "—" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const COR_MARGEM: Record<NivelMargem, string> = { boa: "text-success", baixa: "text-warning", negativa: "text-destructive", "sem-dados": "text-muted-foreground" };
+const COR_MARGEM: Record<NivelMargem, string> = { boa: "text-dashboard-green", baixa: "text-dashboard-amber", negativa: "text-destructive", "sem-dados": "text-muted-foreground" };
 const ROTULO_STATUS: Record<StatusPromocao, string> = { ativa: "Ativa", agendada: "Agendada", encerrada: "Encerrada" };
 const COR_STATUS: Record<StatusPromocao, string> = {
-  ativa: "border-success/40 bg-success/10 text-success",
+  ativa: "border-dashboard-green/40 bg-dashboard-green/10 text-dashboard-green",
   agendada: "border-primary/40 bg-primary/10 text-primary",
   encerrada: "border-border bg-muted text-muted-foreground",
 };
