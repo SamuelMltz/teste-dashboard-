@@ -17,7 +17,7 @@ export function SectionTheme({ children }: { children: ReactNode }) {
     : pathname.startsWith("/garantia") ? "garantia"
     : pathname.startsWith("/graficos") || pathname.startsWith("/promocoes") ? "graficos"
     : pathname.startsWith("/admin") ? "gerenciar"
-    : pathname.startsWith("/contas") ? "contas"
+    : pathname.startsWith("/contas") || pathname.startsWith("/configuracoes") ? "contas"
     : pathname.startsWith("/alertas-estoque") ? "alertas"
     : pathname.startsWith("/estoque") || pathname.startsWith("/empresa/") ? "estoque" : undefined;
   return <SectionContext.Provider value={section}><div data-section={section}>{children}</div></SectionContext.Provider>;
