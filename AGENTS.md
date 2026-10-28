@@ -31,3 +31,4 @@
 - PDFs emitidos pelo sistema levam referência rastreável (`LC-…` na lista, `PED-<id>` no pedido); o importador reconhece essas referências antes da leitura comum e abre o registro existente em vez de duplicar.
 - Devoluções (aba em `/garantia`, `src/components/Devolucoes.tsx`) usam tabelas próprias com histórico gravado por trigger; só a função `confirmar_retorno_devolucao` soma ao estoque, exigindo condição apto + status aprovada, uma única vez.
 - Mercado Livre: OAuth Luminartech + botão Sincronizar estoque Full (em Gráficos); tokens só no servidor (ml_contas sem acesso do navegador).
+- Percentuais de imposto, custo fixo e Ads ficam na empresa (editados em `/configuracoes`) e são copiados para cada promoção ao criar; o lucro (`lucroPromocional`) os desconta do preço promocional. Promoções já guardam campos de status do Mercado Livre, ainda sem envio.
