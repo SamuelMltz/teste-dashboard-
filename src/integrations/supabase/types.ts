@@ -121,39 +121,54 @@ export type Database = {
       empresas: {
         Row: {
           accent: string
+          ads_pct: number | null
           cnpj: string
           created_at: string
+          custo_fixo_pct: number | null
           endereco: string
           id: string
+          imposto_pct: number | null
           nome: string
           ordem: number
+          razao_social: string
           reposicao_alvo_pct: number
           reposicao_atencao_pct: number
           slug: string
+          telefone: string
         }
         Insert: {
           accent?: string
+          ads_pct?: number | null
           cnpj?: string
           created_at?: string
+          custo_fixo_pct?: number | null
           endereco?: string
           id?: string
+          imposto_pct?: number | null
           nome: string
           ordem?: number
+          razao_social?: string
           reposicao_alvo_pct?: number
           reposicao_atencao_pct?: number
           slug: string
+          telefone?: string
         }
         Update: {
           accent?: string
+          ads_pct?: number | null
           cnpj?: string
           created_at?: string
+          custo_fixo_pct?: number | null
           endereco?: string
           id?: string
+          imposto_pct?: number | null
           nome?: string
           ordem?: number
+          razao_social?: string
           reposicao_alvo_pct?: number
           reposicao_atencao_pct?: number
           slug?: string
+          telefone?: string
         }
         Relationships: []
       }
@@ -598,38 +613,62 @@ export type Database = {
       }
       promocoes: {
         Row: {
+          ads_pct: number | null
           created_at: string
           created_by: string
+          custo_fixo_pct: number | null
           data_fim: string
           data_inicio: string
           desconto_pct: number
           empresa_id: string
           encerrada: boolean
           id: string
+          imposto_pct: number | null
+          ml_erro: string | null
+          ml_item_id: string | null
+          ml_promocao_id: string | null
+          ml_sincronizado_em: string | null
+          ml_status: string
           nome: string
           produto_id: string
         }
         Insert: {
+          ads_pct?: number | null
           created_at?: string
           created_by?: string
+          custo_fixo_pct?: number | null
           data_fim: string
           data_inicio?: string
           desconto_pct: number
           empresa_id: string
           encerrada?: boolean
           id?: string
+          imposto_pct?: number | null
+          ml_erro?: string | null
+          ml_item_id?: string | null
+          ml_promocao_id?: string | null
+          ml_sincronizado_em?: string | null
+          ml_status?: string
           nome?: string
           produto_id: string
         }
         Update: {
+          ads_pct?: number | null
           created_at?: string
           created_by?: string
+          custo_fixo_pct?: number | null
           data_fim?: string
           data_inicio?: string
           desconto_pct?: number
           empresa_id?: string
           encerrada?: boolean
           id?: string
+          imposto_pct?: number | null
+          ml_erro?: string | null
+          ml_item_id?: string | null
+          ml_promocao_id?: string | null
+          ml_sincronizado_em?: string | null
+          ml_status?: string
           nome?: string
           produto_id?: string
         }

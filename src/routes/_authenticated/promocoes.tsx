@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { brParaYmd, hojeSP, ymdParaBr } from "@/lib/datas";
-import { MARGEM_MINIMA_PCT, margemPromocional, nivelMargem, precoPromocional, statusPromocao, type NivelMargem, type StatusPromocao } from "@/lib/promocoes";
+import { MARGEM_MINIMA_PCT, margemPromocional, nivelMargem, precoPromocional, statusPromocao, lucroPromocional, type Percentuais, type NivelMargem, type StatusPromocao } from "@/lib/promocoes";
 
 export const Route = createFileRoute("/_authenticated/promocoes")({
   head: () => ({
@@ -29,11 +29,12 @@ export const Route = createFileRoute("/_authenticated/promocoes")({
 });
 
 type Produto = { id: string; nome: string; codigo: string; preco_custo: number | null; preco_venda: number | null; marca_id: string; marcas: { nome: string } | null };
-type Promo = { id: string; nome: string; desconto_pct: number; data_inicio: string; data_fim: string; encerrada: boolean; produto_id: string; produtos: Produto | null };
+type Promo = { id: string; nome: string; desconto_pct: number; data_inicio: string; data_fim: string; encerrada: boolean; produto_id: string; imposto_pct: number | null; custo_fixo_pct: number | null; ads_pct: number | null; ml_status: string; produtos: Produto | null };
 
 const brl = (v: number | null) => v == null ? "—" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const COR_MARGEM: Record<NivelMargem, string> = { boa: "text-dashboard-green", baixa: "text-dashboard-amber", negativa: "text-destructive", "sem-dados": "text-muted-foreground" };
 const ROTULO_STATUS: Record<StatusPromocao, string> = { ativa: "Ativa", agendada: "Agendada", encerrada: "Encerrada" };
+const ROTULO_ML: Record<string, string> = { nao_enviada: "Não enviada", pendente: "Pendente", enviada: "Publicada", erro: "Erro" };
 const COR_STATUS: Record<StatusPromocao, string> = {
   ativa: "border-dashboard-green/40 bg-dashboard-green/10 text-dashboard-green",
   agendada: "border-primary/40 bg-primary/10 text-primary",
@@ -57,11 +58,15 @@ function Promocoes() {
     queryKey: ["promo-marcas", empresa?.id], enabled: !!empresa,
     queryFn: async () => (await supabase.from("marcas").select("id, nome").eq("empresa_id", empresa!.id).order("ordem")).data ?? [],
   });
+  const { data: pctEmpresa } = useQuery({
+    queryKey: ["empresa-pct", empresa?.id], enabled: !!empresa,
+    queryFn: async () => (await supabase.from("empresas").select("imposto_pct, custo_fixo_pct, ads_pct").eq("id", empresa!.id).maybeSingle()).data as Percentuais | null,
+  });
   const { data: promos = [] } = useQuery({
     queryKey: ["promocoes", empresa?.id], enabled: !!empresa,
     queryFn: async () => {
       const { data, error } = await supabase.from("promocoes")
-        .select("id, nome, desconto_pct, data_inicio, data_fim, encerrada, produto_id, produtos(id, nome, codigo, preco_custo, preco_venda, marca_id, marcas(nome))")
+        .select("id, nome, desconto_pct, data_inicio, data_fim, encerrada, produto_id, imposto_pct, custo_fixo_pct, ads_pct, ml_status, produtos(id, nome, codigo, preco_custo, preco_venda, marca_id, marcas(nome))")
         .eq("empresa_id", empresa!.id).order("data_inicio", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as Promo[];
@@ -70,9 +75,11 @@ function Promocoes() {
 
   const linhas = useMemo(() => promos.map((p) => {
     const pr = p.produtos;
-    const margem = margemPromocional(pr?.preco_venda ?? null, pr?.preco_custo ?? null, Number(p.desconto_pct));
-    return { ...p, st: statusPromocao(p, hoje), margem, nivel: nivelMargem(margem), preco: precoPromocional(pr?.preco_venda ?? null, Number(p.desconto_pct)) };
-  }), [promos, hoje]);
+    const pct: Percentuais = { imposto_pct: p.imposto_pct ?? pctEmpresa?.imposto_pct ?? null, custo_fixo_pct: p.custo_fixo_pct ?? pctEmpresa?.custo_fixo_pct ?? null, ads_pct: p.ads_pct ?? pctEmpresa?.ads_pct ?? null };
+    const res = lucroPromocional(pr?.preco_venda ?? null, pr?.preco_custo ?? null, Number(p.desconto_pct), pct);
+    const margem = res?.margem ?? null;
+    return { ...p, pct, lucro: res?.lucro ?? null, st: statusPromocao(p, hoje), margem, nivel: nivelMargem(margem), preco: precoPromocional(pr?.preco_venda ?? null, Number(p.desconto_pct)) };
+  }), [promos, hoje, pctEmpresa]);
 
   const deY = de ? brParaYmd(de) : null, ateY = ate ? brParaYmd(ate) : null;
   const filtradas = linhas.filter((l) => {
@@ -107,7 +114,7 @@ function Promocoes() {
             <Button key={a} variant="ghost" role="tab" aria-selected={aba === a} onClick={() => setAba(a)} className="section-tab h-12 rounded-none px-3">{a === "promocoes" ? "Promoções" : "Histórico"}</Button>
           ))}
         </div>
-        <p className="mt-6 flex items-start gap-2 text-sm text-muted-foreground"><Info className="mt-0.5 h-4 w-4 shrink-0" />Escolha o produto e o % de desconto; a margem é calculada pelo custo e preço de venda do Cadastro.</p>
+        <p className="mt-6 flex items-start gap-2 text-sm text-muted-foreground"><Info className="mt-0.5 h-4 w-4 shrink-0" />Escolha o produto e o % de desconto; o lucro desconta custo, imposto, custo fixo e Ads (definidos em Configurações).</p>
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm font-medium text-foreground">{empresa.nome} · {ativas} {ativas === 1 ? "promoção ativa" : "promoções ativas"}</p>
@@ -124,21 +131,24 @@ function Promocoes() {
         </div>
 
         <div className="mt-5 overflow-x-auto rounded-lg border border-border bg-card">
-          <table className="w-full min-w-[760px] text-sm">
+          <table className="w-full min-w-[1080px] text-sm">
             <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
-              <tr><th className="px-4 py-3 font-medium">Marca</th><th className="px-4 py-3 font-medium">Promoção</th><th className="px-4 py-3 font-medium">Desconto</th><th className="px-4 py-3 font-medium">Preço</th><th className="px-4 py-3 font-medium">Margem</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Período</th><th className="px-4 py-3" /></tr>
+              <tr><th className="px-4 py-3 font-medium">Marca</th><th className="px-4 py-3 font-medium">Promoção</th><th className="px-4 py-3 font-medium">Desconto</th><th className="px-4 py-3 font-medium">Preço</th><th className="px-4 py-3 font-medium">Imposto</th><th className="px-4 py-3 font-medium">Custo fixo</th><th className="px-4 py-3 font-medium">Ads</th><th className="px-4 py-3 font-medium">Lucro</th><th className="px-4 py-3 font-medium">Margem</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Período</th><th className="px-4 py-3 font-medium">Mercado Livre</th><th className="px-4 py-3" /></tr>
             </thead>
             <tbody>
-              {filtradas.length === 0 && <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">{aba === "promocoes" ? "Nenhuma promoção ativa ou agendada." : "Nenhuma promoção encerrada."}</td></tr>}
+              {filtradas.length === 0 && <tr><td colSpan={13} className="px-4 py-10 text-center text-muted-foreground">{aba === "promocoes" ? "Nenhuma promoção ativa ou agendada." : "Nenhuma promoção encerrada."}</td></tr>}
               {filtradas.map((l) => (
                 <tr key={l.id} className="border-t border-border">
                   <td className="px-4 py-3 text-muted-foreground">{l.produtos?.marcas?.nome ?? "—"}</td>
                   <td className="px-4 py-3"><p className="font-medium text-foreground">{l.nome || l.produtos?.nome}</p><p className="text-xs text-muted-foreground">{l.produtos?.codigo} · {l.produtos?.nome}</p></td>
                   <td className="px-4 py-3 font-medium">{Number(l.desconto_pct)}%</td>
                   <td className="px-4 py-3"><span className="text-foreground">{brl(l.preco)}</span><span className="ml-1 text-xs text-muted-foreground line-through">{brl(l.produtos?.preco_venda ?? null)}</span></td>
+                  {(["imposto_pct", "custo_fixo_pct", "ads_pct"] as const).map((k) => <td key={k} className="px-4 py-3 text-muted-foreground">{l.pct[k] == null ? "—" : `${Number(l.pct[k])}%`}</td>)}
+                  <td className={`px-4 py-3 font-medium ${COR_MARGEM[l.nivel]}`}>{brl(l.lucro)}</td>
                   <td className={`px-4 py-3 font-medium ${COR_MARGEM[l.nivel]}`}>{l.margem == null ? "Sem valores" : `${l.margem}%`}</td>
                   <td className="px-4 py-3"><span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs ${COR_STATUS[l.st]}`}><span className="h-1.5 w-1.5 rounded-full bg-current" />{ROTULO_STATUS[l.st]}</span></td>
                   <td className="px-4 py-3 text-muted-foreground">{ymdParaBr(l.data_inicio).slice(0, 5)} a {ymdParaBr(l.data_fim).slice(0, 5)}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{ROTULO_ML[l.ml_status] ?? "Não enviada"}</td>
                   <td className="px-4 py-3 text-right">{l.encerrada
                     ? <Button size="sm" variant="ghost" onClick={() => encerrar(l.id, false)}>Reativar</Button>
                     : l.st !== "encerrada" && <Button size="sm" variant="ghost" onClick={() => encerrar(l.id, true)}>Encerrar</Button>}</td>
@@ -198,7 +208,8 @@ function NovaPromocao({ empresaId, marcas, onFechar, onSalvo }: { empresaId: str
     if (!alvo.length) { toast.error("Escolha ao menos um produto."); return; }
     setSalvando(true);
     const { data: u } = await supabase.auth.getUser();
-    const { error } = await supabase.from("promocoes").insert(alvo.map((p) => ({ empresa_id: empresaId, produto_id: p.id, nome: nome.trim(), desconto_pct: desconto, data_inicio: di, data_fim: df, created_by: u.user!.id })));
+    const { data: emp } = await supabase.from("empresas").select("imposto_pct, custo_fixo_pct, ads_pct").eq("id", empresaId).maybeSingle();
+    const { error } = await supabase.from("promocoes").insert(alvo.map((p) => ({ empresa_id: empresaId, produto_id: p.id, nome: nome.trim(), desconto_pct: desconto, data_inicio: di, data_fim: df, created_by: u.user!.id, imposto_pct: emp?.imposto_pct ?? null, custo_fixo_pct: emp?.custo_fixo_pct ?? null, ads_pct: emp?.ads_pct ?? null })));
     setSalvando(false);
     if (error) { toast.error(error.message); return; }
     toast.success(alvo.length === 1 ? "Promoção criada." : `${alvo.length} promoções criadas.`);

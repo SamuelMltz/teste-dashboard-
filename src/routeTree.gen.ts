@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAlertasEstoqueRouteImport } from './routes/_authenticated/alertas-estoque'
+import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedContasRouteImport } from './routes/_authenticated/contas'
 import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticated/estoque'
 import { Route as AuthenticatedFullRouteImport } from './routes/_authenticated/full'
@@ -53,6 +54,12 @@ const AuthenticatedAlertasEstoqueRoute =
   AuthenticatedAlertasEstoqueRouteImport.update({
     id: '/alertas-estoque',
     path: '/alertas-estoque',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedConfiguracoesRoute =
+  AuthenticatedConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedContasRoute = AuthenticatedContasRouteImport.update({
@@ -140,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/alertas-estoque': typeof AuthenticatedAlertasEstoqueRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/contas': typeof AuthenticatedContasRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/full': typeof AuthenticatedFullRoute
@@ -160,6 +168,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/alertas-estoque': typeof AuthenticatedAlertasEstoqueRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/contas': typeof AuthenticatedContasRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/full': typeof AuthenticatedFullRoute
@@ -182,6 +191,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/alertas-estoque': typeof AuthenticatedAlertasEstoqueRoute
+  '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/contas': typeof AuthenticatedContasRoute
   '/_authenticated/estoque': typeof AuthenticatedEstoqueRoute
   '/_authenticated/full': typeof AuthenticatedFullRoute
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin'
     | '/alertas-estoque'
+    | '/configuracoes'
     | '/contas'
     | '/estoque'
     | '/full'
@@ -226,6 +237,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin'
     | '/alertas-estoque'
+    | '/configuracoes'
     | '/contas'
     | '/estoque'
     | '/full'
@@ -247,6 +259,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/admin'
     | '/_authenticated/alertas-estoque'
+    | '/_authenticated/configuracoes'
     | '/_authenticated/contas'
     | '/_authenticated/estoque'
     | '/_authenticated/full'
@@ -306,6 +319,13 @@ declare module '@tanstack/react-router' {
       path: '/alertas-estoque'
       fullPath: '/alertas-estoque'
       preLoaderRoute: typeof AuthenticatedAlertasEstoqueRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/configuracoes': {
+      id: '/_authenticated/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/contas': {
@@ -436,6 +456,7 @@ const AuthenticatedEmpresaSlugRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAlertasEstoqueRoute: typeof AuthenticatedAlertasEstoqueRoute
+  AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedContasRoute: typeof AuthenticatedContasRoute
   AuthenticatedEstoqueRoute: typeof AuthenticatedEstoqueRoute
   AuthenticatedFullRoute: typeof AuthenticatedFullRoute
@@ -454,6 +475,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAlertasEstoqueRoute: AuthenticatedAlertasEstoqueRoute,
+  AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedContasRoute: AuthenticatedContasRoute,
   AuthenticatedEstoqueRoute: AuthenticatedEstoqueRoute,
   AuthenticatedFullRoute: AuthenticatedFullRoute,

@@ -124,7 +124,7 @@ function Painel({ empresaAtual }: { empresaAtual: EmpresaAtual }) {
   const [menuRecolhido, setMenuRecolhido] = useState(false);
   const [menuMobile, setMenuMobile] = useState(false);
   const { data: fullsAgendados = [] } = useQuery({
-    queryKey: ["full-prazos", empresaAtual.id],
+    queryKey: ["full-prazos", empresaAtual.id], enabled: user.user_metadata?.["avisos"]?.full !== false,
     queryFn: async () => {
       const { data, error } = await supabase.from("full_cargas").select("id, numero, nome, frete_ml, data_prevista").eq("empresa_id", empresaAtual.id).eq("status", "planejada").not("data_prevista", "is", null).order("data_prevista");
       if (error) throw error;
@@ -242,16 +242,17 @@ function Painel({ empresaAtual }: { empresaAtual: EmpresaAtual }) {
               </Link>
             </Button>
             <Button
-              type="button"
+              asChild
               variant="ghost"
               title={menuRecolhido ? "Configurações" : undefined}
               className={`h-12 w-full text-muted-foreground hover:text-foreground ${
                 menuRecolhido ? "justify-start gap-4 md:justify-center md:px-0" : "justify-start gap-4"
               }`}
-              aria-label="Configurações (em breve)"
             >
-              <Settings className="h-5 w-5" aria-hidden="true" />
-              <span className={menuRecolhido ? "md:sr-only" : undefined}>Configurações</span>
+              <Link to="/configuracoes">
+                <Settings className="h-5 w-5" aria-hidden="true" />
+                <span className={menuRecolhido ? "md:sr-only" : undefined}>Configurações</span>
+              </Link>
             </Button>
           </div>
         </aside>

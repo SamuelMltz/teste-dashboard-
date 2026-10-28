@@ -27,3 +27,14 @@ export function statusPromocao(p: { data_inicio: string; data_fim: string; encer
   if (p.data_inicio > hoje) return "agendada";
   return "ativa";
 }
+
+export type Percentuais = { imposto_pct: number | null; custo_fixo_pct: number | null; ads_pct: number | null };
+
+/** Lucro por unidade = preço promocional − custo − (imposto + custo fixo + Ads)% do preço promocional. */
+export function lucroPromocional(precoVenda: number | null, custo: number | null, descontoPct: number, pct: Percentuais): { lucro: number; margem: number } | null {
+  const preco = precoPromocional(precoVenda, descontoPct);
+  if (preco == null || preco <= 0 || custo == null) return null;
+  const taxas = (Number(pct.imposto_pct ?? 0) + Number(pct.custo_fixo_pct ?? 0) + Number(pct.ads_pct ?? 0)) / 100;
+  const lucro = Math.round((preco - custo - preco * taxas) * 100) / 100;
+  return { lucro, margem: Math.round((lucro / preco) * 1000) / 10 };
+}
