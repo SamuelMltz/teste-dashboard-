@@ -55,6 +55,7 @@ function Configuracoes() {
           <Cartao Icon={Link2} titulo="Integração Mercado Livre" info="Cada empresa tem sua própria conta e sincronização. Antes de autorizar, entre no Mercado Livre com a conta da empresa abaixo.">
             <div className="rounded-md border border-border p-4">
               <p className="mb-3 font-semibold text-foreground">{empresa.nome}</p>
+              <CredenciaisMl empresaId={empresa.id} />
               <SincronizarMl empresaId={empresa.id} />
             </div>
           </Cartao>
