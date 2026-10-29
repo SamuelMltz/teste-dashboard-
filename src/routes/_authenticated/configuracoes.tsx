@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { salvarCredenciaisMl, statusMl } from "@/lib/ml.functions";
 import { ArrowLeft, Bell, Building2, Info, Link2, Settings, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaObrigatoria } from "@/lib/use-empresa-obrigatoria";
@@ -151,5 +153,34 @@ function Preferencias() {
       </div>
       <Button className="mt-4" onClick={salvar}>Salvar alterações</Button>
     </Cartao>
+  );
+}
+
+function CredenciaisMl({ empresaId }: { empresaId: string }) {
+  const qc = useQueryClient();
+  const salvarFn = useServerFn(salvarCredenciaisMl);
+  const statusFn = useServerFn(statusMl);
+  const { data: st } = useQuery({ queryKey: ["ml-cred", empresaId], queryFn: () => statusFn({ data: { empresaId } }) });
+  const [id, setId] = useState("");
+  const [secret, setSecret] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  async function salvar() {
+    setSalvando(true);
+    try {
+      await salvarFn({ data: { empresaId, clientId: id, clientSecret: secret } });
+      toast.success("Credenciais salvas. Agora clique em Conectar Mercado Livre.");
+      setId(""); setSecret(""); qc.invalidateQueries();
+    } catch (e: any) { toast.error(e?.message ?? "Não foi possível salvar."); }
+    finally { setSalvando(false); }
+  }
+  return (
+    <div className="mb-4 space-y-3 border-b border-border pb-4">
+      <p className="text-xs text-muted-foreground">App ID atual: {st?.clientId ?? "aplicativo padrão"} · a chave secreta fica guardada no servidor e nunca é exibida. Ao trocar, será preciso conectar de novo.</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Campo rotulo="App ID"><Input inputMode="numeric" placeholder="Ex.: 3608041717738183" value={id} onChange={(e) => setId(e.target.value)} /></Campo>
+        <Campo rotulo="Chave secreta"><Input type="password" autoComplete="off" placeholder="Cole a Secret Key" value={secret} onChange={(e) => setSecret(e.target.value)} /></Campo>
+      </div>
+      <Button size="sm" onClick={salvar} disabled={salvando || !id || !secret}>Salvar credenciais</Button>
+    </div>
   );
 }
