@@ -340,9 +340,55 @@ export type Database = {
           },
         ]
       }
+      ml_anuncios: {
+        Row: {
+          atualizado_em: string
+          em_promocao: boolean
+          empresa_id: string
+          item_id: string
+          preco: number | null
+          preco_original: number | null
+          sku: string
+          status: string | null
+          titulo: string
+        }
+        Insert: {
+          atualizado_em?: string
+          em_promocao?: boolean
+          empresa_id: string
+          item_id: string
+          preco?: number | null
+          preco_original?: number | null
+          sku?: string
+          status?: string | null
+          titulo?: string
+        }
+        Update: {
+          atualizado_em?: string
+          em_promocao?: boolean
+          empresa_id?: string
+          item_id?: string
+          preco?: number | null
+          preco_original?: number | null
+          sku?: string
+          status?: string | null
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ml_anuncios_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ml_contas: {
         Row: {
           access_token: string | null
+          client_id: string | null
+          client_secret: string | null
           conectado_em: string | null
           empresa_id: string
           expires_at: string | null
@@ -354,6 +400,8 @@ export type Database = {
         }
         Insert: {
           access_token?: string | null
+          client_id?: string | null
+          client_secret?: string | null
           conectado_em?: string | null
           empresa_id: string
           expires_at?: string | null
@@ -365,6 +413,8 @@ export type Database = {
         }
         Update: {
           access_token?: string | null
+          client_id?: string | null
+          client_secret?: string | null
           conectado_em?: string | null
           empresa_id?: string
           expires_at?: string | null

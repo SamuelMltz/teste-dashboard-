@@ -38,3 +38,14 @@ export function lucroPromocional(precoVenda: number | null, custo: number | null
   const lucro = Math.round((preco - custo - preco * taxas) * 100) / 100;
   return { lucro, margem: Math.round((lucro / preco) * 1000) / 10 };
 }
+
+/** Lucro de um anúncio do ML no preço atual: preço − custo − (imposto + custo fixo + Ads)% do preço. */
+export function lucroAnuncio(preco: number | null, custo: number | null, pct: Percentuais): { lucro: number; margem: number } | null {
+  return lucroPromocional(preco, custo, 0, pct);
+}
+
+/** Matiz do gradiente da margem: 0% ou menos = vermelho (0), 30% ou mais = verde (130). */
+export function matizMargem(margem: number): number {
+  const t = Math.min(Math.max(margem / 30, 0), 1);
+  return Math.round(t * 130);
+}

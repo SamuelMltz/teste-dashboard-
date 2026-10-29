@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ML_CLIENT_ID, ML_REDIRECT_URI } from "@/lib/ml.functions";
+import { credenciaisDe, ML_REDIRECT_URI } from "@/lib/ml.functions";
 
 export const Route = createFileRoute("/api/public/ml/callback")({
   server: {
@@ -14,15 +14,16 @@ export const Route = createFileRoute("/api/public/ml/callback")({
         const empresaId = state.split(".")[0];
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const admin = supabaseAdmin as any;
-        const { data: c } = await admin.from("ml_contas").select("oauth_state").eq("empresa_id", empresaId).maybeSingle();
+        const { data: c } = await admin.from("ml_contas").select("oauth_state, client_id, client_secret").eq("empresa_id", empresaId).maybeSingle();
         if (!c || c.oauth_state !== state) return voltar("erro");
+        const cred = credenciaisDe(c);
         const r = await fetch("https://api.mercadolibre.com/oauth/token", {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
           body: new URLSearchParams({
             grant_type: "authorization_code",
-            client_id: ML_CLIENT_ID,
-            client_secret: process.env["ML_CLIENT_SECRET"]!,
+            client_id: cred.id,
+            client_secret: cred.secret,
             code,
             redirect_uri: ML_REDIRECT_URI,
           }),

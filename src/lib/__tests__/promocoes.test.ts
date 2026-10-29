@@ -39,3 +39,14 @@ describe("lucroPromocional", () => {
     expect(lucroPromocional(100, null, 20, { imposto_pct: 10, custo_fixo_pct: 0, ads_pct: 0 })).toBeNull();
   });
 });
+
+import { lucroAnuncio, matizMargem } from "../promocoes";
+describe("anúncios ML", () => {
+  it("lucro no preço atual desconta custo e percentuais", () => {
+    expect(lucroAnuncio(100, 50, { imposto_pct: 10, custo_fixo_pct: 5, ads_pct: 5 })).toEqual({ lucro: 30, margem: 30 });
+  });
+  it("sem custo fica incompleto", () => { expect(lucroAnuncio(100, null, { imposto_pct: 10, custo_fixo_pct: null, ads_pct: null })).toBeNull(); });
+  it("gradiente vai de vermelho (0%) a verde (30%)", () => {
+    expect(matizMargem(-5)).toBe(0); expect(matizMargem(15)).toBe(65); expect(matizMargem(40)).toBe(130);
+  });
+});

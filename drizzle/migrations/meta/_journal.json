@@ -162,6 +162,13 @@
       "when": 1793186800871,
       "tag": "0022_configuracoes_e_promocoes_ml",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793280204496,
+      "tag": "0023_ml_credenciais_e_anuncios",
+      "breakpoints": true
     }
   ]
 }

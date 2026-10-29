@@ -6,6 +6,7 @@ import { AlertCircle, ArrowLeft, Boxes, Building2, Info, Plus, Search, Tag } fro
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaObrigatoria } from "@/lib/use-empresa-obrigatoria";
 import { BarraEmpresa } from "@/components/BarraEmpresa";
+import { AnunciosMl } from "@/components/AnunciosMl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -114,7 +115,8 @@ function Promocoes() {
             <Button key={a} variant="ghost" role="tab" aria-selected={aba === a} onClick={() => setAba(a)} className="section-tab h-12 rounded-none px-3">{a === "promocoes" ? "Promoções" : "Histórico"}</Button>
           ))}
         </div>
-        <p className="mt-6 flex items-start gap-2 text-sm text-muted-foreground"><Info className="mt-0.5 h-4 w-4 shrink-0" />Escolha o produto e o % de desconto; o lucro desconta custo, imposto, custo fixo e Ads (definidos em Configurações).</p>
+        {aba === "promocoes" && <AnunciosMl empresaId={empresa.id} pct={pctEmpresa ?? null} />}
+        <p className="mt-6 flex items-start gap-2 text-sm text-muted-foreground"><Info className="mt-0.5 h-4 w-4 shrink-0" />Promoções planejadas no sistema: escolha o produto e o % de desconto; o lucro desconta custo, imposto, custo fixo e Ads (definidos em Configurações).</p>
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm font-medium text-foreground">{empresa.nome} · {ativas} {ativas === 1 ? "promoção ativa" : "promoções ativas"}</p>
