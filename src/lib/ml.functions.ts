@@ -18,7 +18,7 @@ export const statusMl = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: c } = await (supabaseAdmin as any)
       .from("ml_contas")
-      .select("ml_user_id, conectado_em, sincronizado_em, ultimo_erro, refresh_token, access_token, expires_at")
+      .select("ml_user_id, conectado_em, sincronizado_em, ultimo_erro, refresh_token, access_token, expires_at, client_id")
       .eq("empresa_id", data.empresaId)
       .maybeSingle();
     const tokenAtivo = !!c?.access_token && !!c?.expires_at && new Date(c.expires_at).getTime() > Date.now() + 60_000;
@@ -28,6 +28,8 @@ export const statusMl = createServerFn({ method: "POST" })
       conectadoEm: c?.conectado_em ?? null,
       sincronizadoEm: c?.sincronizado_em ?? null,
       erro: c?.ultimo_erro ?? null,
+      clientId: (c?.client_id as string | null) ?? null,
+      mlUserId: c?.ml_user_id ?? null,
     };
   });
 
@@ -38,28 +40,56 @@ export const urlConectarMl = createServerFn({ method: "POST" })
     await exigirAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const state = `${data.empresaId}.${crypto.randomUUID()}`;
-    await (supabaseAdmin as any)
+    const admin = supabaseAdmin as any;
+    const { data: c } = await admin.from("ml_contas").select("client_id, client_secret").eq("empresa_id", data.empresaId).maybeSingle();
+    await admin
       .from("ml_contas")
       .upsert({ empresa_id: data.empresaId, oauth_state: state }, { onConflict: "empresa_id" });
     const u = new URL("https://auth.mercadolivre.com.br/authorization");
     u.searchParams.set("response_type", "code");
-    u.searchParams.set("client_id", ML_CLIENT_ID);
+    u.searchParams.set("client_id", credenciaisDe(c).id);
     u.searchParams.set("redirect_uri", ML_REDIRECT_URI);
     u.searchParams.set("state", state);
     return { url: u.toString() };
+  });
+
+/** Credenciais da empresa; sem elas, usa o aplicativo padrão. */
+export function credenciaisDe(c: any): { id: string; secret: string } {
+  if (c?.client_id && c?.client_secret) return { id: c.client_id, secret: c.client_secret };
+  return { id: ML_CLIENT_ID, secret: process.env["ML_CLIENT_SECRET"]! };
+}
+
+export const salvarCredenciaisMl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { empresaId: string; clientId: string; clientSecret: string }) => {
+    if (!/^\d{5,30}$/.test(d.clientId.trim())) throw new Error("App ID inválido (apenas números).");
+    if (d.clientSecret.trim().length < 10 || d.clientSecret.length > 200) throw new Error("Chave secreta inválida.");
+    return { empresaId: d.empresaId, clientId: d.clientId.trim(), clientSecret: d.clientSecret.trim() };
+  })
+  .handler(async ({ data, context }) => {
+    await exigirAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Trocar o aplicativo invalida os tokens antigos: será preciso conectar de novo.
+    const { error } = await (supabaseAdmin as any).from("ml_contas").upsert({
+      empresa_id: data.empresaId, client_id: data.clientId, client_secret: data.clientSecret,
+      access_token: null, refresh_token: null, expires_at: null,
+    }, { onConflict: "empresa_id" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 async function tokenValido(admin: any, empresaId: string) {
   const { data: c } = await admin.from("ml_contas").select("*").eq("empresa_id", empresaId).maybeSingle();
   if (c?.access_token && c.expires_at && new Date(c.expires_at).getTime() > Date.now() + 60_000) return c;
   if (!c?.refresh_token) throw new Error("A conexão com o Mercado Livre expirou. Clique em \"Conectar Mercado Livre\" novamente.");
+  const cred = credenciaisDe(c);
   const r = await fetch(`${API}/oauth/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
     body: new URLSearchParams({
       grant_type: "refresh_token",
-      client_id: ML_CLIENT_ID,
-      client_secret: process.env["ML_CLIENT_SECRET"]!,
+      client_id: cred.id,
+      client_secret: cred.secret,
       refresh_token: c.refresh_token,
     }),
   });
@@ -144,6 +174,34 @@ export const sincronizarFullMl = createServerFn({ method: "POST" })
         if (error) throw new Error(error.message);
       }
       await admin.from("ml_estoque_full").delete().eq("empresa_id", data.empresaId).lt("atualizado_em", agora);
+
+      // 3b. Anúncios ativos: preço atual e original (promoção ativa quando original > atual)
+      const ativos: string[] = [];
+      let sc: string | undefined;
+      for (let i = 0; i < 50; i++) {
+        const j = await get(`/users/${c.ml_user_id}/items/search?status=active&search_type=scan&limit=100${sc ? `&scroll_id=${sc}` : ""}`);
+        const res: string[] = j.results ?? [];
+        ativos.push(...res);
+        sc = j.scroll_id;
+        if (!res.length || !sc) break;
+      }
+      const anuncios: any[] = [];
+      for (let i = 0; i < ativos.length; i += 20) {
+        const j: any[] = await get(`/items?ids=${ativos.slice(i, i + 20).join(",")}&attributes=id,title,price,original_price,status,seller_custom_field,attributes`);
+        for (const e of j) {
+          const it = e.body;
+          if (!it) continue;
+          const preco = Number(it.price ?? 0);
+          const orig = it.original_price != null ? Number(it.original_price) : null;
+          anuncios.push({ empresa_id: data.empresaId, item_id: it.id, sku: skuDe(it).toUpperCase(), titulo: it.title ?? "", preco, preco_original: orig,
+            em_promocao: orig != null && orig > preco, status: it.status ?? null, atualizado_em: agora });
+        }
+      }
+      if (anuncios.length) {
+        const { error } = await admin.from("ml_anuncios").upsert(anuncios, { onConflict: "empresa_id,item_id" });
+        if (error) throw new Error(error.message);
+      }
+      await admin.from("ml_anuncios").delete().eq("empresa_id", data.empresaId).lt("atualizado_em", agora);
 
       // 4. Vendas pagas dos últimos 30 dias (unidades por SKU; cancelados ficam fora)
       const desde = new Date(Date.now() - 30 * 86400_000).toISOString();
