@@ -19,7 +19,7 @@ export function SincronizarMl({ empresaId }: { empresaId: string }) {
     setOcupado(true);
     try {
       const { url } = await conectar({ data: { empresaId } });
-      window.open(url, "_blank");
+      window.location.href = url;
     } catch (e: any) { toast.error(e.message); } finally { setOcupado(false); }
   }
   async function onSync() {
@@ -41,6 +41,7 @@ export function SincronizarMl({ empresaId }: { empresaId: string }) {
       {data?.expiraEm && (
         <p className="text-xs text-muted-foreground">Conexão válida até {formatarDataHora(data.expiraEm)}</p>
       )}
+      {data?.erro && !data.conectado && <p className="max-w-sm text-xs text-destructive">Último erro do Mercado Livre: {data.erro}</p>}
       {data?.conectado ? (
         <Button size="sm" variant="outline" onClick={onSync} disabled={ocupado} className="gap-2">
           <RefreshCw className={`h-4 w-4 ${ocupado ? "animate-spin" : ""}`} />Sincronizar estoque Full
