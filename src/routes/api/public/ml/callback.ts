@@ -9,7 +9,7 @@ export const Route = createFileRoute("/api/public/ml/callback")({
         const code = url.searchParams.get("code");
         const state = url.searchParams.get("state") ?? "";
         const voltar = (msg: string) =>
-          Response.redirect(`${url.origin}/graficos?ml=${encodeURIComponent(msg)}`, 302);
+          Response.redirect(`${url.origin}/configuracoes?ml=${encodeURIComponent(msg)}`, 302);
         if (!code || !state.includes(".")) return voltar("erro");
         const empresaId = state.split(".")[0];
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -31,6 +31,8 @@ export const Route = createFileRoute("/api/public/ml/callback")({
         const j: any = await r.json();
         if (!r.ok) {
           console.error("ML token", j);
+          const msg = String(j?.message ?? j?.error ?? "Mercado Livre recusou a autorização").slice(0, 300);
+          await admin.from("ml_contas").update({ ultimo_erro: msg, oauth_state: null }).eq("empresa_id", empresaId);
           return voltar("erro");
         }
         await admin

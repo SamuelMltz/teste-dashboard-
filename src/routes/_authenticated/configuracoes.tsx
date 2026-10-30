@@ -41,6 +41,12 @@ const Campo = ({ rotulo, children }: { rotulo: string; children: React.ReactNode
 
 function Configuracoes() {
   const empresa = useEmpresaObrigatoria();
+  useEffect(() => {
+    const ml = new URLSearchParams(window.location.search).get("ml");
+    if (ml === "conectado") toast.success("Mercado Livre conectado!");
+    else if (ml === "erro") toast.error("Não foi possível conectar. Veja o erro abaixo do botão.");
+    if (ml) window.history.replaceState(null, "", "/configuracoes");
+  }, []);
   if (!empresa) return null;
   return (
     <div className="min-h-screen bg-estoque-canvas">
