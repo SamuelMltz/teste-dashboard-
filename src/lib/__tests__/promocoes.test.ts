@@ -50,3 +50,17 @@ describe("anúncios ML", () => {
     expect(matizMargem(-5)).toBe(0); expect(matizMargem(15)).toBe(65); expect(matizMargem(40)).toBe(130);
   });
 });
+
+import { classeMargem } from "../promocoes";
+describe("classificação da margem", () => {
+  it("segue as faixas aprovadas", () => {
+    expect(classeMargem(-3)).toBe("Crítico");
+    expect(classeMargem(1.99)).toBe("Crítico");
+    expect(classeMargem(2)).toBe("Ruim");
+    expect(classeMargem(5)).toBe("Baixo");
+    expect(classeMargem(10)).toBe("Bom");
+    expect(classeMargem(15)).toBe("Bom");
+    expect(classeMargem(15.01)).toBe("Excelente");
+    expect(classeMargem(null)).toBe("Sem valores");
+  });
+});

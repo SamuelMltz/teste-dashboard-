@@ -4,13 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SincronizarMl } from "@/components/SincronizarMl";
-import { lucroAnuncio, matizMargem, type Percentuais } from "@/lib/promocoes";
+import { classeMargem, lucroAnuncio, matizMargem, type Percentuais } from "@/lib/promocoes";
 
 const brl = (v: number | null) => v == null ? "—" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function AnunciosMl({ empresaId, pct }: { empresaId: string; pct: Percentuais | null }) {
   const [filtro, setFiltro] = useState("todos");
   const [busca, setBusca] = useState("");
+  const [classe, setClasse] = useState("todas");
   const { data } = useQuery({
     queryKey: ["ml-anuncios", empresaId],
     queryFn: async () => {
@@ -33,7 +34,7 @@ export function AnunciosMl({ empresaId, pct }: { empresaId: string; pct: Percent
     }).sort((x, y) => Number(y.em_promocao) - Number(x.em_promocao));
   }, [data, pct]);
   const q = busca.trim().toLowerCase();
-  const vis = linhas.filter((l) => (filtro === "todos" || (filtro === "promo") === l.em_promocao) && (!q || [l.titulo, l.sku, l.item_id].some((t) => t.toLowerCase().includes(q))));
+  const vis = linhas.filter((l) => (filtro === "todos" || (filtro === "promo") === l.em_promocao) && (classe === "todas" || classeMargem(l.res?.margem ?? null) === classe) && (!q || [l.titulo, l.sku, l.item_id].some((t) => t.toLowerCase().includes(q))));
   const emPromo = linhas.filter((l) => l.em_promocao).length;
   const ultima = linhas[0]?.atualizado_em;
 
@@ -49,19 +50,21 @@ export function AnunciosMl({ empresaId, pct }: { empresaId: string; pct: Percent
       </div>
       <div className="mt-4 flex flex-wrap gap-3">
         <Select value={filtro} onValueChange={setFiltro}><SelectTrigger className="w-52"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="todos">Todos os anúncios</SelectItem><SelectItem value="promo">Em promoção</SelectItem><SelectItem value="normal">Preço normal</SelectItem></SelectContent></Select>
+        <Select value={classe} onValueChange={setClasse}><SelectTrigger className="w-48"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="todas">Todas as margens</SelectItem>{["Excelente","Bom","Baixo","Ruim","Crítico","Sem valores"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select>
         <Input className="max-w-xs" placeholder="Produto, SKU ou anúncio" value={busca} onChange={(e) => setBusca(e.target.value)} />
       </div>
       <div className="mt-4 overflow-x-auto rounded-md border border-border">
         <table className="w-full min-w-[860px] text-sm">
           <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
-            <tr><th className="px-4 py-3 font-medium">Produto / SKU / anúncio</th><th className="px-4 py-3 font-medium">Promoção no ML</th><th className="px-4 py-3 font-medium">Preço final</th><th className="px-4 py-3 font-medium">Custo</th><th className="px-4 py-3 font-medium">Lucro estimado</th><th className="px-4 py-3 font-medium">Margem de lucro</th></tr>
+            <tr><th className="px-4 py-3 font-medium">Marca</th><th className="px-4 py-3 font-medium">Produto / SKU / anúncio</th><th className="px-4 py-3 font-medium">Promoção no ML</th><th className="px-4 py-3 font-medium">Preço final</th><th className="px-4 py-3 font-medium">Custo</th><th className="px-4 py-3 font-medium">Lucro estimado</th><th className="px-4 py-3 font-medium">Margem de lucro</th></tr>
           </thead>
           <tbody>
-            {vis.length === 0 && <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">{linhas.length ? "Nenhum anúncio neste filtro." : "Sincronize o Mercado Livre para trazer os anúncios."}</td></tr>}
+            {vis.length === 0 && <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">{linhas.length ? "Nenhum anúncio neste filtro." : "Sincronize o Mercado Livre para trazer os anúncios."}</td></tr>}
             {vis.map((l) => {
               const h = l.res ? matizMargem(l.res.margem) : null;
               return (
                 <tr key={l.item_id} className="border-t border-border">
+                  <td className="px-4 py-3 text-muted-foreground">{l.prod?.marcas?.nome ?? "—"}</td>
                   <td className="px-4 py-3"><p className="font-semibold text-foreground">{l.prod?.nome ?? l.titulo}</p><p className="text-xs text-muted-foreground">{l.sku || "Sem SKU"} · {l.item_id}</p></td>
                   <td className="px-4 py-3">{l.em_promocao
                     ? <span className="rounded-full border border-dashboard-green/40 bg-dashboard-green/15 px-2.5 py-1 text-xs font-bold text-dashboard-green">ATIVA · {l.desconto.toLocaleString("pt-BR")}% OFF</span>
@@ -70,7 +73,7 @@ export function AnunciosMl({ empresaId, pct }: { empresaId: string; pct: Percent
                   <td className="px-4 py-3 text-foreground">{brl(l.prod?.preco_custo ?? null)}</td>
                   <td className="px-4 py-3" style={h != null ? { color: `hsl(${h} 75% 55%)` } : undefined}>{l.res ? brl(l.res.lucro) : <span className="text-muted-foreground">Incompleto</span>}</td>
                   <td className="px-4 py-3">{l.res
-                    ? <span className="rounded-md px-2.5 py-1 font-bold" style={{ color: `hsl(${h} 75% 60%)`, backgroundColor: `hsl(${h} 75% 45% / 0.15)` }}>{l.res.margem.toLocaleString("pt-BR")}%</span>
+                    ? <span className="rounded-md px-2.5 py-1 font-bold" style={{ color: `hsl(${h} 75% 60%)`, backgroundColor: `hsl(${h} 75% 45% / 0.15)` }}>{l.res.margem.toLocaleString("pt-BR")}% · {classeMargem(l.res.margem)}</span>
                     : <span className="text-xs text-muted-foreground">{l.prod ? "Custo não informado no cadastro" : "SKU não cadastrado"}</span>}</td>
                 </tr>
               );
