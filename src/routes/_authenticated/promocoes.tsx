@@ -46,7 +46,7 @@ function Promocoes() {
   const empresa = useEmpresaObrigatoria();
   const qc = useQueryClient();
   const hoje = hojeSP();
-  const [aba, setAba] = useState<"promocoes" | "historico">("promocoes");
+  const [aba, setAba] = useState<"produtos" | "promocoes" | "historico">("produtos");
   const [marca, setMarca] = useState("todas");
   const [busca, setBusca] = useState("");
   const [status, setStatus] = useState("todos");
@@ -111,11 +111,11 @@ function Promocoes() {
           <h1 className="font-display text-4xl font-bold text-foreground sm:text-5xl">Promoções</h1>
         </header>
         <div role="tablist" className="mt-5 flex gap-6 border-b border-border">
-          {(["promocoes", "historico"] as const).map((a) => (
-            <Button key={a} variant="ghost" role="tab" aria-selected={aba === a} onClick={() => setAba(a)} className="section-tab h-12 rounded-none px-3">{a === "promocoes" ? "Promoções" : "Histórico"}</Button>
+          {(["produtos", "promocoes", "historico"] as const).map((a) => (
+            <Button key={a} variant="ghost" role="tab" aria-selected={aba === a} onClick={() => setAba(a)} className="section-tab h-12 rounded-none px-3">{a === "produtos" ? "Produtos" : a === "promocoes" ? "Campanhas internas" : "Histórico"}</Button>
           ))}
         </div>
-        {aba === "promocoes" && <AnunciosMl empresaId={empresa.id} pct={pctEmpresa ?? null} />}
+        {aba === "produtos" ? <AnunciosMl empresaId={empresa.id} pct={pctEmpresa ?? null} /> : (<>
         <p className="mt-6 flex items-start gap-2 text-sm text-muted-foreground"><Info className="mt-0.5 h-4 w-4 shrink-0" />Promoções planejadas no sistema: escolha o produto e o % de desconto; o lucro desconta custo, imposto, custo fixo e Ads (definidos em Configurações).</p>
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
@@ -159,6 +159,8 @@ function Promocoes() {
             </tbody>
           </table>
         </div>
+        </>)}
+
 
         <div className="mt-6 grid gap-4 rounded-lg border border-border bg-card p-5 text-sm text-muted-foreground sm:grid-cols-3">
           <p className="flex items-center gap-3"><AlertCircle className="h-5 w-5 shrink-0 text-primary" />Evite promoções com margem abaixo de {MARGEM_MINIMA_PCT}%.</p>

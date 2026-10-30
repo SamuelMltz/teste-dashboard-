@@ -44,6 +44,17 @@ export function lucroAnuncio(preco: number | null, custo: number | null, pct: Pe
   return lucroPromocional(preco, custo, 0, pct);
 }
 
+export type ClasseMargem = "Crítico" | "Ruim" | "Baixo" | "Bom" | "Excelente" | "Sem valores";
+/** Faixas aprovadas: <2 Crítico, 2–<5 Ruim, 5–<10 Baixo, 10–15 Bom, >15 Excelente. Usa o valor sem arredondar. */
+export function classeMargem(margem: number | null): ClasseMargem {
+  if (margem == null || !Number.isFinite(margem)) return "Sem valores";
+  if (margem < 2) return "Crítico";
+  if (margem < 5) return "Ruim";
+  if (margem < 10) return "Baixo";
+  if (margem <= 15) return "Bom";
+  return "Excelente";
+}
+
 /** Matiz do gradiente da margem: 0% ou menos = vermelho (0), 30% ou mais = verde (130). */
 export function matizMargem(margem: number): number {
   const t = Math.min(Math.max(margem / 30, 0), 1);
