@@ -66,6 +66,7 @@ const GRUPOS_MENU = [
   ] },
   { titulo: "Cadastros", itens: [
     { to: "/admin", titulo: "Gerenciar", Icon: ClipboardPlus, secao: "gerenciar" },
+    { to: "/etiquetar", titulo: "Etiquetar", Icon: Tag, secao: "gerenciar" },
   ] },
 ] as const;
 
