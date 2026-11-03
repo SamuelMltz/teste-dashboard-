@@ -17,6 +17,7 @@ import { Route as AuthenticatedAlertasEstoqueRouteImport } from './routes/_authe
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedContasRouteImport } from './routes/_authenticated/contas'
 import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticated/estoque'
+import { Route as AuthenticatedEtiquetarRouteImport } from './routes/_authenticated/etiquetar'
 import { Route as AuthenticatedFullRouteImport } from './routes/_authenticated/full'
 import { Route as AuthenticatedGarantiaRouteImport } from './routes/_authenticated/garantia'
 import { Route as AuthenticatedGraficosRouteImport } from './routes/_authenticated/graficos'
@@ -70,6 +71,11 @@ const AuthenticatedContasRoute = AuthenticatedContasRouteImport.update({
 const AuthenticatedEstoqueRoute = AuthenticatedEstoqueRouteImport.update({
   id: '/estoque',
   path: '/estoque',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEtiquetarRoute = AuthenticatedEtiquetarRouteImport.update({
+  id: '/etiquetar',
+  path: '/etiquetar',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedFullRoute = AuthenticatedFullRouteImport.update({
@@ -150,6 +156,7 @@ export interface FileRoutesByFullPath {
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/contas': typeof AuthenticatedContasRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
+  '/etiquetar': typeof AuthenticatedEtiquetarRoute
   '/full': typeof AuthenticatedFullRoute
   '/garantia': typeof AuthenticatedGarantiaRoute
   '/graficos': typeof AuthenticatedGraficosRoute
@@ -171,6 +178,7 @@ export interface FileRoutesByTo {
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/contas': typeof AuthenticatedContasRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
+  '/etiquetar': typeof AuthenticatedEtiquetarRoute
   '/full': typeof AuthenticatedFullRoute
   '/garantia': typeof AuthenticatedGarantiaRoute
   '/graficos': typeof AuthenticatedGraficosRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/contas': typeof AuthenticatedContasRoute
   '/_authenticated/estoque': typeof AuthenticatedEstoqueRoute
+  '/_authenticated/etiquetar': typeof AuthenticatedEtiquetarRoute
   '/_authenticated/full': typeof AuthenticatedFullRoute
   '/_authenticated/garantia': typeof AuthenticatedGarantiaRoute
   '/_authenticated/graficos': typeof AuthenticatedGraficosRoute
@@ -219,6 +228,7 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/contas'
     | '/estoque'
+    | '/etiquetar'
     | '/full'
     | '/garantia'
     | '/graficos'
@@ -240,6 +250,7 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/contas'
     | '/estoque'
+    | '/etiquetar'
     | '/full'
     | '/garantia'
     | '/graficos'
@@ -262,6 +273,7 @@ export interface FileRouteTypes {
     | '/_authenticated/configuracoes'
     | '/_authenticated/contas'
     | '/_authenticated/estoque'
+    | '/_authenticated/etiquetar'
     | '/_authenticated/full'
     | '/_authenticated/garantia'
     | '/_authenticated/graficos'
@@ -340,6 +352,13 @@ declare module '@tanstack/react-router' {
       path: '/estoque'
       fullPath: '/estoque'
       preLoaderRoute: typeof AuthenticatedEstoqueRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/etiquetar': {
+      id: '/_authenticated/etiquetar'
+      path: '/etiquetar'
+      fullPath: '/etiquetar'
+      preLoaderRoute: typeof AuthenticatedEtiquetarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/full': {
@@ -459,6 +478,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedContasRoute: typeof AuthenticatedContasRoute
   AuthenticatedEstoqueRoute: typeof AuthenticatedEstoqueRoute
+  AuthenticatedEtiquetarRoute: typeof AuthenticatedEtiquetarRoute
   AuthenticatedFullRoute: typeof AuthenticatedFullRoute
   AuthenticatedGarantiaRoute: typeof AuthenticatedGarantiaRoute
   AuthenticatedGraficosRoute: typeof AuthenticatedGraficosRoute
@@ -478,6 +498,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedContasRoute: AuthenticatedContasRoute,
   AuthenticatedEstoqueRoute: AuthenticatedEstoqueRoute,
+  AuthenticatedEtiquetarRoute: AuthenticatedEtiquetarRoute,
   AuthenticatedFullRoute: AuthenticatedFullRoute,
   AuthenticatedGarantiaRoute: AuthenticatedGarantiaRoute,
   AuthenticatedGraficosRoute: AuthenticatedGraficosRoute,
