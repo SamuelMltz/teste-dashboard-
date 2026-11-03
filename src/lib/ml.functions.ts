@@ -186,15 +186,28 @@ export const sincronizarFullMl = createServerFn({ method: "POST" })
         if (!res.length || !sc) break;
       }
       const anuncios: any[] = [];
+      const tarifas = new Map<string, number | null>();
       for (let i = 0; i < ativos.length; i += 20) {
-        const j: any[] = await get(`/items?ids=${ativos.slice(i, i + 20).join(",")}&attributes=id,title,price,original_price,status,seller_custom_field,attributes`);
+        const j: any[] = await get(`/items?ids=${ativos.slice(i, i + 20).join(",")}&attributes=id,title,price,original_price,status,seller_custom_field,attributes,listing_type_id,category_id`);
         for (const e of j) {
           const it = e.body;
           if (!it) continue;
           const preco = Number(it.price ?? 0);
           const orig = it.original_price != null ? Number(it.original_price) : null;
+          // Tarifa de venda do ML (cacheada por preço/tipo/categoria para economizar chamadas)
+          let tarifa: number | null = null;
+          const chave = `${preco}|${it.listing_type_id}|${it.category_id}`;
+          if (tarifas.has(chave)) tarifa = tarifas.get(chave)!;
+          else if (it.listing_type_id && it.category_id) {
+            try {
+              const lp = await get(`/sites/MLB/listing_prices?price=${preco}&listing_type_id=${it.listing_type_id}&category_id=${it.category_id}`);
+              const v = Array.isArray(lp) ? lp[0] : lp;
+              tarifa = v?.sale_fee_amount != null ? Number(v.sale_fee_amount) : null;
+            } catch (err) { console.error("tarifa", it.id, err); }
+            tarifas.set(chave, tarifa);
+          }
           anuncios.push({ empresa_id: data.empresaId, item_id: it.id, sku: skuDe(it).toUpperCase(), titulo: it.title ?? "", preco, preco_original: orig,
-            em_promocao: orig != null && orig > preco, status: it.status ?? null, atualizado_em: agora });
+            em_promocao: orig != null && orig > preco, status: it.status ?? null, tipo_anuncio: it.listing_type_id ?? null, tarifa, atualizado_em: agora });
         }
       }
       if (anuncios.length) {

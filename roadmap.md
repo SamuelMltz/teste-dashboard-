@@ -42,7 +42,7 @@
 ## Mercado Livre e Promoções
 - [x] Conexão ML volta para Configurações na mesma aba e mostra o erro do ML.
 - [ ] Publicar o app para a conexão usar as credenciais novas (o retorno do ML vai para o site publicado).
-- [ ] Monitor de anúncios: colunas Marca, Tarifa estimada, Frete estimado, Ads/ACOS 30 dias, Imposto, Custo fixo.
-- [ ] Cartões-resumo: anúncios, em promoção no ML, margem média.
-- [ ] Atalho para preencher custo quando faltar.
+- [ ] Monitor de anúncios (Marca, Tarifa e Tipo prontos); falta Frete estimado, Ads/ACOS 30 dias, Imposto, Custo fixo.
+- [x] Cartões-resumo: anúncios, em promoção no ML, margem média.
+- [x] Atalho para preencher custo quando faltar.
 - [ ] Fase 2: aplicar/encerrar promoção direto no ML.

@@ -64,3 +64,11 @@ describe("classificação da margem", () => {
     expect(classeMargem(null)).toBe("Sem valores");
   });
 });
+
+import { lucroAnuncio as lucroComTarifa } from "../promocoes";
+describe("lucroAnuncio com tarifa do ML", () => {
+  it("desconta a tarifa em reais do lucro", () => {
+    // 100 − 50 custo − 10% taxas − 12 tarifa = 28
+    expect(lucroComTarifa(100, 50, { imposto_pct: 10, custo_fixo_pct: 0, ads_pct: 0 }, 12)).toEqual({ lucro: 28, margem: 28 });
+  });
+});

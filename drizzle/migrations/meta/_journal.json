@@ -169,6 +169,13 @@
       "when": 1793280204496,
       "tag": "0023_ml_credenciais_e_anuncios",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793706834694,
+      "tag": "0024_ml_anuncios_tarifa",
+      "breakpoints": true
     }
   ]
 }

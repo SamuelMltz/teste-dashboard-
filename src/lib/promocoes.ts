@@ -40,8 +40,11 @@ export function lucroPromocional(precoVenda: number | null, custo: number | null
 }
 
 /** Lucro de um anúncio do ML no preço atual: preço − custo − (imposto + custo fixo + Ads)% do preço. */
-export function lucroAnuncio(preco: number | null, custo: number | null, pct: Percentuais): { lucro: number; margem: number } | null {
-  return lucroPromocional(preco, custo, 0, pct);
+export function lucroAnuncio(preco: number | null, custo: number | null, pct: Percentuais, tarifa: number | null = null): { lucro: number; margem: number } | null {
+  const r = lucroPromocional(preco, custo, 0, pct);
+  if (!r || !tarifa) return r;
+  const lucro = Math.round((r.lucro - tarifa) * 100) / 100;
+  return { lucro, margem: Math.round((lucro / preco!) * 1000) / 10 };
 }
 
 export type ClasseMargem = "Crítico" | "Ruim" | "Baixo" | "Bom" | "Excelente" | "Sem valores";
