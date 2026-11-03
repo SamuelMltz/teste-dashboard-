@@ -1,0 +1,1 @@
+ALTER TABLE public.ml_anuncios ADD COLUMN IF NOT EXISTS tipo_anuncio text, ADD COLUMN IF NOT EXISTS tarifa numeric(12,2);

@@ -350,6 +350,8 @@ export type Database = {
           preco_original: number | null
           sku: string
           status: string | null
+          tarifa: number | null
+          tipo_anuncio: string | null
           titulo: string
         }
         Insert: {
@@ -361,6 +363,8 @@ export type Database = {
           preco_original?: number | null
           sku?: string
           status?: string | null
+          tarifa?: number | null
+          tipo_anuncio?: string | null
           titulo?: string
         }
         Update: {
@@ -372,6 +376,8 @@ export type Database = {
           preco_original?: number | null
           sku?: string
           status?: string | null
+          tarifa?: number | null
+          tipo_anuncio?: string | null
           titulo?: string
         }
         Relationships: [
