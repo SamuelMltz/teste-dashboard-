@@ -1,3 +1,4 @@
+import { BotaoPdfEstoque } from "@/components/BotaoPdfEstoque";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, Package } from "lucide-react";
 
@@ -52,6 +53,7 @@ function MarcaEstoque() {
             <h1 className="font-display text-3xl font-bold text-foreground sm:text-5xl">{marca.nome}</h1>
             <p className="mt-1 text-sm text-muted-foreground sm:text-base">Produtos e quantidade em estoque · em amarelo ou vermelho, estão perto ou abaixo do mínimo</p>
           </div>
+          <div className="ml-auto"><BotaoPdfEstoque empresaId={empresa.id} empresaNome={empresa.nome} marcaId={marca.id} marcaNome={marca.nome} /></div>
         </header>
         <div className="mt-4 h-1 w-14 rounded-full estoque-product-accent" aria-hidden="true" />
 
