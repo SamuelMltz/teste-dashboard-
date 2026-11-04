@@ -6,15 +6,16 @@ import { Button } from "@/components/ui/button";
 import { gerarPdfEstoque, montarRelatorio } from "@/lib/relatorio-estoque";
 
 /** Gera o PDF de estoque com os dados já salvos (sem sincronizar nem alterar nada). */
-export function BotaoPdfEstoque({ empresaId, empresaNome, marcaId, marcaNome }: { empresaId: string; empresaNome: string; marcaId?: string; marcaNome?: string }) {
+export function BotaoPdfEstoque({ empresaId, empresaNome, marcaSlug, marcaNome }: { empresaId?: string | undefined; empresaNome: string; marcaSlug?: string; marcaNome?: string }) {
   const [gerando, setGerando] = useState(false);
   const [link, setLink] = useState<string | null>(null);
 
   async function gerar() {
+    if (!empresaId) return;
     setGerando(true); setLink(null);
     try {
-      let q = supabase.from("produtos").select("codigo, nome, estoque, preco_custo, marca_id, marcas!inner(empresa_id)").eq("marcas.empresa_id", empresaId).order("nome");
-      if (marcaId) q = q.eq("marca_id", marcaId);
+      let q = supabase.from("produtos").select("codigo, nome, estoque, preco_custo, marcas!inner(empresa_id, slug)").eq("marcas.empresa_id", empresaId).order("nome");
+      if (marcaSlug) q = q.eq("marcas.slug", marcaSlug);
       const [{ data: prods, error: e1 }, { data: full, error: e2 }] = await Promise.all([
         q, supabase.from("ml_estoque_full").select("sku, quantidade").eq("empresa_id", empresaId),
       ]);
