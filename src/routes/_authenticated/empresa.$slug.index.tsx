@@ -1,3 +1,4 @@
+import { BotaoPdfEstoque } from "@/components/BotaoPdfEstoque";
 import { BarraEmpresa } from "@/components/BarraEmpresa";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
@@ -49,6 +50,7 @@ function EmpresaMarcas() {
             </h1>
             <p className="text-sm text-muted-foreground">Marcas que a empresa vende · toque em uma para ver os produtos</p>
           </div>
+          <div className="ml-auto"><BotaoPdfEstoque empresaId={empresa.id} empresaNome={empresa.nome} /></div>
         </header>
 
         {empresa.marcas.length === 0 ? (
