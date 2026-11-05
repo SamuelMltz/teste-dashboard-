@@ -1,6 +1,6 @@
 import type { jsPDF } from "jspdf";
 
-export type ProdutoEtiqueta = { id: string; nome: string; sku: string; marca?: string; etiquetado?: boolean; copias?: number };
+export type ProdutoEtiqueta = { id: string; nome: string; sku: string; marca?: string; etiquetado?: boolean; full?: boolean; copias?: number };
 
 export const LIMITE_PAGINAS = 200;
 
@@ -43,8 +43,11 @@ export async function gerarPdfEtiquetas(produtos: ProdutoEtiqueta[]) {
   paginas.forEach((p, i) => {
     if (i) doc.addPage("a4", "landscape");
     doc.setTextColor(0, 0, 0).setFont("helvetica", "bold");
-    escreverBloco(doc, p.nome, w / 2, 14, w - 24, p.etiquetado ? 110 : 160, 84);
-    if (p.etiquetado) escreverBloco(doc, "ETIQUETADO", w / 2, 130, w - 24, 50, 76);
+    const extras = [p.full && "FULL", p.etiquetado && "ETIQUETADO"].filter(Boolean) as string[];
+    const altNome = extras.length === 2 ? 90 : extras.length ? 110 : 160;
+    escreverBloco(doc, p.nome, w / 2, 14, w - 24, altNome, 84);
+    extras.forEach((t, k) => escreverBloco(doc, t, w / 2, 14 + altNome + 6 + k * 44, w - 24, 38, 70));
+    doc.setFontSize(12);
     let tam = 12;
     doc.setFontSize(tam);
     while (tam > 6 && doc.getTextWidth(p.sku) > w / 2) doc.setFontSize(--tam);
