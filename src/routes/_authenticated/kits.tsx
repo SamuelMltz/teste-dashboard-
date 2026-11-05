@@ -53,6 +53,7 @@ function Kits() {
     const { error } = await supabase.from("kits").insert({ empresa_id: empresa!.id, sku: sku.trim(), nome: nome.trim() });
     if (error) return toast.error(error.code === "23505" ? "Já existe um kit com esse SKU." : "Não foi possível criar o kit.");
     setSku(""); setNome(""); recarregar();
+    return undefined;
   }
 
   if (!empresa) return null;
