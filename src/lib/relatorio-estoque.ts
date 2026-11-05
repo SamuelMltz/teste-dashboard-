@@ -1,12 +1,19 @@
+import { expandirKits, type Kit } from "./kits";
+
 /** Relatório de estoque: total = físico + Full disponível; custo = total × custo unitário. Não altera nada. */
 export type LinhaRelatorio = { sku: string; nome: string; total: number; custo: number | null };
 
 export function montarRelatorio(
   produtos: { codigo: string; nome: string; estoque: number; preco_custo: number | null }[],
   full: { sku: string; quantidade: number }[],
+  kits: Kit[] = [],
 ) {
   const fullPorSku = new Map<string, number>();
   for (const f of full) {
+    if (!Number.isFinite(f.quantidade) || f.quantidade < 0) throw new Error(`Registro Full inconsistente para o SKU ${f.sku}.`);
+  }
+  // Kits no Full viram as unidades dos produtos que os compõem.
+  for (const f of expandirKits(full, kits)) {
     if (!Number.isFinite(f.quantidade) || f.quantidade < 0) throw new Error(`Registro Full inconsistente para o SKU ${f.sku}.`);
     fullPorSku.set(f.sku, (fullPorSku.get(f.sku) ?? 0) + f.quantidade);
   }
