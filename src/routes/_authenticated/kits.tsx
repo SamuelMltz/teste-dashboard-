@@ -48,10 +48,10 @@ function Kits() {
   const recarregar = () => qc.invalidateQueries({ queryKey: ["kits", empresa?.id] });
 
   async function criar() {
-    if (!sku.trim() || !nome.trim()) return toast.error("Informe o SKU e o nome do kit.");
-    if (produtos?.some((p) => norm(p.codigo) === norm(sku))) return toast.error("Esse SKU já é de um produto avulso.");
+    if (!sku.trim() || !nome.trim()) { toast.error("Informe o SKU e o nome do kit."); return; }
+    if (produtos?.some((p) => norm(p.codigo) === norm(sku))) { toast.error("Esse SKU já é de um produto avulso."); return; }
     const { error } = await supabase.from("kits").insert({ empresa_id: empresa!.id, sku: sku.trim(), nome: nome.trim() });
-    if (error) return toast.error(error.code === "23505" ? "Já existe um kit com esse SKU." : "Não foi possível criar o kit.");
+    if (error) { toast.error(error.code === "23505" ? "Já existe um kit com esse SKU." : "Não foi possível criar o kit."); return; }
     setSku(""); setNome(""); recarregar();
     return undefined;
   }
