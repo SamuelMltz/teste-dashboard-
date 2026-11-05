@@ -3,6 +3,7 @@ import { FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { carregarKits } from "@/lib/importar-documento";
 import { gerarPdfEstoque, montarRelatorio } from "@/lib/relatorio-estoque";
 
 /** Gera o PDF de estoque com os dados já salvos (sem sincronizar nem alterar nada). */
@@ -20,7 +21,7 @@ export function BotaoPdfEstoque({ empresaId, empresaNome, marcaSlug, marcaNome }
         q, supabase.from("ml_estoque_full").select("sku, quantidade").eq("empresa_id", empresaId),
       ]);
       if (e1 || e2) throw new Error("Só administradores podem gerar este relatório.");
-      const r = montarRelatorio(prods ?? [], full ?? []);
+      const r = montarRelatorio(prods ?? [], full ?? [], await carregarKits(empresaId));
       const url = await gerarPdfEstoque(empresaNome, marcaNome ?? "Todas as marcas", r);
       setLink(url);
       const a = document.createElement("a"); a.href = url; a.download = `estoque-${empresaNome}${marcaNome ? `-${marcaNome}` : ""}.pdf`; a.click();

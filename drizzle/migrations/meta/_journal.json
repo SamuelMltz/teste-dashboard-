@@ -176,6 +176,13 @@
       "when": 1793706834694,
       "tag": "0024_ml_anuncios_tarifa",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793888382605,
+      "tag": "0025_kits",
+      "breakpoints": true
     }
   ]
 }
