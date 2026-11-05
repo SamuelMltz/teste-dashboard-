@@ -55,7 +55,7 @@ function Etiquetar() {
   useEffect(() => { if (produtos) setItens((a) => a.filter((i) => produtos.some((p) => p.id === i.id))); }, [produtos]);
 
   const mapa = useMemo(() => new Map((produtos ?? []).map((p) => [p.id, p])), [produtos]);
-  const lista: ProdutoEtiqueta[] = itens.flatMap((i) => { const p = mapa.get(i.id); return p ? [{ ...p, etiquetado: i.etiquetado, full: i.full, copias: i.copias }] : []; });
+  const lista: ProdutoEtiqueta[] = itens.flatMap((i) => { const p = mapa.get(i.id); return p ? [{ ...p, etiquetado: i.etiquetado, full: !!i.full, copias: i.copias }] : []; });
   let paginas = 0, erro = "";
   try { paginas = totalPaginas(lista); } catch (e) { erro = (e as Error).message; }
 
