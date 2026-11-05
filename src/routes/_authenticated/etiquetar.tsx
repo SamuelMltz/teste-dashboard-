@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/etiquetar")({
   component: Etiquetar,
 });
 
-type Item = { id: string; etiquetado: boolean; copias: number };
+type Item = { id: string; etiquetado: boolean; full?: boolean; copias: number };
 const normalizar = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 function Etiquetar() {
@@ -55,7 +55,7 @@ function Etiquetar() {
   useEffect(() => { if (produtos) setItens((a) => a.filter((i) => produtos.some((p) => p.id === i.id))); }, [produtos]);
 
   const mapa = useMemo(() => new Map((produtos ?? []).map((p) => [p.id, p])), [produtos]);
-  const lista: ProdutoEtiqueta[] = itens.flatMap((i) => { const p = mapa.get(i.id); return p ? [{ ...p, etiquetado: i.etiquetado, copias: i.copias }] : []; });
+  const lista: ProdutoEtiqueta[] = itens.flatMap((i) => { const p = mapa.get(i.id); return p ? [{ ...p, etiquetado: i.etiquetado, full: !!i.full, copias: i.copias }] : []; });
   let paginas = 0, erro = "";
   try { paginas = totalPaginas(lista); } catch (e) { erro = (e as Error).message; }
 
@@ -95,6 +95,7 @@ function Etiquetar() {
             <div key={p.id} className="flex flex-wrap items-center gap-3 p-3">
               <div className="min-w-0 flex-1"><p className="truncate font-medium text-foreground">{p.nome}</p><p className="text-xs text-muted-foreground">SKU {p.sku || "— sem SKU"} · {p.marca}</p></div>
               <label className="flex items-center gap-2 text-sm text-muted-foreground"><Switch checked={!!p.etiquetado} onCheckedChange={(v) => atualizar(p.id, { etiquetado: v })} />Etiquetado</label>
+              <label className="flex items-center gap-2 text-sm text-muted-foreground"><Switch checked={!!p.full} onCheckedChange={(v) => atualizar(p.id, { full: v })} />Full</label>
               <label className="flex items-center gap-2 text-sm text-muted-foreground">Cópias<Input type="number" min={1} max={200} className="w-20" value={p.copias} onChange={(e) => atualizar(p.id, { copias: Number(e.target.value) })} /></label>
               <Button variant="ghost" size="icon" aria-label="Remover da lista" onClick={() => setItens((a) => a.filter((i) => i.id !== p.id))}><Trash2 className="h-4 w-4" /></Button>
             </div>
