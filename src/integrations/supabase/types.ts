@@ -305,6 +305,74 @@ export type Database = {
           },
         ]
       }
+      kit_itens: {
+        Row: {
+          id: string
+          kit_id: string
+          produto_id: string
+          quantidade: number
+        }
+        Insert: {
+          id?: string
+          kit_id: string
+          produto_id: string
+          quantidade: number
+        }
+        Update: {
+          id?: string
+          kit_id?: string
+          produto_id?: string
+          quantidade?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kit_itens_kit_id_fkey"
+            columns: ["kit_id"]
+            isOneToOne: false
+            referencedRelation: "kits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kit_itens_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kits: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          id: string
+          nome: string
+          sku: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          id?: string
+          nome: string
+          sku: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          nome?: string
+          sku?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kits_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marcas: {
         Row: {
           created_at: string
