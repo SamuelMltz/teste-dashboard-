@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { lerDocumentoPdf, type LinhaPdf } from "./pdf-import";
 import type { CabecalhoMl } from "./pdf-ml";
+import { expandirKits, type Kit } from "./kits";
 import { assinaturaLinhas, casarEntreEmpresas, casarLinhas, type Pendente } from "./casar-produtos";
 import type { EmpresaAtual } from "./empresa-atual";
 import { hojeSP } from "./datas";
@@ -73,7 +74,7 @@ export async function criarDocumentoPorPdf(tipo: TipoDoc, arquivo: File, empresa
   // Pedidos de compra: busca na empresa atual e depois nas outras (a entrada vai para a empresa dona do produto). Full: só a empresa atual.
   const produtos = await carregarProdutosEmpresa(tipo === "pedido" ? null : empresa.id);
   const locais = produtos.filter((p) => p.empresa_id === empresa.id);
-  const { casados, pendentes } = tipo === "pedido" ? casarEntreEmpresas(linhas, locais, produtos.filter((p) => p.empresa_id !== empresa.id)) : casarLinhas(linhas, locais);
+  const { casados, pendentes } = tipo === "pedido" ? casarEntreEmpresas(linhas, locais, produtos.filter((p) => p.empresa_id !== empresa.id)) : casarLinhas(ml ? expandirKits(linhas, await carregarKits(empresa.id)) : linhas, locais);
   const marcas = Array.from(new Set(casados.map((c) => produtos.find((p) => p.id === c.produtoId)).filter((p) => p?.empresa_id === empresa.id).map((p) => p!.marca)));
   const nome = ml?.frete ? `Frete #${ml.frete}` : marcas.length ? marcas.join(" + ") : arquivo.name.replace(/\.pdf$/i, "").slice(0, 120) || "Importado de PDF";
 
@@ -151,4 +152,14 @@ async function importarPdfSistema(pdf: PdfSistema, empresa: EmpresaAtual): Promi
     primeiro ??= doc.id as string;
   }
   return primeiro;
+}
+
+/** Kits da empresa com os SKUs dos produtos que os compõem. */
+export async function carregarKits(empresaId: string): Promise<Kit[]> {
+  const { data, error } = await supabase.from("kits").select("sku, kit_itens(quantidade, produtos(codigo))").eq("empresa_id", empresaId);
+  if (error) throw error;
+  return (data ?? []).map((k) => ({
+    sku: k.sku,
+    itens: (k.kit_itens ?? []).flatMap((i) => { const p = i.produtos as unknown as { codigo: string } | null; return p?.codigo ? [{ sku: p.codigo, quantidade: i.quantidade }] : []; }),
+  }));
 }
